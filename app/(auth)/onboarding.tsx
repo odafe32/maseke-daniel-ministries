@@ -4,60 +4,307 @@ import { PaginationDots } from "@/components/ui/PaginationDots";
 import { TextLink } from "@/components/ui/TextLink";
 import { ThemeText } from "@/components/ui/ThemeText";
 import { onboardingData } from "@/constants/data";
-import { getColor, hp, wp } from "@/utils";
+import { fs, getColor, hp, wp } from "@/utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef, useState } from "react";
 import {
   Dimensions,
-  FlatList,
-  Image,
   StyleSheet,
   View,
-  ViewToken,
+  ImageBackground,
+  Animated,
+  PanResponder,
+  PanResponderGestureState,
+  Text,
+  Easing,
 } from "react-native";
 
-const { width } = Dimensions.get("window");
-
-interface ViewableItemsChanged {
-  viewableItems: ViewToken[];
-  changed: ViewToken[];
-}
+const { width, height } = Dimensions.get("window");
 
 const OnboardingScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
   const colors = getColor();
+  
+  // Animated values for smooth transitions
+  const backgroundOpacity = useRef(new Animated.Value(1)).current;
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+  const contentTranslateY = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  // Track if we're currently transitioning
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const handleViewableItemsChanged = ({
-    viewableItems,
-  }: ViewableItemsChanged) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index || 0);
-    }
+  const animateToNext = (nextIndex: number) => {
+    if (isTransitioning || nextIndex < 0 || nextIndex >= onboardingData.length) return;
+    
+    setIsTransitioning(true);
+    
+    // Single smooth transition with ease-out timing and 300ms duration
+    Animated.parallel([
+      // Background smooth crossfade
+      Animated.timing(backgroundOpacity, {
+        toValue: 0.3,
+        duration: 150, // Half of 300ms for fade out
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      // Content slides down and fades
+      Animated.timing(contentOpacity, {
+        toValue: 0,
+        duration: 150, // Half of 300ms for fade out
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTranslateY, {
+        toValue: 20,
+        duration: 150, // Half of 300ms for slide out
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      // Subtle scale effect
+      Animated.timing(scaleAnim, {
+        toValue: 0.98,
+        duration: 150, // Half of 300ms for scale out
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Update index while content is transitioning
+      setCurrentIndex(nextIndex);
+      
+      // Animate content back in smoothly with ease-out
+      Animated.parallel([
+        Animated.timing(backgroundOpacity, {
+          toValue: 1,
+          duration: 150, // Second half of 300ms for fade in
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 150, // Second half of 300ms for fade in
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentTranslateY, {
+          toValue: 0,
+          duration: 150, // Second half of 300ms for slide in
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 150, // Second half of 300ms for scale in
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsTransitioning(false);
+      });
+    });
   };
 
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
-  };
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+    },
+    onPanResponderGrant: () => {
+      // Subtle feedback on gesture start
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (!isTransitioning) {
+        const dragDistance = Math.abs(gestureState.dx);
+        const maxDrag = width * 0.3;
+        
+        // Subtle content movement during gesture
+        const translateValue = gestureState.dx * 0.05;
+        contentTranslateY.setValue(Math.abs(translateValue) * 0.5);
+        
+        // Subtle opacity change during drag
+        const fadeValue = Math.max(0.7, 1 - (dragDistance / maxDrag) * 0.3);
+        contentOpacity.setValue(fadeValue);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (!isTransitioning) {
+        const threshold = width * 0.25;
+        const velocity = Math.abs(gestureState.vx);
+        
+        // Determine swipe direction and navigate
+        if (gestureState.dx > threshold || (gestureState.dx > 50 && velocity > 0.5)) {
+          // Swipe right - go to previous
+          if (currentIndex > 0) {
+            animateToNext(currentIndex - 1);
+          } else {
+            // Reset animations if no navigation
+            Animated.parallel([
+              Animated.timing(contentTranslateY, {
+                toValue: 0,
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.timing(contentOpacity, {
+                toValue: 1,
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (gestureState.dx < -threshold || (gestureState.dx < -50 && velocity > 0.5)) {
+          // Swipe left - go to next
+          if (currentIndex < onboardingData.length - 1) {
+            animateToNext(currentIndex + 1);
+          } else {
+            // Reset animations if no navigation
+            Animated.parallel([
+              Animated.timing(contentTranslateY, {
+                toValue: 0,
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.timing(contentOpacity, {
+                toValue: 1,
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else {
+          // Reset animations if swipe wasn't enough
+          Animated.parallel([
+            Animated.timing(contentTranslateY, {
+              toValue: 0,
+              duration: 300,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(contentOpacity, {
+              toValue: 1,
+              duration: 300,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      }
+    },
+    onPanResponderTerminate: () => {
+      // Reset animations if gesture is terminated
+      Animated.parallel([
+        Animated.timing(contentTranslateY, {
+          toValue: 0,
+          duration: 300,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+  });
 
-  const renderItem = ({ item }: { item: (typeof onboardingData)[0] }) => {
+  const renderCurrentSlide = () => {
+    const item = onboardingData[currentIndex];
+    const isLastSlide = currentIndex === onboardingData.length - 1;
+    
     return (
-      <View style={styles.slide}>
-        <View style={styles.titleContainer}>
-          <ThemeText variant="bodySmall" style={styles.welcomeText}>
-            Welcome to Oga&apos;bai
-          </ThemeText>
-          <ThemeText variant="h1">{item.title}</ThemeText>
-        </View>
-        <View style={styles.imageContainer}>
-          <Image
+      <View style={styles.slide} {...panResponder.panHandlers}>
+        {/* Background Image with smooth transition */}
+        <Animated.View 
+          style={[
+            styles.backgroundContainer,
+            {
+              opacity: backgroundOpacity,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          <ImageBackground
             source={item.image}
-            style={styles.image}
-            resizeMode="contain"
-          />
+            style={styles.fullBackgroundImage}
+            resizeMode="cover"
+          >
+            {/* Gradient Overlay */}
+            <View style={styles.gradientOverlay} />
+            
+            {/* Top Content */}
+            <View style={styles.topContent}>
+              <ThemeText variant="bodySmall" style={styles.brandText}>
+                Grace Dimensions
+              </ThemeText>
+            </View>
+          </ImageBackground>
+        </Animated.View>
+
+        <View style={styles.bottomSheet}>
+          {/* Content with smooth animations */}
+          <Animated.View 
+            style={[
+              styles.contentContainer,
+              { 
+                opacity: contentOpacity,
+                transform: [{ translateY: contentTranslateY }]
+              }
+            ]}
+          >
+            <View style={styles.titleContainer}>
+              {/* Single Pagination Dots - only here */}
+              <View style={styles.paginationContainer}>
+                <PaginationDots
+                  length={onboardingData.length}
+                  activeIndex={currentIndex}
+                />
+              </View>
+              
+              <Text style={styles.title}>
+                {item.title}
+              </Text>
+              <Text style={styles.description}>
+                {item.description}
+              </Text>
+            </View>
+
+            {/* Buttons - Conditional rendering based on slide */}
+            <View style={styles.buttonContainer}>
+              {isLastSlide ? (
+                // Last slide - only one button
+                <Button
+                  title="Get Started"
+                  onPress={handleGetStarted}
+                  style={styles.primaryButton}
+                  disabled={isTransitioning}
+                />
+              ) : (
+                // First slides - two buttons
+                <>
+                  <Button
+                    title="Next"
+                    onPress={handleNext}
+                    style={styles.secondaryButton}
+                    textStyle={{ color: '#000000ff' }} 
+                    disabled={isTransitioning}
+                  />
+                  <Button
+                    title="Get Started"
+                    onPress={handleLogin}
+                    style={styles.primaryButton}
+                    disabled={isTransitioning}
+                  />
+                </>
+              )}
+            </View>
+          </Animated.View>
         </View>
       </View>
     );
@@ -71,14 +318,18 @@ const OnboardingScreen = () => {
     }
   };
 
+  const handleNext = () => {
+    if (currentIndex < onboardingData.length - 1) {
+      animateToNext(currentIndex + 1);
+    }
+  };
+
   const handleGetStarted = async () => {
     if (currentIndex < onboardingData.length - 1) {
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex + 1,
-        animated: true,
-      });
+      animateToNext(currentIndex + 1);
     } else {
-      //   await markOnboardingComplete();
+      // Last slide - navigate to signup
+      // await markOnboardingComplete();
       router.push("/signup");
     }
   };
@@ -89,31 +340,10 @@ const OnboardingScreen = () => {
   };
 
   return (
-    <SafeAreaWrapper>
-      <StatusBar style="dark" />
-      <FlatList
-        ref={flatListRef}
-        data={onboardingData}
-        renderItem={renderItem}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
-        onViewableItemsChanged={handleViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-      />
-      <View style={styles.footer}>
-        <PaginationDots
-          length={onboardingData.length}
-          activeIndex={currentIndex}
-        />
-        <Button
-          title={
-            currentIndex === onboardingData.length - 1 ? "Get Started" : "Next"
-          }
-          onPress={handleGetStarted}
-        />
-        <TextLink text="Have an account? Login" onPress={handleLogin} />
+    <SafeAreaWrapper style={styles.container}>
+      <StatusBar style="light" />
+      <View style={styles.gestureContainer}>
+        {renderCurrentSlide()}
       </View>
     </SafeAreaWrapper>
   );
@@ -122,32 +352,102 @@ const OnboardingScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000',
+  },
+  gestureContainer: {
+    flex: 1,
   },
   slide: {
     width,
+    height: height,
     flex: 1,
+  },
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.73, 
+    width: '100%',
+  },
+  fullBackgroundImage: {
+    flex: 1,
+    width: '100%',
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  topContent: {
+    paddingTop: hp(60),
     paddingHorizontal: wp(24),
+  },
+  brandText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.42,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: wp(24),
+    paddingTop: hp(2),
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
   },
   titleContainer: {
-    marginTop: hp(20),
-    marginBottom: hp(20),
-  },
-  welcomeText: {
-    color: "#98A2B3",
-    marginBottom: hp(8),
-  },
-  imageContainer: {
+    alignItems: 'center',
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
   },
-  image: {
-    width: "100%",
-    height: hp(400),
+  title: {
+    fontSize: fs(26),
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: hp(16),
+    lineHeight: 34,
+    width: wp(200),
   },
-  footer: {
-    paddingHorizontal: wp(24),
-    paddingBottom: hp(40),
+  description: {
+    fontSize: fs(15),
+    color: '#424242',
+    fontFamily: "SpaceGrotesk-Medium",
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: wp(20),  
+  },
+  paginationContainer: {
+    alignItems: 'center',
+    marginBottom: hp(24),
+  },
+  buttonContainer: {
+    paddingBottom: hp(20),
+  },
+  primaryButton: {
+    backgroundColor: '#0C154C',
+    borderRadius: 12,
+    paddingVertical: hp(16),
+    marginBottom: hp(16),
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    paddingVertical: hp(16),
+    color: "#000000ff",
+    borderWidth: 1,
+    borderColor: '#3B489740',
+    marginBottom: hp(8),
   },
 });
 

@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import React, { useEffect } from "react";
-import { StatusBar } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { StatusBar, Animated, View } from "react-native";
 import Toast from "react-native-toast-message";
 import "react-native-url-polyfill/auto";
 
@@ -22,13 +22,35 @@ const RootLayout = () => {
     "SpaceGrotesk-SemiBold": require("../assets/fonts/SpaceGrotesk-SemiBold.ttf"),
   });
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const [showContent, setShowContent] = useState(false);
+
   useEffect(() => {
     if (error) throw error;
 
     if (fontsLoaded) {
-      SplashScreen.hideAsync();
+      // Start the fade-in animation
+      setShowContent(true);
+      
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Hide splash screen after animation completes
+        SplashScreen.hideAsync();
+      });
     }
-  }, [fontsLoaded, error]);
+  }, [fontsLoaded, error, fadeAnim, scaleAnim]);
 
   if (!fontsLoaded) {
     return null;
@@ -41,7 +63,17 @@ const RootLayout = () => {
   return (
     <>
       <StatusBar barStyle={"dark-content"} />
-      <RootLayoutNav />
+      {showContent && (
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          }}
+        >
+          <RootLayoutNav />
+        </Animated.View>
+      )}
       <Toast />
     </>
   );
@@ -55,7 +87,7 @@ function RootLayoutNav() {
         contentStyle: {
           backgroundColor: "#fff",
         },
-        animation: "slide_from_right",
+        animation: "fade_from_bottom", 
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

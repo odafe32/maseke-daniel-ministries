@@ -23,7 +23,7 @@ export const PaginationDots = ({
           style={[
             styles.dot,
             index === activeIndex
-              ? [styles.activeDot, { backgroundColor: colors.primary }]
+              ? [styles.activeDot, { backgroundColor: "#63637A" }]
               : styles.inactiveDot,
           ]}
         />
@@ -37,18 +37,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: wp(20),
+    marginVertical: wp(7),
   },
   dot: {
-    width: wp(8),
-    height: wp(8),
+    width: wp(25),
+    height: wp(6),
     borderRadius: wp(4),
-    marginHorizontal: wp(4),
+    marginHorizontal: wp(2),
   },
   activeDot: {
-    width: wp(24),
+    width: wp(64),
   },
   inactiveDot: {
-    backgroundColor: "#E8E9F1",
+    backgroundColor: "#D9D9D9",
   },
 });
