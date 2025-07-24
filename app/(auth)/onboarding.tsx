@@ -42,32 +42,31 @@ const OnboardingScreen = () => {
     
     setIsTransitioning(true);
     
-    // Single smooth transition with ease-out timing and 300ms duration
     Animated.parallel([
       // Background smooth crossfade
       Animated.timing(backgroundOpacity, {
         toValue: 0.3,
-        duration: 150, // Half of 300ms for fade out
+        duration: 150, 
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       // Content slides down and fades
       Animated.timing(contentOpacity, {
         toValue: 0,
-        duration: 150, // Half of 300ms for fade out
+        duration: 150, 
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(contentTranslateY, {
         toValue: 20,
-        duration: 150, // Half of 300ms for slide out
+        duration: 150, 
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       // Subtle scale effect
       Animated.timing(scaleAnim, {
         toValue: 0.98,
-        duration: 150, // Half of 300ms for scale out
+        duration: 150,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
@@ -75,29 +74,28 @@ const OnboardingScreen = () => {
       // Update index while content is transitioning
       setCurrentIndex(nextIndex);
       
-      // Animate content back in smoothly with ease-out
       Animated.parallel([
         Animated.timing(backgroundOpacity, {
           toValue: 1,
-          duration: 150, // Second half of 300ms for fade in
+          duration: 150, 
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(contentOpacity, {
           toValue: 1,
-          duration: 150, // Second half of 300ms for fade in
+          duration: 150, 
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(contentTranslateY, {
           toValue: 0,
-          duration: 150, // Second half of 300ms for slide in
+          duration: 150, 
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
           toValue: 1,
-          duration: 150, // Second half of 300ms for scale in
+          duration: 150, 
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
