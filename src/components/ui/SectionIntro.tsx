@@ -59,7 +59,8 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontFamily: "SpaceGrotesk-SemiBold",
-    fontSize: fs(18),
+    fontSize: fs(20),
+    color: "#121116",
   },
   subtitle: {
     lineHeight: hp(22),

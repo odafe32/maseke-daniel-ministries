@@ -17,3 +17,15 @@ export interface LoginProps {
   onSignupPress: () => void;
   onForgotPasswordPress: () => void;
 }
+
+export interface VerifyProps {
+  code: string;
+  isLoading: boolean;
+  timer: number;
+  onCodeChange: (value: string) => void;
+  onCodeComplete: (value: string) => void;
+  onVerify: () => void;
+  onResend: () => void;
+  onBack?: () => void;
+  onRefresh: () => void;
+}

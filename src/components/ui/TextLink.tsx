@@ -13,6 +13,7 @@ interface TextLinkProps {
   onPress: () => void;
   textStyle?: TextStyle;
   style?: ViewStyle;
+  disabled?: boolean;
 }
 
 export const TextLink = ({
@@ -20,6 +21,7 @@ export const TextLink = ({
   onPress,
   textStyle,
   style,
+  disabled = false,
 }: TextLinkProps) => {
   const colors = getColor();
 
@@ -27,9 +29,16 @@ export const TextLink = ({
     <TouchableOpacity
       style={[styles.container, style]}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={disabled ? 1 : 0.7}
+      disabled={disabled}
     >
-      <Text style={[styles.text, { color: colors.primary }, textStyle]}>
+      <Text
+        style={[
+          styles.text,
+          { color: disabled ? colors.muted : colors.primary },
+          textStyle,
+        ]}
+      >
         {text}
       </Text>
     </TouchableOpacity>

@@ -109,7 +109,9 @@ export const OtpCodeInput = ({
           keyboardType={keyboardType}
           maxLength={1}
           secureTextEntry={secure}
-          style={[styles.cell, { borderColor: colors.primary }]}
+          placeholder="-"
+          placeholderTextColor="#94A3B8"
+          style={[styles.cell, styles.cellTheme]}
           selectionColor={colors.primary}
           autoCapitalize="none"
           autoCorrect={false}
@@ -142,5 +144,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 1,
+  },
+  cellTheme: {
+    borderColor: "#E1E1E1",
   },
 });
