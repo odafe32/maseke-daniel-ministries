@@ -1,5 +1,5 @@
 import { getColor, hp, wp } from "@/src/utils";
-import React from "react";
+import React, { ReactNode } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableOpacityProps,
   ViewStyle,
+  View,
 } from "react-native";
 import { ThemeText } from "./ThemeText";
 
@@ -21,6 +22,7 @@ interface ButtonProps extends TouchableOpacityProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
+  leftIcon?: ReactNode;
 }
 
 export const Button = ({
@@ -32,6 +34,7 @@ export const Button = ({
   style,
   textStyle,
   fullWidth = true,
+  leftIcon,
   ...rest
 }: ButtonProps) => {
   const colors = getColor();
@@ -104,12 +107,15 @@ export const Button = ({
           color={variant === "outline" ? colors.primary : colors.card}
         />
       ) : (
-        <ThemeText
-          variant="button"
-          style={[{ color: getTextColor() }, ...(textStyle ? [textStyle] : [])]}
-        >
-          {title}
-        </ThemeText>
+        <View style={styles.content}>
+          {leftIcon ? <View style={styles.icon}>{leftIcon}</View> : null}
+          <ThemeText
+            variant="button"
+            style={[{ color: getTextColor() }, ...(textStyle ? [textStyle] : [])]}
+          >
+            {title}
+          </ThemeText>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -125,6 +131,15 @@ const styles = StyleSheet.create({
   },
   fullWidth: {
     width: "100%",
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: wp(6),
+  },
+  icon: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   outlineButton: {
     backgroundColor: "transparent",

@@ -87,7 +87,7 @@ function RootLayoutNav() {
         contentStyle: {
           backgroundColor: "#fff",
           paddingHorizontal: 0,
-          paddingTop: 7,
+          paddingTop: 20,
         },
         animation: "fade",
         animationDuration: 250,

@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontFamily: "SpaceGrotesk-SemiBold",
-    fontSize: fs(20),
+    fontSize: fs(19),
     color: "#121116",
   },
   subtitle: {

@@ -14,7 +14,7 @@ export const detectTouch = {
   top: touch,
 };
 
-const frame = { height: 853, width: 393 }; // Frame according to figma design
+const frame = { height: 853, width: 393 }; 
 
 function normalize(size: number, based = "width") {
   const newSize =

@@ -32,7 +32,7 @@ export default function LoginPage() {
       try {
     
         await new Promise(resolve => setTimeout(resolve, 1000));
-        router.push("/verify");
+        router.push({ pathname: "/verify", params: { source: "login" } });
       } catch (error) {
         console.error("Email login error:", error);
       } finally {

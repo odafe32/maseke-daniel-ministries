@@ -38,7 +38,8 @@ export const OtpCodeInput = ({
   const handleChange = (text: string, index: number) => {
     const sanitized = text.replace(/\D/g, "");
     if (!sanitized) {
-      updateCode(index, "");
+      const updatedCode = updateCode(index, "");
+      onChange?.(updatedCode.trimEnd());
       if (index > 0) {
         inputsRef.current[index - 1]?.focus();
       }
@@ -47,23 +48,24 @@ export const OtpCodeInput = ({
 
     const digits = sanitized.split("");
     let nextIndex = index;
+    let updatedCode = code;
 
     digits.forEach((digit, idx) => {
       const targetIndex = index + idx;
       if (targetIndex < length) {
-        updateCode(targetIndex, digit);
+        updatedCode = updateCode(targetIndex, digit);
         nextIndex = targetIndex;
       }
     });
 
-    const finalCode = assembleCode();
+    const finalCode = updatedCode.trimEnd();
     onChange?.(finalCode);
 
     if (nextIndex < length - 1) {
       inputsRef.current[nextIndex + 1]?.focus();
     } else {
       inputsRef.current[nextIndex]?.blur();
-      if (finalCode.length === length) {
+      if (finalCode.replace(/\s/g, "").length === length) {
         onComplete?.(finalCode);
       }
     }
@@ -77,21 +79,16 @@ export const OtpCodeInput = ({
   };
 
   const updateCode = (index: number, digit: string) => {
+    let nextValue = "";
     setCode((prev) => {
       const next = prev.padEnd(length, "").split("");
       next[index] = digit;
-      const joined = next.join("").slice(0, length);
-      onChange?.(joined.trimEnd());
-      if (joined.replace(/\s/g, "").length === length) {
-        onComplete?.(joined);
-      }
-      return joined;
+      nextValue = next.join("").slice(0, length);
+      return nextValue;
     });
+    return nextValue || code;
   };
-
-  const assembleCode = () => {
-    return code.padEnd(length, "").substring(0, length);
-  };
+  
 
   return (
     <View style={styles.container}>

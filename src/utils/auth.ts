@@ -29,3 +29,32 @@ export interface VerifyProps {
   onBack?: () => void;
   onRefresh: () => void;
 }
+
+export interface SignupProps {
+  email: string;
+  emailError?: string;
+  isLoading: boolean;
+  onEmailChange: (value: string) => void;
+  onSubmit: () => void;
+  onSignupWithGoogle: () => void;
+  onLoginPress: () => void;
+  onBack?: () => void;
+  onRefresh: () => void;
+}
+
+export interface CreatePasswordProps {
+  password: string;
+  confirmPassword: string;
+  isLoading: boolean;
+  passwordError?: string;
+  confirmPasswordError?: string;
+  onPasswordChange: (value: string) => void;
+  onConfirmPasswordChange: (value: string) => void;
+  onTogglePasswordVisibility: () => void;
+  onToggleConfirmVisibility: () => void;
+  showPassword: boolean;
+  showConfirmPassword: boolean;
+  onSubmit: () => void;
+  onBack?: () => void;
+  onRefresh: () => void;
+}

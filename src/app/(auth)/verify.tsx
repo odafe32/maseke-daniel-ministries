@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Verify } from "@/src/screens";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 const VERIFY_CODE_LENGTH = 6;
 const RESEND_INTERVAL = 30; 
@@ -9,6 +9,7 @@ export default function VerifyPage() {
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(RESEND_INTERVAL);
+  const { source } = useLocalSearchParams<{ source?: string }>();
 
   useEffect(() => {
     if (timer === 0) return;
@@ -27,7 +28,8 @@ export default function VerifyPage() {
     try {
  
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.replace("/");
+      const nextRoute = source === "login" ? "/" : "/createpassword";
+      router.replace(nextRoute);
     } catch (error) {
       console.error("Verification error:", error);
     } finally {

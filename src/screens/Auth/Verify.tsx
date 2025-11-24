@@ -9,7 +9,7 @@ import {
   TextLink,
   ThemeText,
 } from "@/src/components";
-import { fs, VerifyProps } from "@/src/utils";
+import { VerifyProps } from "@/src/utils";
 
 export const Verify = ({
   code,
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 8,
-    fontSize: fs(16),
+    fontSize: 16,
     fontFamily: "SpaceGrotesk-SemiBold",
   },
   resendRow: {
