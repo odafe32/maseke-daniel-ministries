@@ -38,4 +38,5 @@ yarn-error.*
 .qodo
 
 # custom
+.env
 .qodo
