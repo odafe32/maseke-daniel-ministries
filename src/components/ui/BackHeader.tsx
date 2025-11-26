@@ -80,7 +80,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingTop: 26,
+    paddingBottom: 10,
  
   },
   sideColumn: {
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    fontSize: wp(16),
+    fontSize: wp(18),
     textAlign: "center",
     fontFamily: "DMSans-Bold",
     flex: 1,

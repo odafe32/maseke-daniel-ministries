@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: wp(20),
-    minHeight: hp(56),
+    minHeight: hp(50),
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 16,
     elevation: 1,

@@ -13,6 +13,20 @@ export interface ProfileAction {
   link?: string;
 }
 
+export interface EditProfileFormProps {
+  avatar: string;
+  name: string;
+  email: string;
+  onNameChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onAvatarPress: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+  isSaving?: boolean;
+  isAvatarLoading?: boolean;
+}
+
 export interface ProfileProps {
   avatar: string;
   name: string;
@@ -20,6 +34,9 @@ export interface ProfileProps {
   actions: ProfileAction[];
   onBack: () => void;
   onActionPress: (link: string) => void;
+  onEditPress: () => void;
+  isEditing: boolean;
+  editForm: EditProfileFormProps;
 }
 
 export interface HomeProps {
