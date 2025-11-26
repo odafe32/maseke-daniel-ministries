@@ -20,6 +20,15 @@ const RootLayout = () => {
     "SpaceGrotesk-Medium": require("../assets/fonts/SpaceGrotesk-Medium.ttf"),
     "SpaceGrotesk-Regular": require("../assets/fonts/SpaceGrotesk-Regular.ttf"),
     "SpaceGrotesk-SemiBold": require("../assets/fonts/SpaceGrotesk-SemiBold.ttf"),
+    "Geist-Thin": require("../assets/fonts/Geist-Thin.ttf"),
+    "Geist-ExtraLight": require("../assets/fonts/Geist-ExtraLight.ttf"),
+    "Geist-Light": require("../assets/fonts/Geist-Light.ttf"),
+    "Geist-Regular": require("../assets/fonts/Geist-Regular.ttf"),
+    "Geist-Medium": require("../assets/fonts/Geist-Medium.ttf"),
+    "Geist-SemiBold": require("../assets/fonts/Geist-SemiBold.ttf"),
+    "Geist-Bold": require("../assets/fonts/Geist-Bold.ttf"),
+    "Geist-ExtraBold": require("../assets/fonts/Geist-ExtraBold.ttf"),
+    "Geist-Black": require("../assets/fonts/Geist-Black.ttf"),
   });
 
   // Animation values

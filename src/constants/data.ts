@@ -40,3 +40,44 @@ export const onboardingData: OnboardingItem[] = [
     image: require("../assets/images/four.png"),
   },
 ];
+
+export const avatarUri = "https://i.pravatar.cc/150?img=15";
+
+export const quickActions = [
+  {
+    id: "sermons",
+    title: "Sermons",
+    image: require("../assets/images/sermons.png"),
+    link: "/sermons",
+  },
+  {
+    id: "devotionals",
+    title: "Devotionals",
+    image: require("../assets/images/devotional.png"),
+    link: "/devotionals",
+  },
+  {
+    id: "bible",
+    title: "Bible",
+    image: require("../assets/images/bible.png"),
+    link: "/bible",
+  },
+  {
+    id: "prayer",
+    title: "Prayer requests",
+    image: require("../assets/images/prayer.png"),
+    link: "/prayer-requests",
+  },
+  {
+    id: "giving",
+    title: "Giving",
+    image: require("../assets/images/giving.png"),
+    link: "/giving",
+  },
+  {
+    id: "store",
+    title: "Visit Store",
+    image: require("../assets/images/store.png"),
+    link: "/store",
+  },
+];
