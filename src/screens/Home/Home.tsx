@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { ThemeText } from "@/src/components";
 import { fs, getColor } from "@/src/utils";
+import { HomeProps } from "@/src/utils/types";
 import {
   StyleSheet,
   View,
@@ -12,20 +13,6 @@ import {
   Animated,
 } from "react-native";
 import { avatarUri } from "@/src/constants/data";
-
-interface HomeProps {
-  loading: boolean;
-  refreshing: boolean;
-  onRefresh: () => void;
-  onCardPress: (link: string) => void;
-  onProfilePress: () => void;
-  quickActions: {
-    id: string;
-    title: string;
-    image: any;
-    link: string;
-  }[];
-}
 
 export const Home = ({
   loading,
