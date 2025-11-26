@@ -47,37 +47,37 @@ export const quickActions = [
   {
     id: "sermons",
     title: "Sermons",
-    image: require("../assets/images/sermons.png"),
+    image: require("../assets/images/sermons.jpg"),
     link: "/sermons",
   },
   {
     id: "devotionals",
     title: "Devotionals",
-    image: require("../assets/images/devotional.png"),
+    image: require("../assets/images/devotionals.jpg"),
     link: "/devotionals",
   },
   {
     id: "bible",
     title: "Bible",
-    image: require("../assets/images/bible.png"),
+    image: require("../assets/images/bible.jpg"),
     link: "/bible",
   },
   {
     id: "prayer",
     title: "Prayer requests",
-    image: require("../assets/images/prayer.png"),
+    image: require("../assets/images/prayer.jpg"),
     link: "/prayer-requests",
   },
   {
     id: "giving",
     title: "Giving",
-    image: require("../assets/images/giving.png"),
+    image: require("../assets/images/giving.jpg"),
     link: "/giving",
   },
   {
     id: "store",
     title: "Visit Store",
-    image: require("../assets/images/store.png"),
+    image: require("../assets/images/store.jpg"),
     link: "/store",
   },
 ];

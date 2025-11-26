@@ -28,7 +28,7 @@ export default function VerifyPage() {
     try {
  
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      const nextRoute = "/home";
+      const nextRoute = source === "forgot" ? "/createpassword" : "/home";
       router.replace(nextRoute);
     } catch (error) {
       console.error("Verification error:", error);

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { ThemeText } from "@/src/components";
 import { fs, getColor } from "@/src/utils";
 import {
@@ -8,51 +8,119 @@ import {
   ScrollView,
   ImageBackground,
   TouchableOpacity,
+  RefreshControl,
+  Animated,
 } from "react-native";
-import { avatarUri, quickActions } from "@/src/constants/data";
-import { useRouter } from "expo-router";
+import { avatarUri } from "@/src/constants/data";
 
-export const Home = () => {
+interface HomeProps {
+  loading: boolean;
+  refreshing: boolean;
+  onRefresh: () => void;
+  onCardPress: (link: string) => void;
+  onProfilePress: () => void;
+  quickActions: {
+    id: string;
+    title: string;
+    image: any;
+    link: string;
+  }[];
+}
+
+export const Home = ({
+  loading,
+  refreshing,
+  onRefresh,
+  onCardPress,
+  onProfilePress,
+  quickActions,
+}: HomeProps) => {
   const colors = getColor();
-  const router = useRouter();
+  const profileScale = useRef(new Animated.Value(1)).current;
+
+  const handleProfilePressInternal = () => {
+    Animated.sequence([
+      Animated.timing(profileScale, {
+        toValue: 0.8,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(profileScale, {
+        toValue: 0.7,
+        duration: 140,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onProfilePress());
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerRow}>
-        <View>
-          <ThemeText
-            variant="label"
-            color={colors.muted}
-            style={styles.serviceLabel}
-          >
-            Sunday Service
-          </ThemeText>
-          <ThemeText variant="h3" style={styles.greeting}>
-            Hello Adam
-          </ThemeText>
-        </View>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+      }
+    >
+      {loading ? (
+        <>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <View style={[styles.skeletonBar, { width: 120 }]} />
+              <View style={[styles.skeletonBar, { width: 180, marginTop: 8 }]} />
+            </View>
+            <View style={styles.skeletonAvatar} />
+          </View>
 
-        <Image source={{ uri: avatarUri }} style={styles.avatar} />
-      </View>
+          <View style={styles.cardsWrapper}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View key={`skeleton-${index}`} style={styles.skeletonCard} />
+            ))}
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.headerRow}>
+            <View>
+              <ThemeText
+                variant="label"
+                color={colors.muted}
+                style={styles.serviceLabel}
+              >
+                Sunday Service
+              </ThemeText>
+              <ThemeText variant="h3" style={styles.greeting}>
+                Hello Adam
+              </ThemeText>
+            </View>
 
-      <View style={styles.cardsWrapper}>
-        {quickActions.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            activeOpacity={0.8}
-            style={styles.cardShadow}
-            onPress={() => router.push(item.link)}
-          >
-            <ImageBackground source={item.image} style={styles.cardImage} imageStyle={styles.cardImageInner}>
-              <View style={styles.cardOverlay}>
-                <ThemeText variant="bodyBold" style={styles.cardText}>
-                  {item.title}
-                </ThemeText>
-              </View>
-            </ImageBackground>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <TouchableOpacity onPress={handleProfilePressInternal} activeOpacity={0.8}>
+              <Animated.Image
+                source={{ uri: avatarUri }}
+                style={[styles.avatar, { transform: [{ scale: profileScale }] }]}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.cardsWrapper}>
+            {quickActions.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.8}
+                style={styles.cardShadow}
+                onPress={() => onCardPress(item.link)}
+              >
+                <ImageBackground source={item.image} style={styles.cardImage} imageStyle={styles.cardImageInner}>
+                  <View style={styles.cardOverlay}>
+                    <ThemeText variant="bodyBold" style={styles.cardText}>
+                      {item.title}
+                    </ThemeText>
+                  </View>
+                </ImageBackground>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 };
@@ -78,7 +146,7 @@ const styles = StyleSheet.create({
   greeting: {
     marginTop: 4,
     fontFamily: "Geist-Medium",
-    fontSize: fs(22),
+    fontSize: fs(20),
     color: "#000",
   },
   avatar: {
@@ -117,5 +185,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Geist-SemiBold",
     fontSize: fs(18),
+  },
+  skeletonBar: {
+    height: 14,
+    borderRadius: 8,
+    backgroundColor: "#E3E6EB",
+  },
+  skeletonAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#E3E6EB",
+  },
+  skeletonCard: {
+    height: 160,
+    borderRadius: 16,
+    backgroundColor: "#E3E6EB",
   },
 });

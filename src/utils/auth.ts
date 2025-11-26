@@ -18,6 +18,17 @@ export interface LoginProps {
   onForgotPasswordPress: () => void;
 }
 
+export interface ForgotPasswordProps {
+  email: string;
+  emailError?: string;
+  isLoading: boolean;
+  onEmailChange: (value: string) => void;
+  onSubmit: () => void;
+  onSignupPress: () => void;
+  onBack?: () => void;
+  onRefresh: () => void;
+}
+
 export interface VerifyProps {
   code: string;
   isLoading: boolean;

@@ -71,7 +71,8 @@ const RootLayout = () => {
 
   return (
     <>
-      <StatusBar barStyle={"light-content"} />
+      <StatusBar barStyle={"light-content"} backgroundColor="#000" />
+
       {showContent && (
         <Animated.View
           style={{
