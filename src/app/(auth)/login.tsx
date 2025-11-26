@@ -68,7 +68,7 @@ export default function LoginPage() {
       setIsLoading(true);
       try {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        router.replace("/");
+        router.replace("/home");
       } catch (error) {
         console.error("Login error:", error);
       } finally {
