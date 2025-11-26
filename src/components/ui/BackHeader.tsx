@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: wp(16),
-    paddingVertical: hp(12),
+    paddingVertical: 10,
+ 
   },
   sideColumn: {
     width: wp(52),

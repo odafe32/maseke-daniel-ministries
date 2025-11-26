@@ -81,3 +81,14 @@ export const quickActions = [
     link: "/store",
   },
 ];
+
+
+export const profileActions = [
+  { id: "notes", label: "Saved notes", icon: "archive", custom: true, link: "/notes" },
+  { id: "orders", label: "My orders", icon: "shopping-bag", link: "/orders" },
+  { id: "wishlist", label: "My wishlists", icon: "heart", link: "/wishlist" },
+  { id: "help", label: "Help", icon: "life-buoy", link: "/help" },
+  { id: "about", label: "About", icon: "info", link: "/about" },
+  { id: "privacy", label: "Privacy Policy", icon: "shield", link: "/privacy" },
+  { id: "settings", label: "Settings", icon: "settings", link: "/settings" },
+];
