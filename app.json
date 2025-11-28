@@ -4,12 +4,13 @@
     "slug": "maseke-daniel-ministries",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/icon.svg",
+    "icon": "./src/assets/icon/icon.svg",
     "userInterfaceStyle": "light",
     "scheme": "maseke-daniel-ministries",
     "newArchEnabled": true,
+    "plugins": ["expo-env"],
     "splash": {
-      "image": "./src/assets/logo.png",
+      "image": "./src/assets/icon/icon.svg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

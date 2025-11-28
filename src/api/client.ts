@@ -1,7 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://your-laravel-api.com/api';
+import { API_URL } from '../env';
 
 const client: AxiosInstance = axios.create({
   baseURL: API_URL,
