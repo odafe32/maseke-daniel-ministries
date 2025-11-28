@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createPassword, login, LoginResponse } from '../api/authAPi';
+import { createPassword, login, LoginResponse, forgotPassword } from '../api/authAPi';
 import { useAuthStore } from '../stores/authStore';
 
 export const useCreatePassword = () => {
@@ -49,6 +49,27 @@ export const useLogin = () => {
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Login failed';
       setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { mutate, isLoading, error };
+};
+
+export const useForgotPassword = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutate = async (email: string): Promise<{ message: string }> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await forgotPassword(email);
+      return result;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Forgot password failed');
       throw err;
     } finally {
       setIsLoading(false);

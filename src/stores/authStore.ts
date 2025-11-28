@@ -26,6 +26,7 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -114,6 +115,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to load stored auth:', error);
+    }
+  },
+
+  async forgotPassword(email: string) {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.post(`${API_URL}/mobile/auth/forgot-password`, { email });
+      set({ isLoading: false });
+      return response.data;
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Forgot password failed', isLoading: false });
+      throw error;
     }
   },
 }));

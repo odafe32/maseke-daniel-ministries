@@ -1,8 +1,9 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { StatusBar, Animated, View, Text } from "react-native";
+import { StatusBar, View, Text } from "react-native";
 import Toast from "react-native-toast-message";
+import { Ionicons } from "@expo/vector-icons";
 import "react-native-url-polyfill/auto";
 import { useAuthStore } from "../stores/authStore";
 
@@ -19,10 +20,15 @@ const toastConfig = {
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
-      alignSelf: 'flex-end',
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
     }}>
-      <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
-      <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>
+      <Ionicons name="checkmark-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
+      <View>
+        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+        {props.text2 && <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>}
+      </View>
     </View>
   ),
   error: (props: any) => (
@@ -36,10 +42,15 @@ const toastConfig = {
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
-      alignSelf: 'flex-end',
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
     }}>
-      <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
-      <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>
+      <Ionicons name="close-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
+      <View>
+        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+        {props.text2 && <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>}
+      </View>
     </View>
   ),
   info: (props: any) => (
@@ -53,10 +64,15 @@ const toastConfig = {
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
-      alignSelf: 'flex-end',
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
     }}>
-      <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
-      <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>
+      <Ionicons name="information-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
+      <View>
+        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+        {props.text2 && <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>}
+      </View>
     </View>
   ),
 };
@@ -87,9 +103,6 @@ const RootLayout = () => {
     "Geist-Black": require("../assets/fonts/Geist-Black.ttf"),
   });
 
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const [showContent, setShowContent] = useState(false);
 
   // Load auth state on app start
@@ -103,26 +116,12 @@ const RootLayout = () => {
     if (error) throw error;
 
     if (fontsLoaded) {
-      // Start the fade-in animation
+      // Show content after fonts load
       setShowContent(true);
-      
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Hide splash screen after animation completes
-        SplashScreen.hideAsync();
-      });
+      // Hide splash screen immediately since AuthPageWrapper will handle the animation
+      SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, error, fadeAnim, scaleAnim]);
+  }, [fontsLoaded, error]);
 
   if (!fontsLoaded) {
     return null;
@@ -137,15 +136,7 @@ const RootLayout = () => {
       <StatusBar barStyle={"dark-content"} backgroundColor="#fff" />
 
       {showContent && (
-        <Animated.View
-          style={{
-            flex: 1,
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          }}
-        >
-          <RootLayoutNav />
-        </Animated.View>
+        <RootLayoutNav />
       )}
       <Toast config={toastConfig} />
     </>

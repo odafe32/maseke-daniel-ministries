@@ -42,9 +42,15 @@ export default function SignupPage() {
       showSuccessToast('Success', 'OTP sent to your email. Please verify.');
       console.log('Signup successful');
       router.push({ pathname: "/verify", params: { source: "signup", email, full_name: fullName } });
-    } catch (error) {
-      showErrorToast('Error', 'Signup failed. Please try again.');
+    } catch (error: any) {
       console.log('Signup error:', error);
+      let errorMessage = 'Signup failed. Please try again.';
+      if (error?.response?.status === 422) {
+        errorMessage = 'Email has already been used.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      showErrorToast('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
