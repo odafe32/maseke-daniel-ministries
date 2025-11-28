@@ -74,7 +74,7 @@ export function Wishlist({ wishListData, onBack, loading = false }: WishlistProp
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="My Wishlist" onBackPress={onBack} />
+      <BackHeader title="My Wishlist" />
 
       {loading ? (
         <View style={styles.skeletonGrid}>

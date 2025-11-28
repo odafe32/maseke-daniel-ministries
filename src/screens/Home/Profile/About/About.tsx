@@ -14,7 +14,7 @@ export function About({ onBack }: { onBack: () => void }) {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="About App" onBackPress={onBack} showMoreButton={true} />
+      <BackHeader title="About App" onBackPress={onBack}/>
 
       <View style={styles.content}>
         <ThemeText variant="h5" style={styles.title}>
