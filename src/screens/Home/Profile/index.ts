@@ -6,3 +6,4 @@ export * from "./Help";
 export * from "./Settings";
 export * from "./SavedNotes"
 export * from "./Orders"
+export * from "./PrayerRequest"

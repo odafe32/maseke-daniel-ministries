@@ -66,7 +66,7 @@ export const quickActions = [
     id: "prayer",
     title: "Prayer requests",
     image: require("../assets/images/prayer.jpg"),
-    link: "/prayer-requests",
+    link: "/prayer-request",
   },
   {
     id: "giving",
