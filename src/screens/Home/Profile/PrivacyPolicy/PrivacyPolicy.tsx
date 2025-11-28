@@ -14,7 +14,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="Privacy Policy" onBackPress={onBack} showMoreButton={true}/>
+      <BackHeader title="Privacy Policy" onBackPress={onBack}/>
 
       <View style={styles.content}>
         <ThemeText variant="h5" style={styles.title}>

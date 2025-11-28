@@ -14,7 +14,7 @@ export function Help({ onBack }: { onBack: () => void }) {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="Get Help" onBackPress={onBack} showMoreButton={true} />
+      <BackHeader title="Get Help" onBackPress={onBack}/>
 
       <View style={styles.content}>
         <ThemeText variant="h5" style={styles.title}>
