@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   contentWithFixedBottom: {
-    paddingBottom: hp(120), 
+    paddingBottom: hp(160), 
   },
   bottomActions: {
     paddingTop: 16,
