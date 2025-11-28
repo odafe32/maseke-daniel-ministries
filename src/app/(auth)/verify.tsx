@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Verify } from "@/src/screens";
 import { router, useLocalSearchParams } from "expo-router";
-import { verifyOtp, register } from "@/src/api/authAPi";
+import { verifyOtp, register, verifyOtpPassword } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
@@ -29,9 +29,15 @@ export default function VerifyPage() {
 
     setIsLoading(true);
     try {
-      await verifyOtp(email, code);
-      showSuccessToast('Success', 'OTP verified successfully.');
-      router.push({ pathname: "/createpassword", params: { email, full_name } });
+      if (source === "forgot") {
+        await verifyOtpPassword(email, code);
+        showSuccessToast('Success', 'OTP verified. You can now reset your password.');
+        router.push({ pathname: "/createpassword", params: { email, source: "reset" } });
+      } else {
+        await verifyOtp(email, code);
+        showSuccessToast('Success', 'OTP verified successfully.');
+        router.push({ pathname: "/createpassword", params: { email, full_name } });
+      }
     } catch (error) {
       console.log('Verification error:', error);
       showErrorToast('Error', 'Incorrect OTP. Please try again.');

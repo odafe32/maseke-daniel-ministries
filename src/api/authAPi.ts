@@ -29,3 +29,18 @@ export const createPassword = async (email: string, password: string, password_c
   const response = await client.post<LoginResponse>('/mobile/auth/create-password', { email, password, password_confirmation });
   return response.data;
 };
+
+export const forgotPassword = async (email: string): Promise<{ message: string }> => {
+  const response = await client.post('/mobile/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const verifyOtpPassword = async (email: string, otp: string): Promise<{ message: string }> => {
+  const response = await client.post('/mobile/auth/verify-otp-password', { email, otp });
+  return response.data;
+};
+
+export const resetPassword = async (email: string, password: string, password_confirmation: string): Promise<{ message: string }> => {
+  const response = await client.post('/mobile/auth/reset-password', { email, password, password_confirmation });
+  return response.data;
+};
