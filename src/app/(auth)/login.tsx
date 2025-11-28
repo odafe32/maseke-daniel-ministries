@@ -1,6 +1,9 @@
 import { Login } from "@/src/screens";
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { useLogin } from "@/src/hooks/auth";
+import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -8,7 +11,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState<string | undefined>();
   const [passwordError, setPasswordError] = useState<string | undefined>();
-  const [isLoading, setIsLoading] = useState(false);
+  const { mutate: login, isLoading: hookLoading } = useLogin();
   const [loginMethod, setLoginMethod] = useState<'traditional' | 'email-only'>('traditional');
 
   const validateEmail = (value: string) =>
@@ -28,15 +31,11 @@ export default function LoginPage() {
     }
 
     if (!hasError) {
-      setIsLoading(true);
       try {
-    
         await new Promise(resolve => setTimeout(resolve, 1000));
         router.push({ pathname: "/verify", params: { source: "login" } });
       } catch (error) {
         console.error("Email login error:", error);
-      } finally {
-        setIsLoading(false);
       }
     }
   };
@@ -65,14 +64,14 @@ export default function LoginPage() {
     }
 
     if (!hasError) {
-      setIsLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await login(email, password);
+        showSuccessToast('Success', 'Login successful');
+        console.log('Login successful');
         router.replace("/home");
       } catch (error) {
-        console.error("Login error:", error);
-      } finally {
-        setIsLoading(false);
+        console.log('Login error:', error);
+        showErrorToast('Error', 'Login failed. Please check your credentials.');
       }
     }
   };
@@ -87,30 +86,32 @@ export default function LoginPage() {
   };
 
   return (
-    <Login
-      email={email}
-      password={password}
-      showPassword={showPassword}
-      emailError={emailError}
-      passwordError={passwordError}
-      isLoading={isLoading}
-      loginMethod={loginMethod}
-      onEmailChange={(value) => {
-        setEmail(value);
-        if (emailError) setEmailError(undefined);
-      }}
-      onPasswordChange={(value) => {
-        setPassword(value);
-        if (passwordError) setPasswordError(undefined);
-      }}
-      onTogglePassword={() => setShowPassword((prev) => !prev)}
-      onEmailOnlySelect={() => setLoginMethod('email-only')}
-      onTraditionalSelect={() => setLoginMethod('traditional')}
-      onEmailOnlyLogin={handleEmailOnlyLogin}
-      onTraditionalLogin={handleTraditionalLogin}
-      onRefresh={handleRefresh}
-      onSignupPress={() => router.push("/signup")}
-      onForgotPasswordPress={() => router.push("/forgotpassword")}
-    />
+    <AuthPageWrapper>
+      <Login
+        email={email}
+        password={password}
+        showPassword={showPassword}
+        emailError={emailError}
+        passwordError={passwordError}
+        isLoading={hookLoading}
+        loginMethod={loginMethod}
+        onEmailChange={(value) => {
+          setEmail(value);
+          if (emailError) setEmailError(undefined);
+        }}
+        onPasswordChange={(value) => {
+          setPassword(value);
+          if (passwordError) setPasswordError(undefined);
+        }}
+        onTogglePassword={() => setShowPassword((prev) => !prev)}
+        onEmailOnlySelect={() => setLoginMethod('email-only')}
+        onTraditionalSelect={() => setLoginMethod('traditional')}
+        onEmailOnlyLogin={handleEmailOnlyLogin}
+        onTraditionalLogin={handleTraditionalLogin}
+        onRefresh={handleRefresh}
+        onSignupPress={() => router.push("/signup")}
+        onForgotPasswordPress={() => router.push("/forgotpassword")}
+      />
+    </AuthPageWrapper>
   );
 }

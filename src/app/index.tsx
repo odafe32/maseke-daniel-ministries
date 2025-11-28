@@ -9,11 +9,13 @@ import {
   Animated,
 } from "react-native";
 import { images } from "@/src/constants/data";
+import { useAuthStore } from "../stores/authStore";
 
 const Index = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [showVector, setShowVector] = useState(false);
+  const { token } = useAuthStore();
 
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -21,10 +23,10 @@ const Index = () => {
   const vectorTranslateY = useRef(new Animated.Value(-30)).current;
 
   useEffect(() => {
-    checkOnboardingStatus();
+    checkAuthStatus();
   }, []);
 
-  const checkOnboardingStatus = async () => {
+  const checkAuthStatus = async () => {
     try {
       Animated.sequence([
         Animated.parallel([
@@ -59,16 +61,14 @@ const Index = () => {
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const hasSeenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
-
-      if (hasSeenOnboarding === "true") {
-        router.replace("/login");
+      if (token) {
+        router.replace("/home");
       } else {
-        router.replace("/onboarding");
+        router.replace("/login");
       }
     } catch (error) {
-      console.error("Error checking onboarding status:", error);
-      router.replace("/onboarding");
+      console.error("Error checking auth status:", error);
+      router.replace("/login");
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../env';
+import { useAuthStore } from '../stores/authStore';
 
 const client: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -9,9 +9,9 @@ const client: AxiosInstance = axios.create({
 });
 
 client.interceptors.request.use(
-  async (config) => {
+  (config) => {
     console.log('Request:', config);
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = useAuthStore.getState().token;
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
@@ -22,6 +22,9 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error);
+    if (error.response?.status === 401) {
+      useAuthStore.getState().logout();
+    }
     return Promise.reject(error);
   }
 );

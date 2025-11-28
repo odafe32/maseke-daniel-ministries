@@ -43,9 +43,12 @@ export interface VerifyProps {
 
 export interface SignupProps {
   email: string;
+  fullName: string;
   emailError?: string;
+  fullNameError?: string;
   isLoading: boolean;
   onEmailChange: (value: string) => void;
+  onFullNameChange: (value: string) => void;
   onSubmit: () => void;
   onSignupWithGoogle: () => void;
   onLoginPress: () => void;

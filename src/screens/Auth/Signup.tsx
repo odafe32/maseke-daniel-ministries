@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, KeyboardAvoidingView, Platform } from "react-native";
 import {
   AuthWrapper,
   BackHeader,
@@ -12,9 +12,12 @@ import { FontAwesome } from "@expo/vector-icons";
 
 export const Signup = ({
   email,
+  fullName,
   emailError,
+  fullNameError,
   isLoading,
   onEmailChange,
+  onFullNameChange,
   onSubmit,
   onSignupWithGoogle,
   onLoginPress,
@@ -24,34 +27,19 @@ export const Signup = ({
   return (
     <AuthWrapper
       onRefresh={onRefresh}
-      fixedBottomActions
-      bottomActions={
-        <View style={styles.actions}>
-          <Button
-            title="Create Account"
-            onPress={onSubmit}
-            loading={isLoading}
-          />
-          <Button
-            title="Sign up with Google"
-            variant="outline"
-            onPress={onSignupWithGoogle}
-            leftIcon={<FontAwesome name="google" size={18} color="#DB4437" />}
-          />
-        </View>
-      }
     >
       <BackHeader title="Grace Dimensions" onBackPress={onBack} />
 
       <SectionIntro
         title="Join the Community of Grace"
-        subtitle="Enter your email address below to create your very own account and start watching."
+        subtitle="Enter your details below to create your very own account and start watching."
         actionLabel="Log in"
         onActionPress={onLoginPress}
       />
 
+  
       <View style={styles.form}>
-        <InputField
+             <InputField
           label="Email"
           placeholder="example@gmail.com"
           keyboardType="email-address"
@@ -59,8 +47,37 @@ export const Signup = ({
           value={email}
           onChangeText={onEmailChange}
           errorMessage={emailError}
+          autoComplete="email"
+          textContentType="emailAddress"
+        />
+        <InputField
+          label="Full Name"
+          placeholder="Enter your full name"
+          autoCapitalize="words"
+          value={fullName}
+          onChangeText={onFullNameChange}
+          errorMessage={fullNameError}
+          autoComplete="name"
+          textContentType="name"
+        />
+ 
+      </View>
+
+      <View style={{ height: 230 }} />
+          <View style={styles.actions}>
+        <Button
+          title="Create Account"
+          onPress={onSubmit}
+          loading={isLoading}
+        />
+        <Button
+          title="Sign up with Google"
+          variant="outline"
+          onPress={onSignupWithGoogle}
+          leftIcon={<FontAwesome name="google" size={18} color="#DB4437" />}
         />
       </View>
+
     </AuthWrapper>
   );
 };
@@ -68,6 +85,7 @@ export const Signup = ({
 const styles = StyleSheet.create({
   form: {
     marginTop: 8,
+    gap: 16,
   },
   actions: {
     gap: 12,
