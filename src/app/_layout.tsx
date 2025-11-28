@@ -1,9 +1,65 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { StatusBar, Animated, View } from "react-native";
+import { StatusBar, Animated, View, Text } from "react-native";
 import Toast from "react-native-toast-message";
 import "react-native-url-polyfill/auto";
+import { useAuthStore } from "../stores/authStore";
+
+// Toast config for better styling
+const toastConfig = {
+  success: (props: any) => (
+    <View style={{
+      backgroundColor: '#10B981',
+      borderRadius: 8,
+      padding: 16,
+      marginHorizontal: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+      alignSelf: 'flex-end',
+    }}>
+      <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+      <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>
+    </View>
+  ),
+  error: (props: any) => (
+    <View style={{
+      backgroundColor: '#EF4444',
+      borderRadius: 8,
+      padding: 16,
+      marginHorizontal: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+      alignSelf: 'flex-end',
+    }}>
+      <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+      <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>
+    </View>
+  ),
+  info: (props: any) => (
+    <View style={{
+      backgroundColor: '#3B82F6',
+      borderRadius: 8,
+      padding: 16,
+      marginHorizontal: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+      alignSelf: 'flex-end',
+    }}>
+      <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+      <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>
+    </View>
+  ),
+};
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -35,6 +91,13 @@ const RootLayout = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const [showContent, setShowContent] = useState(false);
+
+  // Load auth state on app start
+  const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
+
+  useEffect(() => {
+    loadStoredAuth(); // Load token and user from AsyncStorage
+  }, []);
 
   useEffect(() => {
     if (error) throw error;
@@ -71,7 +134,7 @@ const RootLayout = () => {
 
   return (
     <>
-      <StatusBar barStyle={"light-content"} backgroundColor="#000" />
+      <StatusBar barStyle={"dark-content"} backgroundColor="#fff" />
 
       {showContent && (
         <Animated.View
@@ -84,12 +147,39 @@ const RootLayout = () => {
           <RootLayoutNav />
         </Animated.View>
       )}
-      <Toast />
+      <Toast config={toastConfig} />
     </>
   );
 };
 
 function RootLayoutNav() {
+  const { token } = useAuthStore();
+
+  if (!token) {
+    // Auth stack
+    return (
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "#fff",
+            paddingHorizontal: 0,
+            paddingTop: 20,
+          },
+          animation: "fade",
+          animationDuration: 250,
+        }}
+      >
+        <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/verify" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/createpassword" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/forgotpassword" options={{ headerShown: false }} />
+      </Stack>
+    );
+  }
+
+  // Main stack
   return (
     <Stack
       screenOptions={{
@@ -103,7 +193,10 @@ function RootLayoutNav() {
         animationDuration: 250,
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="(home)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="home" options={{ headerShown: false }} />
+      {/* Add other main screens here */}
     </Stack>
   );
 }
