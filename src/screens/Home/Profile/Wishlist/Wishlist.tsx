@@ -8,9 +8,8 @@ import {
   Image,
 } from "react-native";
 
-import { BackHeader, ThemeText } from "@/src/components";
+import { BackHeader, ThemeText, Icon } from "@/src/components";
 import { WishlistProps } from "@/src/utils/types";
-import { Feather } from "@expo/vector-icons";
 
 export function Wishlist({ wishListData, onBack, loading = false }: WishlistProps) {
   const calculateDiscount = (price: number, beforePrice: number) => {
@@ -33,7 +32,7 @@ export function Wishlist({ wishListData, onBack, loading = false }: WishlistProp
         
         {/* Heart icon on top right */}
         <TouchableOpacity style={styles.heartIcon}>
-          <Feather name="heart" size={16} color="#FF0000" />
+          <Icon name="heart" size={16} color="#FF0000" />
         </TouchableOpacity>
       </View>
       

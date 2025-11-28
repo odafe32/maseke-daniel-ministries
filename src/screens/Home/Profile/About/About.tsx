@@ -22,7 +22,7 @@ export function About({ onBack }: { onBack: () => void }) {
         </ThemeText>
         
         <ThemeText variant="body" style={styles.description}>
-          Tge GRACE DIMENSION APP is designed to bring your church experience to your fingertips. Watch live sermons, read devotionals, give tithes and offerings securely, and access a library of past messages anytime, anywhere.
+          The GRACE DIMENSION APP is designed to bring your church experience to your fingertips. Watch live sermons, read devotionals, give tithes and offerings securely, and access a library of past messages anytime, anywhere.
         </ThemeText>
         
         <ThemeText variant="body" style={styles.description}>

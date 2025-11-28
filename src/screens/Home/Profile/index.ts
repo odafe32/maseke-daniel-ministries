@@ -4,3 +4,5 @@ export * from "./About";
 export * from "./PrivacyPolicy";
 export * from "./Help";
 export * from "./Settings";
+export * from "./SavedNotes"
+export * from "./Orders"
