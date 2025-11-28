@@ -47,3 +47,18 @@ export interface HomeProps {
   onProfilePress: () => void;
   quickActions: QuickAction[];
 }
+
+export interface WishlistItem {
+  id: string;
+  title: string;
+  link: string;
+  image: any;
+  price: number;
+  beforePrice?: number | null;
+}
+
+export interface WishlistProps {
+  wishListData: WishlistItem[];
+  onBack: () => void;
+  loading?: boolean;
+}

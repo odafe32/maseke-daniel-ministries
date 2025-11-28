@@ -14,17 +14,21 @@ import { ThemeText } from "./ThemeText";
 interface BackHeaderProps {
   title: string;
   onBackPress?: () => void;
+  onMorePress?: () => void;
   containerStyle?: ViewStyle;
   titleStyle?: TextStyle;
   showBackButton?: boolean;
+  showMoreButton?: boolean;
 }
 
 export const BackHeader = ({
   title,
   onBackPress,
+  onMorePress,
   containerStyle,
   titleStyle,
   showBackButton = true,
+  showMoreButton = false,
 }: BackHeaderProps) => {
   const router = useRouter();
   const colors = getColor();
@@ -32,6 +36,19 @@ export const BackHeader = ({
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/index");
+    }
+  };
+
+  const handleMore = () => {
+    if (onMorePress) {
+      onMorePress();
       return;
     }
 
@@ -70,7 +87,18 @@ export const BackHeader = ({
         {title}
       </ThemeText>
 
-      <View style={styles.sideColumn} />
+      {showMoreButton ? (
+        <Pressable
+          onPress={handleMore}
+          style={[
+            styles.backButton,
+            { backgroundColor: "#fff" },
+          ]}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Feather name="menu" size={22} color={colors.primary} />
+        </Pressable>
+      ) : <View style={styles.sideColumn} />}
     </View>
   );
 };
@@ -82,7 +110,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 26,
     paddingBottom: 10,
- 
   },
   sideColumn: {
     width: wp(52),

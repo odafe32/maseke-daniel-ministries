@@ -86,9 +86,46 @@ export const quickActions = [
 export const profileActions = [
   { id: "notes", label: "Saved notes", icon: "archive", custom: true, link: "/notes" },
   { id: "orders", label: "My orders", icon: "shopping-bag", link: "/orders" },
-  { id: "wishlist", label: "My wishlists", icon: "heart", link: "/wishlist" },
+  { id: "wishlist", label: "My wishlists", icon: "heart", link: "/wishlists" },
   { id: "help", label: "Help", icon: "life-buoy", link: "/help" },
   { id: "about", label: "About", icon: "info", link: "/about" },
-  { id: "privacy", label: "Privacy Policy", icon: "shield", link: "/privacy" },
+  { id: "privacy", label: "Privacy Policy", icon: "shield", link: "/privacy-policy" },
   { id: "settings", label: "Settings", icon: "settings", link: "/settings" },
 ];
+
+
+export const wishListData = [
+  {
+    id: "1",
+    title: "King James Bible",
+    link: "/",
+    image: require("../assets/images/wishlist/image-1.jpg"),
+    price: 10.00,
+    beforePrice: 15.00,
+  },
+  {
+    id: "2",
+    title: "King James Bible Gray",
+    link: "/",
+    image: require("../assets/images/wishlist/image-2.jpg"),
+    price: 8,
+    beforePrice: null,
+  },
+  {
+    id: "3",
+    title: "King James Bible",
+    link: "/",
+    image: require("../assets/images/wishlist/image-3.jpg"),
+    price: 10.00,
+    beforePrice: 15.00,
+  },
+  {
+    id: "4",
+    title: "Holy Scriptures",
+    link: "/",
+    image: require("../assets/images/wishlist/image-4.jpg"),
+    price: 8.00,
+    beforePrice: null,
+  },
+];
+
