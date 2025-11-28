@@ -94,6 +94,39 @@ export const profileActions = [
 ];
 
 
+export const settingsData = [
+  {
+    id: 'notifications',
+    title: 'Notifications',
+    description: 'Enable or disable app notifications',
+    value: true,
+  },
+  {
+    id: 'sermon-alerts',
+    title: 'Sermon Alerts',
+    description: 'Receive alerts when a live sermon starts',
+    value: true,
+  },
+  {
+    id: 'autoplay-sermon',
+    title: 'Autoplay Sermon',
+    description: 'Automatically play the next sermon in a series',
+    value: false,
+  },
+  {
+    id: 'devotional-reminders',
+    title: 'Daily Devotional reminders',
+    description: 'Get reminders to read the devotional',
+    value: true,
+  },
+  {
+    id: 'stay-logged-in',
+    title: 'Stay Logged In',
+    description: 'Keep your account signed in on this device.',
+    value: true,
+  },
+];
+
 export const wishListData = [
   {
     id: "1",
