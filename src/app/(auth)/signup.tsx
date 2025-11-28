@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { router } from "expo-router";
 import { Signup } from "@/src/screens";
 import { register } from "@/src/api/authAPi";
 import { showSuccessToast, showErrorToast } from "@/src/utils/toast";
-import { Animated } from "react-native";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -11,25 +11,6 @@ export default function SignupPage() {
   const [emailError, setEmailError] = useState<string | undefined>();
   const [fullNameError, setFullNameError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
-
-  const scaleAnim = useRef(new Animated.Value(0.5)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        damping: 15,
-        stiffness: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   const validateEmail = (value: string) =>
     /^\S+@\S+\.\S+$/.test(value.trim());
@@ -77,13 +58,7 @@ export default function SignupPage() {
   };
 
   return (
-    <Animated.View
-      style={{
-        flex: 1,
-        transform: [{ scale: scaleAnim }],
-        opacity: opacityAnim,
-      }}
-    >
+    <AuthPageWrapper>
       <Signup
         email={email}
         fullName={fullName}
@@ -104,6 +79,6 @@ export default function SignupPage() {
         onBack={() => router.back()}
         onRefresh={handleRefresh}
       />
-    </Animated.View>
+    </AuthPageWrapper>
   );
 }

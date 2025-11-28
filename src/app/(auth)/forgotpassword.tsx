@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { router } from "expo-router";
 import { ForgotPassword } from "@/src/screens";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
@@ -42,18 +43,20 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <ForgotPassword
-      email={email}
-      emailError={emailError}
-      isLoading={isLoading}
-      onEmailChange={(value) => {
-        setEmail(value);
-        if (emailError) setEmailError(undefined);
-      }}
-      onSubmit={handleSubmit}
-      onSignupPress={() => router.push("/login")}
-      onBack={() => router.back()}
-      onRefresh={handleRefresh}
-    />
+    <AuthPageWrapper>
+      <ForgotPassword
+        email={email}
+        emailError={emailError}
+        isLoading={isLoading}
+        onEmailChange={(value) => {
+          setEmail(value);
+          if (emailError) setEmailError(undefined);
+        }}
+        onSubmit={handleSubmit}
+        onSignupPress={() => router.push("/login")}
+        onBack={() => router.back()}
+        onRefresh={handleRefresh}
+      />
+    </AuthPageWrapper>
   );
 }

@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Verify } from "@/src/screens";
 import { router, useLocalSearchParams } from "expo-router";
 import { verifyOtp, register } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
-import { Animated } from "react-native";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 const VERIFY_CODE_LENGTH = 6;
 const RESEND_INTERVAL = 30; 
@@ -13,25 +13,6 @@ export default function VerifyPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(RESEND_INTERVAL);
   const { source, email, full_name } = useLocalSearchParams<{ source?: string; email?: string; full_name?: string }>();
-
-  const scaleAnim = useRef(new Animated.Value(0.5)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        damping: 15,
-        stiffness: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   useEffect(() => {
     if (timer === 0) return;
@@ -89,13 +70,7 @@ export default function VerifyPage() {
   };
 
   return (
-    <Animated.View
-      style={{
-        flex: 1,
-        transform: [{ scale: scaleAnim }],
-        opacity: opacityAnim,
-      }}
-    >
+    <AuthPageWrapper>
       <Verify
         code={code}
         isLoading={isLoading}
@@ -107,6 +82,6 @@ export default function VerifyPage() {
         onBack={() => router.back()}
         onRefresh={handleRefresh}
       />
-    </Animated.View>
+    </AuthPageWrapper>
   );
 }

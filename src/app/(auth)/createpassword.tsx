@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { CreatePassword } from "@/src/screens";
 import { createPassword } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
-import { Animated } from "react-native";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -16,25 +16,6 @@ export default function CreatePasswordPage() {
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
-
-  const scaleAnim = useRef(new Animated.Value(0.5)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        damping: 15,
-        stiffness: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   const validatePassword = (value: string) => {
     if (!value.trim()) {
@@ -82,13 +63,7 @@ export default function CreatePasswordPage() {
   };
 
   return (
-    <Animated.View
-      style={{
-        flex: 1,
-        transform: [{ scale: scaleAnim }],
-        opacity: opacityAnim,
-      }}
-    >
+    <AuthPageWrapper>
       <CreatePassword
         password={password}
         confirmPassword={confirmPassword}
@@ -113,6 +88,6 @@ export default function CreatePasswordPage() {
         onBack={() => router.back()}
         onRefresh={handleRefresh}
       />
-    </Animated.View>
+    </AuthPageWrapper>
   );
 }
