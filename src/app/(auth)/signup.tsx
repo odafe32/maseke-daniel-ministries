@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { Signup } from "@/src/screens";
 import { register } from "@/src/api/authAPi";
 import { showSuccessToast, showErrorToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { useAuthStore } from "../stores/authStore";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");

@@ -20,6 +20,11 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   return response.data;
 };
 
+export const otpLogin = async (email: string): Promise<{ message: string }> => {
+  const response = await client.post('/mobile/auth/otp-login', { email });
+  return response.data;
+};
+
 export const verifyOtp = async (email: string, otp: string): Promise<{ message: string }> => {
   const response = await client.post('/mobile/auth/verify-otp', { email, otp });
   return response.data;
@@ -42,5 +47,10 @@ export const verifyOtpPassword = async (email: string, otp: string): Promise<{ m
 
 export const resetPassword = async (email: string, password: string, password_confirmation: string): Promise<{ message: string }> => {
   const response = await client.post('/mobile/auth/reset-password', { email, password, password_confirmation });
+  return response.data;
+};
+
+export const verifyOtpLogin = async (email: string, otp: string): Promise<LoginResponse> => {
+  const response = await client.post<LoginResponse>('/mobile/auth/verify-otp-login', { email, otp });
   return response.data;
 };
