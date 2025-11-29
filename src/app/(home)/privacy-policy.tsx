@@ -1,6 +1,7 @@
 import React from "react";
 import { PrivacyPolicy } from "@/src/screens";
 import { useRouter } from "expo-router";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function PrivacyPolicyPage() {
   const router = useRouter();
@@ -10,8 +11,10 @@ export default function PrivacyPolicyPage() {
   };
 
   return (
-    <PrivacyPolicy
-      onBack={handleBack}
-    />
+    <AuthPageWrapper>
+      <PrivacyPolicy
+        onBack={handleBack}
+      />
+    </AuthPageWrapper>
   );
 }

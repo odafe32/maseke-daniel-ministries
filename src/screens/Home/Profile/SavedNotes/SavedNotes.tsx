@@ -13,6 +13,7 @@ import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
 import { SavedNote, NoteType } from "@/src/constants/data";
+import { fs, hp, wp, wpt } from "@/src/utils";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -55,7 +56,7 @@ export function SavedNotes({
       style={[
         styles.noteCard, 
         { 
-          width: (screenWidth - 48) / 2,
+          width: wpt(48),
         }
       ]}
       activeOpacity={0.8}
@@ -78,20 +79,20 @@ export function SavedNotes({
   );
 
   const renderSkeletonNoteCard = (index: number) => {
-    const cardWidth = (screenWidth - 48) / 2;
+    const cardWidth = wpt(48);
     
     return (
       <View key={`skeleton-${index}`} style={[styles.skeletonNoteCard, { width: cardWidth }]}>
         <View style={styles.skeletonTextContainer}>
-          <View style={[styles.skeletonBar, { width: '100%', marginBottom: 8 }]} />
-          <View style={[styles.skeletonBar, { width: '85%', marginBottom: 8 }]} />
-          <View style={[styles.skeletonBar, { width: '90%', marginBottom: 8 }]} />
+          <View style={[styles.skeletonBar, { width: '100%', marginBottom: hp(8) }]} />
+          <View style={[styles.skeletonBar, { width: '85%', marginBottom: hp(8) }]} />
+          <View style={[styles.skeletonBar, { width: '90%', marginBottom: hp(8) }]} />
           <View style={[styles.skeletonBar, { width: '75%' }]} />
         </View>
         
         <View style={styles.skeletonFooter}>
           <View style={styles.skeletonBookmark} />
-          <View style={[styles.skeletonBar, { width: 60, height: 12 }]} />
+          <View style={[styles.skeletonBar, { width: wp(60), height: hp(12) }]} />
         </View>
       </View>
     );
@@ -267,19 +268,19 @@ export function SavedNotes({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 20,
+    paddingHorizontal: hp(16),
+    paddingBottom: hp(20),
+    gap: hp(20),
   },
   filterContainer: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    gap: wp(8),
+    marginBottom: hp(8),
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: wp(16),
+    paddingVertical: hp(8),
+    borderRadius: wp(12),
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     color: '#424242',
-    fontSize: 12,
+    fontSize: fs(14),
     fontFamily: 'Geist-SemiBold',
   },
   activeFilterButtonText: {
@@ -301,13 +302,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: wp(12),
   },
   noteCard: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    minHeight: 100,
+    padding: hp(12),
+    borderRadius: wp(12),
+    marginBottom: hp(8),
+    minHeight: hp(100),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -317,9 +318,9 @@ const styles = StyleSheet.create({
   },
   noteText: {
     color: '#434343',
-    fontSize: 14,
+    fontSize: fs(16),
     lineHeight: 20,
-    marginBottom: 8,
+    marginBottom: hp(8),
     flex: 1,
     fontFamily: 'Geist-Regular',
   },
@@ -336,19 +337,19 @@ const styles = StyleSheet.create({
   },
   noteDate: {
     color: '#575757',
-    fontSize: 12,
+    fontSize: fs(14),
     fontFamily: 'Geist-Medium',
   },
   skeletonNoteCard: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    minHeight: 100,
+    padding: hp(12),
+    borderRadius: wp(12),
+    marginBottom: hp(8),
+    minHeight: hp(100),
     backgroundColor: '#F5F5F5',
   },
   skeletonTextContainer: {
     flex: 1,
-    marginBottom: 8,
+    marginBottom: hp(8),
   },
   skeletonFooter: {
     flexDirection: 'row',
@@ -357,14 +358,14 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   skeletonBar: {
-    height: 14,
-    borderRadius: 4,
+    height: hp(14),
+    borderRadius: wp(4),
     backgroundColor: '#E3E6EB',
   },
   skeletonBookmark: {
-    width: 14,
-    height: 14,
-    borderRadius: 2,
+    width: wp(14),
+    height: hp(14),
+    borderRadius: wp(2),
     backgroundColor: '#E3E6EB',
   },
   skeletonGrid: {
@@ -373,14 +374,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   skeletonItemContainer: {
-    width: "48%",
-    marginBottom: 12,
+    width: wp(48),
+    marginBottom: hp(12),
   },
   row: {
     justifyContent: "space-between",
   },
   separator: {
-    height: 12,
+    height: hp(12),
   },
   modalBackdrop: {
     position: 'absolute',
@@ -430,8 +431,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalTitleIconContainer: {
-    width: 40,
-    height: 40,
+    width: wp(40),
+    height: hp(40),
     borderRadius: 12,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
@@ -443,17 +444,17 @@ const styles = StyleSheet.create({
   modalTitle: {
     color: '#121116',
     fontFamily: 'Geist-Bold',
-    fontSize: 18,
+    fontSize: fs(18),
     marginBottom: 2,
   },
   modalSubtitle: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 13,
+    fontSize: fs(14),
   },
   closeButton: {
-    width: 36,
-    height: 36,
+    width: wp(36),
+    height: hp(36),
     borderRadius: 18,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
@@ -466,7 +467,7 @@ const styles = StyleSheet.create({
   },
   modalNoteText: {
     color: '#434343',
-    fontSize: 16,
+    fontSize: fs(16),
     lineHeight: 24,
     fontFamily: 'Geist-Regular',
     marginBottom: 20,
@@ -502,7 +503,7 @@ const styles = StyleSheet.create({
   modalSummaryLabel: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   modalSummaryDivider: {
     height: 1,
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
   modalNoteTypeText: {
     color: '#3B4897',
     fontFamily: 'Geist-SemiBold',
-    fontSize: 11,
+    fontSize: fs(12),
   },
   modalDateContainer: {
     flexDirection: 'row',
@@ -527,8 +528,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalDateIconContainer: {
-    width: 32,
-    height: 32,
+    width: wp(32),
+    height: hp(32),
     borderRadius: 8,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
@@ -540,12 +541,12 @@ const styles = StyleSheet.create({
   modalDateLabel: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 12,
+    fontSize: fs(12),
     marginBottom: 2,
   },
   modalDateValue: {
     color: '#121116',
     fontFamily: 'Geist-SemiBold',
-    fontSize: 14,
+    fontSize: fs(14),
   },
 });

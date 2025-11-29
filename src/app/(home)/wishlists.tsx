@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Wishlist } from "@/src/screens";
 import { useRouter } from "expo-router";
 import { wishListData } from "@/src/constants/data";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -20,10 +21,12 @@ export default function WishlistPage() {
   };
 
   return (
-    <Wishlist
-      wishListData={wishListData}
-      onBack={handleBack}
-      loading={loading}
-    />
+    <AuthPageWrapper>
+      <Wishlist
+        wishListData={wishListData}
+        onBack={handleBack}
+        loading={loading}
+      />
+    </AuthPageWrapper>
   );
 }

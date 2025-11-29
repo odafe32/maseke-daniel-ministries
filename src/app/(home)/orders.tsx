@@ -3,6 +3,7 @@ import { Orders } from "@/src/screens/Home/Profile/Orders";
 import { useRouter } from "expo-router";
 import { Animated } from "react-native";
 import { ordersData, Order, OrderStatus } from "@/src/constants/data";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -89,21 +90,23 @@ export default function OrdersPage() {
       : ordersData.filter(order => order.status === 'completed' || order.status === 'cancelled');
 
   return (
-    <Orders 
-      onBack={handleBack}
-      ordersData={ordersData}
-      filteredOrders={filteredOrders}
-      loading={loading}
-      activeFilter={activeFilter}
-      modalVisible={modalVisible}
-      selectedOrder={selectedOrder}
-      slideAnim={slideAnim}
-      fadeAnim={fadeAnim}
-      onFilterChange={handleFilterChange}
-      onOrderPress={handleOrderPress}
-      onCloseModal={handleCloseModal}
-      formatDate={formatDate}
-      getDisplayDate={getDisplayDate}
-    />
+    <AuthPageWrapper>
+      <Orders 
+        onBack={handleBack}
+        ordersData={ordersData}
+        filteredOrders={filteredOrders}
+        loading={loading}
+        activeFilter={activeFilter}
+        modalVisible={modalVisible}
+        selectedOrder={selectedOrder}
+        slideAnim={slideAnim}
+        fadeAnim={fadeAnim}
+        onFilterChange={handleFilterChange}
+        onOrderPress={handleOrderPress}
+        onCloseModal={handleCloseModal}
+        formatDate={formatDate}
+        getDisplayDate={getDisplayDate}
+      />
+    </AuthPageWrapper>
   );
 }

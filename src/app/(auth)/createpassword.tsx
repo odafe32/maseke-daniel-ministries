@@ -4,11 +4,20 @@ import { CreatePassword } from "@/src/screens";
 import { createPassword, resetPassword } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { useAuthStore } from "@/src/stores/authStore";
+
 
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function CreatePasswordPage() {
   const { email, source } = useLocalSearchParams<{ email: string; source?: string }>();
+  const { user } = useAuthStore();
+
+  if (user) {
+    router.replace('/home');
+    return null;
+  }
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

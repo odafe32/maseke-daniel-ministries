@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { ForgotPassword } from "@/src/screens";
 import { useForgotPassword } from "@/src/hooks/auth";
 import { showSuccessToast, showErrorToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { useAuthStore } from "@/src/stores/authStore";
+
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
@@ -11,6 +13,14 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | undefined>();
   const { mutate: forgotPassword, isLoading } = useForgotPassword();
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users to home
+    if (token) {
+      router.replace("/home");
+    }
+  }, [token]);
 
   const validateEmail = (value: string) => {
     if (!value.trim()) {

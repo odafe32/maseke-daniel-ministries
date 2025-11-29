@@ -34,6 +34,11 @@ export interface ProfileProps {
   actions: ProfileAction[];
   onBack: () => void;
   onActionPress: (link: string) => void;
+  onLogout: () => void;
+  onLogoutPress: () => void;
+  onLogoutCancel: () => void;
+  showLogoutModal: boolean;
+  logoutLoading: boolean;
   onEditPress: () => void;
   isEditing: boolean;
   editForm: EditProfileFormProps;

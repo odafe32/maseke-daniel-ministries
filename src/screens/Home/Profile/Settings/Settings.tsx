@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -7,7 +7,10 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
-import Toast from 'react-native-toast-message';
+import { showSuccessToast } from "@/src/utils/toast";
+import { fs, hp, wp } from "@/src/utils";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/src/stores/authStore';
 
 interface SettingItem {
   id: string;
@@ -21,8 +24,29 @@ export function Settings({ onBack, settingsData: initialSettingsData }: {
   settingsData: SettingItem[];
 }) {
   const [settings, setSettings] = useState<SettingItem[]>(initialSettingsData);
+  const { setStayLoggedIn, logout } = useAuthStore();
 
-  const handleToggleChange = (id: string, value: boolean) => {
+  // Load stay-logged-in preference on component mount
+  useEffect(() => {
+    const loadStayLoggedInPreference = async () => {
+      try {
+        const stayLoggedInStr = await AsyncStorage.getItem('stayLoggedIn');
+        const stayLoggedIn = stayLoggedInStr ? JSON.parse(stayLoggedInStr) : true;
+        
+        setSettings(prev => 
+          prev.map(setting => 
+            setting.id === 'stay-logged-in' ? { ...setting, value: stayLoggedIn } : setting
+          )
+        );
+      } catch (error) {
+        console.error('Failed to load stay logged in preference:', error);
+      }
+    };
+    
+    loadStayLoggedInPreference();
+  }, []);
+
+  const handleToggleChange = async (id: string, value: boolean) => {
     console.log(`Toggle changed: ${id} = ${value}`);
     
     const setting = settings.find(s => s.id === id);
@@ -34,17 +58,28 @@ export function Settings({ onBack, settingsData: initialSettingsData }: {
       )
     );
 
-    // Show toast message using react-native-toast-message
-    const message = `${setting?.title} ${statusText}`;
-    console.log(message);
-    
-    Toast.show({
-      type: 'success',
-      text1: 'Setting Updated',
-      text2: message,
-      position: 'bottom',
-      visibilityTime: 2000,
-    });
+    // Special handling for stay-logged-in setting
+    if (id === 'stay-logged-in') {
+      try {
+        await AsyncStorage.setItem('stayLoggedIn', JSON.stringify(value));
+        setStayLoggedIn(value);
+        
+        // If turning off stay logged in, clear stored auth
+        if (!value) {
+          await logout();
+        }
+        
+        showSuccessToast('Setting Updated', `${setting?.title} ${statusText}`, { position: 'top', visibilityTime: 2000 });
+      } catch (error) {
+        console.error('Failed to save stay logged in preference:', error);
+        showSuccessToast('Error', 'Failed to update setting', { position: 'top', visibilityTime: 2000 });
+      }
+    } else {
+      // Show toast for other settings
+      const message = `${setting?.title} ${statusText}`;
+      console.log(message);
+      showSuccessToast('Setting Updated', message, { position: 'top', visibilityTime: 2000 });
+    }
   };
 
   return (
@@ -82,33 +117,33 @@ export function Settings({ onBack, settingsData: initialSettingsData }: {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 24,
+    paddingHorizontal: hp(16),
+    paddingBottom: hp(20),
+    gap: hp(24),
   },
   content: {
-    gap: 16,
+    gap: hp(16),
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FAFAFA',
-    padding: 16,
-    borderRadius: 8,
-    gap: 20,
+    padding: hp(16),
+    borderRadius: wp(8),
+    gap: wp(20),
   },
   textContainer: {
     flex: 1,
     gap: 8,
   },
   title: {
-    fontSize: 14,
+    fontSize: fs(16),
     color: '#121116',
     lineHeight: 14,
   },
   description: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#121116',
     lineHeight: 18,
   },

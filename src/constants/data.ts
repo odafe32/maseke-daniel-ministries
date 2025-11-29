@@ -41,7 +41,7 @@ export const onboardingData: OnboardingItem[] = [
   },
 ];
 
-export const avatarUri = "https://i.pravatar.cc/150?img=15";
+export const avatarUri = "https://i.ibb.co/MxX34v8b/avtar.png";
 
 export const quickActions = [
   {
@@ -91,6 +91,7 @@ export const profileActions = [
   { id: "about", label: "About", icon: "info", link: "/about" },
   { id: "privacy", label: "Privacy Policy", icon: "shield", link: "/privacy-policy" },
   { id: "settings", label: "Settings", icon: "settings", link: "/settings" },
+  { id: "logout", label: "Logout", icon: "log-out", link: undefined },
 ];
 
 
@@ -106,12 +107,6 @@ export const settingsData = [
     title: 'Sermon Alerts',
     description: 'Receive alerts when a live sermon starts',
     value: true,
-  },
-  {
-    id: 'autoplay-sermon',
-    title: 'Autoplay Sermon',
-    description: 'Automatically play the next sermon in a series',
-    value: false,
   },
   {
     id: 'devotional-reminders',

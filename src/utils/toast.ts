@@ -85,3 +85,4 @@ export const showLoadingToast = (message: string = 'Loading...') => {
 export const hideToast = () => {
   Toast.hide();
 };
+

@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { PrayerRequest } from "@/src/screens/Home/Profile/PrayerRequest";
 import Toast from 'react-native-toast-message';
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function PrayerRequestPage() {
   const router = useRouter();
@@ -113,17 +114,19 @@ export default function PrayerRequestPage() {
   };
 
   return (
-    <PrayerRequest
-      onBack={handleBack}
-      title={title}
-      message={message}
-      onTitleChange={handleTitleChange}
-      onMessageChange={handleMessageChange}
-      onSubmit={handlePrayerRequest}
-      onCancel={handleCancel}
-      titleError={titleError}
-      messageError={messageError}
-      isLoading={isLoading}
-    />
+    <AuthPageWrapper>
+      <PrayerRequest
+        onBack={handleBack}
+        title={title}
+        message={message}
+        onTitleChange={handleTitleChange}
+        onMessageChange={handleMessageChange}
+        onSubmit={handlePrayerRequest}
+        onCancel={handleCancel}
+        titleError={titleError}
+        messageError={messageError}
+        isLoading={isLoading}
+      />
+    </AuthPageWrapper>
   );
 }

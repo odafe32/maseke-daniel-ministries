@@ -5,7 +5,8 @@ import { useLogin } from "@/src/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { otpLogin } from "@/src/api/authAPi";
-import { useAuthStore } from "../stores/authStore";
+import { useAuthStore } from "@/src/stores/authStore";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

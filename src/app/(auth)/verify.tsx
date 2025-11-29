@@ -4,6 +4,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { verifyOtp, register, verifyOtpPassword, otpLogin, forgotPassword, verifyOtpLogin } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { useAuthStore } from "@/src/stores/authStore";
+
 
 const VERIFY_CODE_LENGTH = 6;
 const RESEND_INTERVAL = 30; 
@@ -14,6 +16,14 @@ export default function VerifyPage() {
   const [isResending, setIsResending] = useState(false);
   const [timer, setTimer] = useState(RESEND_INTERVAL);
   const { source, email, full_name } = useLocalSearchParams<{ source?: string; email?: string; full_name?: string }>();
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users to home
+    if (token) {
+      router.replace("/home");
+    }
+  }, [token]);
 
   useEffect(() => {
     if (timer === 0) return;

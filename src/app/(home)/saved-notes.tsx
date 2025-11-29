@@ -3,6 +3,7 @@ import { SavedNotes } from "@/src/screens/Home/Profile/SavedNotes";
 import { useRouter } from "expo-router";
 import { Animated } from "react-native";
 import { savedNotesData, SavedNote, NoteType } from "@/src/constants/data";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function SavedNotesPage() {
   const router = useRouter();
@@ -87,21 +88,23 @@ export default function SavedNotesPage() {
     : savedNotesData.filter(note => note.type === activeFilter);
 
   return (
-    <SavedNotes 
-      onBack={handleBack}
-      savedNotesData={savedNotesData}
-      filteredNotes={filteredNotes}
-      loading={loading}
-      activeFilter={activeFilter}
-      modalVisible={modalVisible}
-      selectedNote={selectedNote}
-      slideAnim={slideAnim}
-      fadeAnim={fadeAnim}
-      onFilterChange={handleFilterChange}
-      onNotePress={handleNotePress}
-      onCloseModal={handleCloseModal}
-      formatDate={formatDate}
-      getDisplayDate={getDisplayDate}
-    />
+    <AuthPageWrapper>
+      <SavedNotes 
+        onBack={handleBack}
+        savedNotesData={savedNotesData}
+        filteredNotes={filteredNotes}
+        loading={loading}
+        activeFilter={activeFilter}
+        modalVisible={modalVisible}
+        selectedNote={selectedNote}
+        slideAnim={slideAnim}
+        fadeAnim={fadeAnim}
+        onFilterChange={handleFilterChange}
+        onNotePress={handleNotePress}
+        onCloseModal={handleCloseModal}
+        formatDate={formatDate}
+        getDisplayDate={getDisplayDate}
+      />
+    </AuthPageWrapper>
   );
 }

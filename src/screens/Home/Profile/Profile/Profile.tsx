@@ -20,6 +20,11 @@ export function Profile({
   actions,
   onBack,
   onActionPress,
+  onLogout,
+  onLogoutPress,
+  onLogoutCancel,
+  showLogoutModal,
+  logoutLoading,
   onEditPress,
   isEditing,
   editForm,
@@ -61,18 +66,24 @@ export function Profile({
                   index < actions.length - 1 && styles.actionSpacing,
                 ]}
                 activeOpacity={0.8}
-                onPress={() => action.link && onActionPress(action.link)}
+                onPress={() => {
+                  if (action.id === 'logout') {
+                    onLogoutPress();
+                  } else if (action.link) {
+                    onActionPress(action.link);
+                  }
+                }}
               >
                 <View style={styles.actionLeft}>
                   <View style={styles.iconBadge}>
                     {action.custom ? (
                       <Icon name={action.icon as "archive"} color="#121116" size={24} />
                     ) : (
-                      <Feather name={action.icon as any} size={24} color="#121116" />
+                      <Feather name={action.icon as any} size={24} color={action.id === 'logout' ? '#DC2626' : '#121116'} />
                     )}
                   </View>
 
-                  <ThemeText variant="bodyBold" style={styles.actionLabel}>
+                  <ThemeText variant="bodyBold" style={[styles.actionLabel, action.id === 'logout' ? styles.logoutLabel : {}]}>
                     {action.label}
                   </ThemeText>
                 </View>
@@ -193,6 +204,9 @@ const styles = StyleSheet.create({
     fontFamily: "Geist-Medium",
     color: "#121116",
   },
+  logoutLabel: {
+    color: "#DC2626",
+  },
   editCard: {
     backgroundColor: "#fff",
     borderRadius: 24,
@@ -251,4 +265,4 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 24,
   },
-});
+}); 

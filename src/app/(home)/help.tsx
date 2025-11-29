@@ -1,6 +1,7 @@
 import React from "react";
 import { Help } from "@/src/screens";
 import { useRouter } from "expo-router";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function HelpPage() {
   const router = useRouter();
@@ -10,8 +11,10 @@ export default function HelpPage() {
   };
 
   return (
-    <Help
-      onBack={handleBack}
-    />
+    <AuthPageWrapper>
+      <Help
+        onBack={handleBack}
+      />
+    </AuthPageWrapper>
   );
 }

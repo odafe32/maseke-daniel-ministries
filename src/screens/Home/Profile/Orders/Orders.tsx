@@ -13,6 +13,7 @@ import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText } from "@/src/components";
 import { Order, OrderStatus } from "@/src/constants/data";
+import { fs, hp, wp } from "@/src/utils";
 
 interface OrdersProps {
   onBack: () => void;
@@ -367,7 +368,7 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     color: '#424242',
-    fontSize: 12,
+    fontSize: fs(14),
     fontFamily: 'Geist-SemiBold',
   },
   activeFilterButtonText: {
@@ -382,8 +383,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   orderImage: {
-    width: 100,
-    height: 100,
+    width: wp(100),
+    height: hp(100),
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
   },
@@ -399,12 +400,12 @@ const styles = StyleSheet.create({
   orderNumber: {
     color: '#0B0A0D',
     fontFamily: 'Geist-Medium',
-    fontSize: 16,
+    fontSize: fs(16),
   },
   orderPrice: {
     color: '#0C154C',
     fontFamily: 'Geist-SemiBold',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   orderFooter: {
     flexDirection: 'row',
@@ -413,7 +414,7 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     color: '#666',
-    fontSize: 12,
+    fontSize: fs(12.5),
     fontFamily: 'Geist-Medium',
   },
   statusBadge: {
@@ -422,15 +423,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusText: {
-    fontSize: 10,
+    fontSize: fs(11),
     fontFamily: 'Geist-SemiBold',
   },
   skeletonContainer: {
     gap: 12,
   },
   skeletonImage: {
-    width: 80,
-    height: 80,
+    width:wp(80),
+    height: hp(80),
     borderRadius: 8,
     backgroundColor: '#E3E6EB',
   },
@@ -491,8 +492,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalTitleIconContainer: {
-    width: 40,
-    height: 40,
+    width: wp(40),
+    height: hp(40),
     borderRadius: 12,
     backgroundColor: '#F8F9FA',
     justifyContent: 'center',
@@ -504,13 +505,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     color: '#121116',
     fontFamily: 'Geist-Bold',
-    fontSize: 18,
+    fontSize: fs(18),
     marginBottom: 2,
   },
   modalOrderNumber: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 13,
+    fontSize: fs(13),
   },
   closeButton: {
     width: 36,
@@ -533,8 +534,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   modalItemImage: {
-    width: 60,
-    height: 60,
+    width: wp(60),
+    height: hp(60),
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
   },
@@ -546,19 +547,19 @@ const styles = StyleSheet.create({
   modalItemTitle: {
     color: '#121116',
     fontFamily: 'Geist-SemiBold',
-    fontSize: 14,
+    fontSize: fs(14),
     marginBottom: 4,
   },
   modalItemPrice: {
     color: '#0C154C',
     fontFamily: 'Geist-Medium',
-    fontSize: 12,
+    fontSize: fs(12),
     marginBottom: 2,
   },
   modalItemQuantity: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 12,
+    fontSize: fs(12),
   },
   modalItemSeparator: {
     height: 1,
@@ -597,12 +598,12 @@ const styles = StyleSheet.create({
   modalSummaryLabel: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   modalSummaryValue: {
     color: '#0C154C',
     fontFamily: 'Geist-Bold',
-    fontSize: 20,
+    fontSize: fs(20),
   },
   modalSummaryDivider: {
     height: 1,
@@ -617,7 +618,7 @@ const styles = StyleSheet.create({
   modalStatusLabel: {
     color: '#666',
     fontFamily: 'Geist-Medium',
-    fontSize: 12,
+    fontSize: fs(12),
   },
   modalStatusBadge: {
     paddingHorizontal: 8,
@@ -625,7 +626,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   modalStatusText: {
-    fontSize: 10,
+    fontSize: fs(10),
     fontFamily: 'Geist-SemiBold',
   },
 });

@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { ThemeText } from "@/src/components";
-import { fs, getColor } from "@/src/utils";
+import { fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
 import {
   StyleSheet,
@@ -137,14 +137,14 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp(50),
+    height: hp(50),
+    borderRadius: wp(50),
     backgroundColor: "#E0E0E0",
   },
   cardsWrapper: {
-    marginTop: 32,
-    gap: 18,
+    marginTop: hp(32),
+    gap: hp(18),
   },
   cardShadow: {
     borderRadius: 1,
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardImage: {
-    height: 160,
+    height: hp(160),
     borderRadius: 1,
     overflow: "hidden",
   },
@@ -174,19 +174,19 @@ const styles = StyleSheet.create({
     fontSize: fs(18),
   },
   skeletonBar: {
-    height: 14,
-    borderRadius: 8,
+    height: hp(14),
+    borderRadius: wp(8),
     backgroundColor: "#E3E6EB",
   },
   skeletonAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp(40),
+    height: hp(40),
+    borderRadius: wp(20),
     backgroundColor: "#E3E6EB",
   },
   skeletonCard: {
-    height: 160,
-    borderRadius: 16,
+    height: hp(160),
+    borderRadius: wp(16),
     backgroundColor: "#E3E6EB",
   },
 });

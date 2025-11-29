@@ -13,16 +13,18 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#10B981',
       borderRadius: 8,
-      padding: 16,
-      marginHorizontal: 16,
+      padding: 8,
+      marginHorizontal: 10,
+      marginTop: 0,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
-      alignSelf: 'center',
+      alignSelf: 'flex-end',
       flexDirection: 'row',
       alignItems: 'center',
+      maxWidth: '80%',
     }}>
       <Ionicons name="checkmark-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
       <View>
@@ -35,16 +37,18 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#EF4444',
       borderRadius: 8,
-      padding: 16,
-      marginHorizontal: 16,
+  padding: 8,
+      marginHorizontal: 10,
+      marginTop: 0,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
-      alignSelf: 'center',
+      alignSelf: 'flex-end',
       flexDirection: 'row',
       alignItems: 'center',
+      maxWidth: '80%',
     }}>
       <Ionicons name="close-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
       <View>
@@ -57,16 +61,18 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#3B82F6',
       borderRadius: 8,
-      padding: 16,
-      marginHorizontal: 16,
+        padding: 8,
+      marginHorizontal: 10,
+      marginTop: 0,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
-      alignSelf: 'center',
+      alignSelf: 'flex-end',
       flexDirection: 'row',
       alignItems: 'center',
+      maxWidth: '80%',
     }}>
       <Ionicons name="information-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
       <View>
