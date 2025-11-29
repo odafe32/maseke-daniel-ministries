@@ -21,6 +21,7 @@ export const Verify = ({
   onResend,
   onBack,
   onRefresh,
+  isResending = false,
 }: VerifyProps) => {
   const isCodeComplete = code.length === 6;
   const canResend = timer === 0;
@@ -64,9 +65,9 @@ export const Verify = ({
               : `Resend code in 0:${timer.toString().padStart(2, "0")}`}
           </ThemeText>
           <TextLink
-            text="Resend code"
+            text={isResending ? "Sending..." : "Resend code"}
             onPress={onResend}
-            disabled={!canResend}
+            disabled={!canResend || isResending}
             style={styles.resendLink}
             textStyle={styles.resendText}
           />

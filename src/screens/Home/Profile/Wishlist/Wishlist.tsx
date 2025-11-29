@@ -8,9 +8,9 @@ import {
   Image,
 } from "react-native";
 
-import { BackHeader, ThemeText } from "@/src/components";
+import { BackHeader, ThemeText, Icon } from "@/src/components";
 import { WishlistProps } from "@/src/utils/types";
-import { Feather } from "@expo/vector-icons";
+import { hp, wp, wpt } from "@/src/utils";
 
 export function Wishlist({ wishListData, onBack, loading = false }: WishlistProps) {
   const calculateDiscount = (price: number, beforePrice: number) => {
@@ -33,7 +33,7 @@ export function Wishlist({ wishListData, onBack, loading = false }: WishlistProp
         
         {/* Heart icon on top right */}
         <TouchableOpacity style={styles.heartIcon}>
-          <Feather name="heart" size={16} color="#FF0000" />
+          <Icon name="heart" size={16} color="#FF0000" />
         </TouchableOpacity>
       </View>
       
@@ -74,7 +74,7 @@ export function Wishlist({ wishListData, onBack, loading = false }: WishlistProp
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="My Wishlist" onBackPress={onBack} />
+      <BackHeader title="My Wishlist" />
 
       {loading ? (
         <View style={styles.skeletonGrid}>
@@ -99,21 +99,19 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 24,
   },
   row: {
     justifyContent: "space-between",
   },
   itemContainer: {
-    width: "48%",
+    width: wpt(48),
     backgroundColor: "transparent",
     overflow: "hidden",
   },
   imageContainer: {
     position: "relative",
     width: "100%",
-    height: 200,
+    height: hp(200),
     borderColor: "#f5f5f5",
     borderWidth: 1,
     borderRadius: 6,
@@ -182,13 +180,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   skeletonItemContainer: {
-    width: "48%",
+    width: wpt(48),
     marginBottom: 12,
   },
   skeletonImageContainer: {
     position: "relative",
     width: "100%",
-    height: 200,
+    height: hp(200),
     borderColor: "#f5f5f5",
     borderWidth: 1,
     borderRadius: 6,
@@ -204,8 +202,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     left: 8,
-    width: 40,
-    height: 20,
+    width: wp(40),
+    height: hp(20),
     backgroundColor: "#E3E6EB",
     borderRadius: 16,
   },
@@ -213,9 +211,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: wp(28),
+    height: hp(28),
+    borderRadius: wp(14),
     backgroundColor: "#E3E6EB",
   },
   skeletonContent: {

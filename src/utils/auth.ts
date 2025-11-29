@@ -5,6 +5,7 @@ export interface LoginProps {
   emailError?: string;
   passwordError?: string;
   isLoading: boolean;
+  isEmailOnlyLoading?: boolean;
   loginMethod: 'traditional' | 'email-only';
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
@@ -39,6 +40,7 @@ export interface VerifyProps {
   onResend: () => void;
   onBack?: () => void;
   onRefresh: () => void;
+  isResending?: boolean;
 }
 
 export interface SignupProps {

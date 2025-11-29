@@ -1,9 +1,12 @@
+import React, { useState, useEffect } from "react";
 import { Login } from "@/src/screens";
 import { router } from "expo-router";
-import React, { useState } from "react";
 import { useLogin } from "@/src/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { otpLogin } from "@/src/api/authAPi";
+import { useAuthStore } from "@/src/stores/authStore";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +16,16 @@ export default function LoginPage() {
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const { mutate: login, isLoading: hookLoading } = useLogin();
   const [loginMethod, setLoginMethod] = useState<'traditional' | 'email-only'>('traditional');
+  const [emailOnlyLoading, setEmailOnlyLoading] = useState(false);
+
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users to home
+    if (token) {
+      router.replace("/home");
+    }
+  }, [token]);
 
   const validateEmail = (value: string) =>
     /^\S+@\S+\.\S+$/.test(value.trim());
@@ -31,11 +44,22 @@ export default function LoginPage() {
     }
 
     if (!hasError) {
+      setEmailOnlyLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        router.push({ pathname: "/verify", params: { source: "login" } });
-      } catch (error) {
+        await otpLogin(email);
+        showSuccessToast('Success', 'OTP sent to your email. Please verify to login.');
+        router.push({ pathname: "/verify", params: { source: "login", email } });
+      } catch (error: any) {
         console.error("Email login error:", error);
+        let errorMessage = 'Failed to send OTP. Please try again.';
+        if (error?.response?.status === 422) {
+          errorMessage = 'Email not found. Please check your email address.';
+        } else if (error?.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+        showErrorToast('Error', errorMessage);
+      } finally {
+        setEmailOnlyLoading(false);
       }
     }
   };
@@ -94,6 +118,7 @@ export default function LoginPage() {
         emailError={emailError}
         passwordError={passwordError}
         isLoading={hookLoading}
+        isEmailOnlyLoading={emailOnlyLoading}
         loginMethod={loginMethod}
         onEmailChange={(value) => {
           setEmail(value);

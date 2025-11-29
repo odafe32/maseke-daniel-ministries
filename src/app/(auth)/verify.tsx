@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Verify } from "@/src/screens";
 import { router, useLocalSearchParams } from "expo-router";
-import { verifyOtp, register, verifyOtpPassword } from "@/src/api/authAPi";
+import { verifyOtp, register, verifyOtpPassword, otpLogin, forgotPassword, verifyOtpLogin } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { useAuthStore } from "@/src/stores/authStore";
+
 
 const VERIFY_CODE_LENGTH = 6;
 const RESEND_INTERVAL = 30; 
@@ -11,8 +13,17 @@ const RESEND_INTERVAL = 30;
 export default function VerifyPage() {
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [timer, setTimer] = useState(RESEND_INTERVAL);
   const { source, email, full_name } = useLocalSearchParams<{ source?: string; email?: string; full_name?: string }>();
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users to home
+    if (token) {
+      router.replace("/home");
+    }
+  }, [token]);
 
   useEffect(() => {
     if (timer === 0) return;
@@ -33,6 +44,11 @@ export default function VerifyPage() {
         await verifyOtpPassword(email, code);
         showSuccessToast('Success', 'OTP verified. You can now reset your password.');
         router.push({ pathname: "/createpassword", params: { email, source: "reset" } });
+      } else if (source === "login") {
+        const result = await verifyOtpLogin(email, code);
+        showSuccessToast('Success', 'Login successful.');
+        console.log('Login successful');
+        router.replace("/home");
       } else {
         await verifyOtp(email, code);
         showSuccessToast('Success', 'OTP verified successfully.');
@@ -47,18 +63,29 @@ export default function VerifyPage() {
   };
 
   const handleResend = async () => {
-    if (timer > 0 || !email || !full_name) return;
+    if (timer > 0 || !email) return;
 
-    setIsLoading(true);
+    setIsResending(true);
     try {
-      await register(email, full_name);
-      showSuccessToast('Success', 'OTP resent to your email.');
+      if (source === "forgot") {
+        // Resend forgot password OTP
+        await forgotPassword(email);
+        showSuccessToast('Success', 'OTP resent to your email.');
+      } else if (source === "login") {
+        // Resend login OTP
+        await otpLogin(email);
+        showSuccessToast('Success', 'OTP resent to your email.');
+      } else if (full_name) {
+        // Resend registration OTP
+        await register(email, full_name);
+        showSuccessToast('Success', 'OTP resent to your email.');
+      }
       setTimer(RESEND_INTERVAL);
     } catch (error) {
       console.log('Resend error:', error);
       showErrorToast('Error', 'Failed to resend OTP.');
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -87,6 +114,7 @@ export default function VerifyPage() {
         onResend={handleResend}
         onBack={() => router.back()}
         onRefresh={handleRefresh}
+        isResending={isResending}
       />
     </AuthPageWrapper>
   );

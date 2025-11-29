@@ -11,6 +11,7 @@ export const Login = ({
   emailError,
   passwordError,
   isLoading,
+  isEmailOnlyLoading = false,
   loginMethod,
   onEmailChange,
   onPasswordChange,
@@ -34,7 +35,7 @@ export const Login = ({
             <Button
               title="Continue"
               onPress={onEmailOnlyLogin}
-              loading={isLoading}
+              loading={isEmailOnlyLoading}
             />
           ) : (
             <>

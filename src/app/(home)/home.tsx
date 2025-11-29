@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Home } from "@/src/screens/Home/Home";
 import { quickActions } from "@/src/constants/data";
 import { useRouter } from "expo-router";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 
 export default function HomePage() {
   const router = useRouter();
@@ -32,13 +33,15 @@ export default function HomePage() {
   };
 
   return (
-    <Home
-      loading={loading}
-      refreshing={refreshing}
-      onRefresh={handleRefresh}
-      onCardPress={handleCardPress}
-      onProfilePress={handleProfilePress}
-      quickActions={quickActions}
-    />
+    <AuthPageWrapper disableLottieLoading={true}>
+      <Home
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onCardPress={handleCardPress}
+        onProfilePress={handleProfilePress}
+        quickActions={quickActions}
+      />
+    </AuthPageWrapper>
   );
 }

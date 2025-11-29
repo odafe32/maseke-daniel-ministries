@@ -1,16 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { Signup } from "@/src/screens";
 import { register } from "@/src/api/authAPi";
 import { showSuccessToast, showErrorToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
-
+import { useAuthStore } from "@/src/stores/authStore";
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [emailError, setEmailError] = useState<string | undefined>();
   const [fullNameError, setFullNameError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
+
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    // Redirect authenticated users to home
+    if (token) {
+      router.replace("/home");
+    }
+  }, [token]);
 
   const validateEmail = (value: string) =>
     /^\S+@\S+\.\S+$/.test(value.trim());

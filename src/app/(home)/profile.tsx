@@ -1,26 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Profile } from "@/src/screens";
 import { avatarUri, profileActions } from "@/src/constants/data";
 import { useRouter } from "expo-router";
+import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { Alert } from "react-native";
 import { ConfirmActionSheet } from "@/src/components";
-
-const MOCK_USER = {
-  name: "Samuel Bishop",
-  email: "example@gmail.com",
-};
+import { useAuthStore } from "@/src/stores/authStore";
+import { showSuccessToast } from "@/src/utils/toast";
+import { useUser } from '../../hooks/useUser';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [profile, setProfile] = useState(MOCK_USER);
+  const { logout } = useAuthStore();
+  const { user } = useUser();
+  const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email } : { name: "", email: "" });
   const [isEditing, setIsEditing] = useState(false);
-  const [formName, setFormName] = useState(MOCK_USER.name);
-  const [formEmail, setFormEmail] = useState(MOCK_USER.email);
+  const [formName, setFormName] = useState(user?.full_name || "");
+  const [formEmail, setFormEmail] = useState(user?.email || "");
   const [isSaving, setIsSaving] = useState(false);
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setProfile({ name: user.full_name, email: user.email });
+      setFormName(user.full_name);
+      setFormEmail(user.email);
+    }
+  }, [user]);
 
   const handleActionPress = (link: string) => {
     if (!link) return;
@@ -90,8 +101,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = async () => {
+    setLogoutLoading(true);
+    try {
+      await logout();
+      showSuccessToast('Success', 'Logged out successfully');
+      setShowLogoutModal(false);
+      
+      // Explicitly navigate to login screen to ensure redirect
+      setTimeout(() => {
+        router.replace('/(auth)/login');
+      }, 1000); // Small delay to show the success toast
+      
+    } catch (error) {
+      console.error('Logout failed:', error);
+      showSuccessToast('Error', 'Failed to logout');
+    } finally {
+      setLogoutLoading(false);
+    }
+  };
+
+  const handleLogoutPress = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+  };
+
   return (
-    <>
+    <AuthPageWrapper disableLottieLoading={true}>
       <Profile
         avatar={avatar}
         name={profile.name}
@@ -99,6 +138,11 @@ export default function ProfilePage() {
         actions={profileActions}
         onBack={handleBack}
         onActionPress={handleActionPress}
+        onLogout={handleLogout}
+        onLogoutPress={handleLogoutPress}
+        onLogoutCancel={handleLogoutCancel}
+        showLogoutModal={showLogoutModal}
+        logoutLoading={logoutLoading}
         onEditPress={handleEditPress}
         isEditing={isEditing}
         editForm={{
@@ -116,6 +160,15 @@ export default function ProfilePage() {
         }}
       />
       <ConfirmActionSheet
+        visible={showLogoutModal}
+        title="Logout"
+        description="Are you sure you want to logout?"
+        confirmLabel="Logout"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+        isLoading={logoutLoading}
+      />
+      <ConfirmActionSheet
         visible={showDeleteSheet}
         title="Are you sure?"
         description="Your account will be permanently deleted. You can sign up again anytime, but previous data cannot be restored"
@@ -123,6 +176,6 @@ export default function ProfilePage() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteSheet(false)}
       />
-    </>
+    </AuthPageWrapper>
   );
 }
