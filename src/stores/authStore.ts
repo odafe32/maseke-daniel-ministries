@@ -19,6 +19,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   stayLoggedIn: boolean;
+  pushToken: string | null;
 
   // Actions
   setToken: (token: string) => void;
@@ -26,12 +27,14 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setStayLoggedIn: (stayLoggedIn: boolean) => void;
+  setPushToken: (pushToken: string) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
+  sendPushToken: (pushToken: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -40,12 +43,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
   stayLoggedIn: true, // Default to true for backward compatibility
+  pushToken: null,
 
   setToken: (token) => set({ token }),
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   setStayLoggedIn: (stayLoggedIn) => set({ stayLoggedIn }),
+  setPushToken: (pushToken) => set({ pushToken }),
 
   async login(email: string, password: string) {
     set({ isLoading: true, error: null });
@@ -61,9 +66,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       set({ token, user, isLoading: false });
+
+      // Send push token if available
+      const { pushToken } = get();
+      if (pushToken) {
+        get().sendPushToken(pushToken);
+      }
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Login failed', isLoading: false });
       throw error;
+    }
+  },
+
+  async sendPushToken(pushToken: string) {
+    const { token } = get();
+    if (!token) return;
+
+    try {
+      await axios.post(`${API_URL}/mobile/auth/push-token`, { push_token: pushToken }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('Push token sent to backend');
+    } catch (error) {
+      console.error('Failed to send push token:', error);
     }
   },
 

@@ -4,18 +4,65 @@ import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWr
 import { useRouter } from "expo-router";
 import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { notificationsData } from "@/src/constants/data";
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  time: string;
+  read: boolean;
+  type: string;
+}
 
 export default function NotificationsPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadNotifications = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('notifications');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setNotifications(parsed);
+      } else {
+        setNotifications(notificationsData);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+      setNotifications(notificationsData);
+    }
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    loadNotifications().then(() => setLoading(false));
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadNotifications();
+    setRefreshing(false);
+  };
+
+  const handleNotificationPress = (id: string) => {
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === id ? { ...notification, read: true } : notification
+      )
+    );
+    // Update AsyncStorage
+    const updated = notifications.map(notification =>
+      notification.id === id ? { ...notification, read: true } : notification
+    );
+    AsyncStorage.setItem('notifications', JSON.stringify(updated)).catch(error => {
+      console.error('Failed to update notification:', error);
+    });
+  };
 
   const handleBack = () => {
     wrapperRef.current?.reverseAnimate(() => router.back());
@@ -37,7 +84,13 @@ export default function NotificationsPage() {
 
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
-      <Notifications onBack={handleBack} />
+      <Notifications 
+        onBack={handleBack} 
+        notifications={notifications} 
+        onNotificationPress={handleNotificationPress}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
     </AuthPageWrapper>
   );
 }

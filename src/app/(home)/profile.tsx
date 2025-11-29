@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Profile } from "@/src/screens";
 import { avatarUri, profileActions } from "@/src/constants/data";
 import { useRouter } from "expo-router";
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -37,6 +39,22 @@ export default function ProfilePage() {
       setFormAddress(user.address || "");
     }
   }, [user]);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('notifications');
+        if (stored) {
+          const notifications = JSON.parse(stored);
+          const unread = notifications.filter((n: any) => !n.read).length;
+          setUnreadCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications', error);
+      }
+    };
+    loadNotifications();
+  }, []);
 
   const handleActionPress = (link: string) => {
     if (!link) return;
@@ -138,13 +156,15 @@ export default function ProfilePage() {
     setShowLogoutModal(false);
   };
 
+  const actions = profileActions.map(a => a.id === 'notifications' ? { ...a, badgeCount: unreadCount } : a);
+
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <Profile
         avatar={avatar}
         name={profile.name}
         email={profile.email}
-        actions={profileActions}
+        actions={actions}
         onBack={handleBack}
         onActionPress={handleActionPress}
         onLogout={handleLogout}

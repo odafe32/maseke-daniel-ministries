@@ -6,6 +6,7 @@ import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-url-polyfill/auto";
 import { useAuthStore } from "../stores/authStore";
+import { registerForPushNotificationsAsync } from "../notifications";
 
 // Toast config for better styling
 const toastConfig = {
@@ -116,6 +117,17 @@ const RootLayout = () => {
 
   useEffect(() => {
     loadStoredAuth(); // Load token and user from AsyncStorage
+    // Register for push notifications
+    registerForPushNotificationsAsync().then((token) => {
+      if (token) {
+        useAuthStore.getState().setPushToken(token);
+        // If already logged in, send token to backend
+        const { token: authToken } = useAuthStore.getState();
+        if (authToken) {
+          useAuthStore.getState().sendPushToken(token);
+        }
+      }
+    });
   }, []);
 
   useEffect(() => {

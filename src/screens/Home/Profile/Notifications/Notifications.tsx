@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   TouchableOpacity,
   FlatList,
+  RefreshControl,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
 import { BackHeader, ThemeText } from "@/src/components";
-import { fs, getColor } from "@/src/utils";
+import { colors, fs, getColor } from "@/src/utils";
 import { notificationsData } from "@/src/constants/data";
+import { Icon } from "@/src/components/icons/Icon";
 
 interface NotificationItem {
   id: string;
@@ -89,15 +91,10 @@ function NotificationCard({ item, onPress }: NotificationCardProps) {
   );
 }
 
-export function Notifications({ onBack }: { onBack?: () => void }) {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(notificationsData);
-
+export function Notifications({ onBack, notifications, onNotificationPress, onRefresh, refreshing }: { onBack?: () => void; notifications: NotificationItem[]; onNotificationPress: (id: string) => void; onRefresh?: () => void; refreshing?: boolean }) {
+  const colors = getColor();
   const handleNotificationPress = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+    onNotificationPress(id);
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -121,6 +118,18 @@ export function Notifications({ onBack }: { onBack?: () => void }) {
     </View>
   );
 
+  const renderEmpty = () => {
+    const colors = getColor();
+    return (
+      <View style={styles.emptyContainer}>
+        <Icon name="bell" size={56} color={colors.muted} />
+        <ThemeText variant="h4" style={styles.emptyTitle}>
+          No notifications yet
+        </ThemeText>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
     <FlatList
@@ -133,8 +142,19 @@ export function Notifications({ onBack }: { onBack?: () => void }) {
         />
       )}
       ListHeaderComponent={renderHeader}
+      ListEmptyComponent={renderEmpty}
       contentContainerStyle={styles.listContainer}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl
+            refreshing={refreshing || false}
+            onRefresh={onRefresh}
+            colors={[getColor().primary]}
+            tintColor={getColor().primary}
+          />
+        ) : undefined
+      }
     />
     </View>
   );
@@ -216,5 +236,15 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: fs(12),
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 50,
+  },
+  emptyTitle: {
+    marginTop: 16,
+    color: "#666",
+    textAlign: 'center',
   },
 });
