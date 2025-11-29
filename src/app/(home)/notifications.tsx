@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Help } from "@/src/screens";
-import { useRouter } from "expo-router";
+import { Notifications } from "@/src/screens";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
+import { useRouter } from "expo-router";
 import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
 
-export default function HelpPage() {
+export default function NotificationsPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
@@ -23,13 +23,13 @@ export default function HelpPage() {
 
   if (loading) {
     return (
-      <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
+   <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
         <View style={styles.container}>
-          <Skeleton width={100} height={24} style={{ marginBottom: 20, marginTop: 20 }} />
-          <Skeleton width="100%" height={16} style={{ marginBottom: 8 }} />
-          <Skeleton width="95%" height={16} style={{ marginBottom: 8 }} />
-          <Skeleton width="100%" height={16} style={{ marginBottom: 12 }} />
-          <Skeleton width="90%" height={16} style={{ marginBottom: 8 }} />
+          <Skeleton width={200} height={24} style={{ marginBottom: 20, marginTop: 20 }} />
+          <Skeleton width="100%" height={60} style={{ marginBottom: 12 }} />
+          <Skeleton width="100%" height={60} style={{ marginBottom: 12 }} />
+          <Skeleton width="100%" height={60} style={{ marginBottom: 12 }} />
+          <Skeleton width="100%" height={60} style={{ marginBottom: 12 }} />
         </View>
       </AuthPageWrapper>
     );
@@ -37,9 +37,7 @@ export default function HelpPage() {
 
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
-      <Help
-        onBack={handleBack}
-      />
+      <Notifications onBack={handleBack} />
     </AuthPageWrapper>
   );
 }

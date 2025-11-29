@@ -41,7 +41,7 @@ export const onboardingData: OnboardingItem[] = [
   },
 ];
 
-export const avatarUri = "https://i.ibb.co/MxX34v8b/avtar.png";
+export const avatarUri = "https://i.ibb.co/sd4F4kcQ/images.png";
 
 export const quickActions = [
   {
@@ -87,6 +87,8 @@ export const profileActions = [
   { id: "notes", label: "Saved notes", icon: "archive", custom: true, link: "/saved-notes" },
   { id: "orders", label: "My orders", icon: "shopping-bag", link: "/orders" },
   { id: "wishlist", label: "My wishlists", icon: "heart", link: "/wishlists" },
+  { id: "notifications", label: "Notifications", icon: "bell", badgeCount: 5, link: "/notifications" },
+  { id: "change-password", label: "Change Password", icon: "lock", link: "/change-password" },
   { id: "help", label: "Help", icon: "life-buoy", link: "/help" },
   { id: "about", label: "About", icon: "info", link: "/about" },
   { id: "privacy", label: "Privacy Policy", icon: "shield", link: "/privacy-policy" },
@@ -94,6 +96,80 @@ export const profileActions = [
   { id: "logout", label: "Logout", icon: "log-out", link: undefined },
 ];
 
+export const notificationsData = [
+  {
+    id: "1",
+    title: "New Sermon Available",
+    message: "Pastor Daniel has uploaded a new sermon: 'Walking in Faith'. Listen now!",
+    date: "2024-11-29",
+    time: "10:00 AM",
+    read: false,
+    type: "sermon",
+  },
+  {
+    id: "2",
+    title: "Daily Devotional Reminder",
+    message: "Don't forget to read today's devotional: 'The Power of Prayer'",
+    date: "2024-11-29",
+    time: "8:00 AM",
+    read: true,
+    type: "devotional",
+  },
+  {
+    id: "3",
+    title: "Live Stream Starting Soon",
+    message: "Join us for our Sunday service live stream in 30 minutes",
+    date: "2024-11-28",
+    time: "9:30 AM",
+    read: false,
+    type: "live",
+  },
+  {
+    id: "4",
+    title: "Prayer Request Update",
+    message: "Your prayer request has been shared with the community",
+    date: "2024-11-27",
+    time: "2:15 PM",
+    read: true,
+    type: "prayer",
+  },
+  {
+    id: "5",
+    title: "New Testimony Shared",
+    message: "Sarah shared a powerful testimony about God's healing",
+    date: "2024-11-26",
+    time: "4:45 PM",
+    read: false,
+    type: "testimony",
+  },
+  {
+    id: "6",
+    title: "Bible Study Group",
+    message: "Join our weekly Bible study this Thursday at 7 PM",
+    date: "2024-11-25",
+    time: "11:00 AM",
+    read: true,
+    type: "event",
+  },
+  {
+    id: "7",
+    title: "Donation Receipt",
+    message: "Thank you for your generous donation of $50. Receipt attached.",
+    date: "2024-11-24",
+    time: "1:30 PM",
+    read: true,
+    type: "donation",
+  },
+  {
+    id: "8",
+    title: "App Update Available",
+    message: "A new version of the app is available with improved features",
+    date: "2024-11-23",
+    time: "9:15 AM",
+    read: false,
+    type: "app",
+  },
+];
 
 export const settingsData = [
   {

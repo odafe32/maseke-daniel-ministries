@@ -3,10 +3,11 @@ import { Orders } from "@/src/screens/Home/Profile/Orders";
 import { useRouter } from "expo-router";
 import { Animated } from "react-native";
 import { ordersData, Order, OrderStatus } from "@/src/constants/data";
-import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 
 export default function OrdersPage() {
   const router = useRouter();
+  const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>('all');
   const [modalVisible, setModalVisible] = useState(false);
@@ -25,7 +26,7 @@ export default function OrdersPage() {
   }, []);
 
   const handleBack = () => {
-    router.back();
+    wrapperRef.current?.reverseAnimate(() => router.back());
   };
 
   const handleFilterChange = (filter: 'all' | OrderStatus) => {
@@ -90,7 +91,7 @@ export default function OrdersPage() {
       : ordersData.filter(order => order.status === 'completed' || order.status === 'cancelled');
 
   return (
-    <AuthPageWrapper>
+<AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <Orders 
         onBack={handleBack}
         ordersData={ordersData}

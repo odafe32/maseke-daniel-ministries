@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { Animated } from "react-native";
 import { LottieLoading } from "./LottieLoading";
 
@@ -7,10 +7,33 @@ interface AuthPageWrapperProps {
   disableLottieLoading?: boolean;
 }
 
-export const AuthPageWrapper: React.FC<AuthPageWrapperProps> = ({ children, disableLottieLoading = false }) => {
+export interface AuthPageWrapperRef {
+  reverseAnimate: (callback?: () => void) => void;
+}
+
+export const AuthPageWrapper = forwardRef<AuthPageWrapperRef, AuthPageWrapperProps>(({ children, disableLottieLoading = false }, ref) => {
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const [showLottie, setShowLottie] = useState(!disableLottieLoading);
+
+  useImperativeHandle(ref, () => ({
+    reverseAnimate: (callback) => {
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 0.5,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        if (callback) callback();
+      });
+    },
+  }));
 
   useEffect(() => {
     Animated.parallel([
@@ -51,4 +74,4 @@ export const AuthPageWrapper: React.FC<AuthPageWrapperProps> = ({ children, disa
       </Animated.View>
     </>
   );
-};
+});

@@ -3,10 +3,11 @@ import { SavedNotes } from "@/src/screens/Home/Profile/SavedNotes";
 import { useRouter } from "expo-router";
 import { Animated } from "react-native";
 import { savedNotesData, SavedNote, NoteType } from "@/src/constants/data";
-import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 
 export default function SavedNotesPage() {
   const router = useRouter();
+  const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | NoteType>('all');
   const [modalVisible, setModalVisible] = useState(false);
@@ -25,7 +26,7 @@ export default function SavedNotesPage() {
   }, []);
 
   const handleBack = () => {
-    router.back();
+    wrapperRef.current?.reverseAnimate(() => router.back());
   };
 
   const handleFilterChange = (filter: 'all' | NoteType) => {
@@ -67,7 +68,7 @@ export default function SavedNotesPage() {
     ]).start(() => {
       setModalVisible(false);
       setSelectedNote(null);
-    });
+    })
   };
 
   const formatDate = (dateString: string) => {
@@ -88,7 +89,7 @@ export default function SavedNotesPage() {
     : savedNotesData.filter(note => note.type === activeFilter);
 
   return (
-    <AuthPageWrapper>
+    <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <SavedNotes 
         onBack={handleBack}
         savedNotesData={savedNotesData}

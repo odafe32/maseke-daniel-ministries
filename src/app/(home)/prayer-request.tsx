@@ -1,17 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { PrayerRequest } from "@/src/screens/Home/Profile/PrayerRequest";
 import Toast from 'react-native-toast-message';
-import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
+import { View, StyleSheet } from "react-native";
+import { Skeleton } from "@/src/components";
 
 export default function PrayerRequestPage() {
   const router = useRouter();
+  const wrapperRef = useRef<AuthPageWrapperRef>(null);
+  const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [titleError, setTitleError] = useState("");
   const [messageError, setMessageError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const showSuccessToast = () => {
     Toast.show({
@@ -94,7 +105,7 @@ export default function PrayerRequestPage() {
     setMessage("");
     setTitleError("");
     setMessageError("");
-    router.back();
+    wrapperRef.current?.reverseAnimate(() => router.back());
   };
 
   const handleTitleChange = (text: string) => {
@@ -113,8 +124,24 @@ export default function PrayerRequestPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
+        <View style={styles.container}>
+          <Skeleton width={180} height={28} style={{ marginBottom: 30, marginTop: 20 }} />
+          <Skeleton width="100%" height={50} style={{ marginBottom: 16 }} />
+          <Skeleton width="100%" height={80} style={{ marginBottom: 20 }} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Skeleton width="48%" height={48} style={{ borderRadius: 8 }} />
+            <Skeleton width="48%" height={48} style={{ borderRadius: 8 }} />
+          </View>
+        </View>
+      </AuthPageWrapper>
+    );
+  }
+
   return (
-    <AuthPageWrapper>
+    <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <PrayerRequest
         onBack={handleBack}
         title={title}
@@ -130,3 +157,11 @@ export default function PrayerRequestPage() {
     </AuthPageWrapper>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 20,
+  },
+});

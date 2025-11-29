@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Profile } from "@/src/screens";
 import { avatarUri, profileActions } from "@/src/constants/data";
 import { useRouter } from "expo-router";
-import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { Alert } from "react-native";
 import { ConfirmActionSheet } from "@/src/components";
 import { useAuthStore } from "@/src/stores/authStore";
@@ -14,10 +14,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const { logout } = useAuthStore();
   const { user } = useUser();
-  const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email } : { name: "", email: "" });
+  const wrapperRef = useRef<AuthPageWrapperRef>(null);
+  const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email, phone: user.phone_number || "", address: user.address || "" } : { name: "", email: "", phone: "", address: "" });
   const [isEditing, setIsEditing] = useState(false);
   const [formName, setFormName] = useState(user?.full_name || "");
   const [formEmail, setFormEmail] = useState(user?.email || "");
+  const [formPhone, setFormPhone] = useState(user?.phone_number || "");
+  const [formAddress, setFormAddress] = useState(user?.address || "");
   const [isSaving, setIsSaving] = useState(false);
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
@@ -27,9 +30,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setProfile({ name: user.full_name, email: user.email });
+      setProfile({ name: user.full_name, email: user.email, phone: user.phone_number || "", address: user.address || "" });
       setFormName(user.full_name);
       setFormEmail(user.email);
+      setFormPhone(user.phone_number || "");
+      setFormAddress(user.address || "");
     }
   }, [user]);
 
@@ -41,12 +46,16 @@ export default function ProfilePage() {
   const handleEditPress = () => {
     setFormName(profile.name);
     setFormEmail(profile.email);
+    setFormPhone(profile.phone);
+    setFormAddress(profile.address);
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setFormName(profile.name);
     setFormEmail(profile.email);
+    setFormPhone(profile.phone);
+    setFormAddress(profile.address);
     setIsEditing(false);
   };
 
@@ -54,7 +63,7 @@ export default function ProfilePage() {
     if (isEditing) {
       handleCancelEdit();
     } else {
-      router.back();
+      wrapperRef.current?.reverseAnimate(() => router.back());
     }
   };
 
@@ -62,7 +71,7 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
-      setProfile({ name: formName, email: formEmail });
+      setProfile({ name: formName, email: formEmail, phone: formPhone, address: formAddress });
       setIsEditing(false);
     } finally {
       setIsSaving(false);
@@ -130,7 +139,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <AuthPageWrapper disableLottieLoading={true}>
+    <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <Profile
         avatar={avatar}
         name={profile.name}
@@ -149,8 +158,12 @@ export default function ProfilePage() {
           avatar,
           name: formName,
           email: formEmail,
+          phone: formPhone,
+          address: formAddress,
           onNameChange: setFormName,
           onEmailChange: setFormEmail,
+          onPhoneChange: setFormPhone,
+          onAddressChange: setFormAddress,
           onAvatarPress: handleAvatarPress,
           onSave: handleSaveProfile,
           onDelete: handleDeleteAccount,

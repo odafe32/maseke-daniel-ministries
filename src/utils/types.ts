@@ -11,14 +11,19 @@ export interface ProfileAction {
   icon: string;
   custom?: boolean;
   link?: string;
+  badgeCount?: number;
 }
 
 export interface EditProfileFormProps {
   avatar: string;
   name: string;
   email: string;
+  phone: string;
+  address: string;
   onNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
+  onPhoneChange: (value: string) => void;
+  onAddressChange: (value: string) => void;
   onAvatarPress: () => void;
   onSave: () => void;
   onDelete: () => void;

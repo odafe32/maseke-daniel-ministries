@@ -81,6 +81,13 @@ export function Profile({
                     ) : (
                       <Feather name={action.icon as any} size={24} color={action.id === 'logout' ? '#DC2626' : '#121116'} />
                     )}
+                    {action.badgeCount && action.badgeCount > 0 && (
+                      <View style={styles.badge}>
+                        <ThemeText variant="caption" style={styles.badgeText}>
+                          {action.badgeCount > 99 ? '99+' : action.badgeCount}
+                        </ThemeText>
+                      </View>
+                    )}
                   </View>
 
                   <ThemeText variant="bodyBold" style={[styles.actionLabel, action.id === 'logout' ? styles.logoutLabel : {}]}>
@@ -119,6 +126,21 @@ export function Profile({
                   keyboardType="email-address"
                   value={editForm.email}
                   onChangeText={editForm.onEmailChange}
+                />
+
+                <InputField
+                  label="Phone Number"
+                  placeholder="Enter phone number"
+                  keyboardType="phone-pad"
+                  value={editForm.phone}
+                  onChangeText={editForm.onPhoneChange}
+                />
+
+                <InputField
+                  label="Address"
+                  placeholder="Enter address"
+                  value={editForm.address}
+                  onChangeText={editForm.onAddressChange}
                 />
               </View>
             </View>
@@ -199,6 +221,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#DC2626",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#fff",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: fs(10),
+    fontFamily: "Geist-SemiBold",
   },
   actionLabel: {
     fontFamily: "Geist-Medium",

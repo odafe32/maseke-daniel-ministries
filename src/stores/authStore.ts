@@ -9,6 +9,8 @@ interface User {
   email: string;
   full_name: string;
   status: string;
+  phone_number?: string;
+  address?: string;
 }
 
 interface AuthState {
