@@ -11,26 +11,26 @@ import { BackHeader, ThemeText } from "@/src/components";
 
 interface PrayerRequestProps {
   onBack: () => void;
-  title: string;
+  email: string;
   message: string;
-  onTitleChange: (text: string) => void;
+  onEmailChange: (text: string) => void;
   onMessageChange: (text: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
-  titleError: string;
+  emailError: string;
   messageError: string;
   isLoading: boolean;
 }
 
 export function PrayerRequest({
   onBack,
-  title,
+  email,
   message,
-  onTitleChange,
+  onEmailChange,
   onMessageChange,
   onSubmit,
   onCancel,
-  titleError,
+  emailError,
   messageError,
   isLoading,
 }: PrayerRequestProps) {
@@ -49,18 +49,20 @@ export function PrayerRequest({
         
         <View style={styles.formContainer}>
           <ThemeText variant="body" style={styles.label}>
-            Request Title
+            Email Address
           </ThemeText>
           <TextInput
-            style={[styles.input, titleError && styles.inputError]}
-            value={title}
-            onChangeText={onTitleChange}
-            placeholder="Enter your prayer request title"
+            style={[styles.input, emailError && styles.inputError]}
+            value={email}
+            onChangeText={onEmailChange}
+            placeholder="Enter your email address"
             placeholderTextColor="#999"
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
-          {titleError ? (
+          {emailError ? (
             <ThemeText variant="caption" style={styles.errorText}>
-              {titleError}
+              {emailError}
             </ThemeText>
           ) : null}
           

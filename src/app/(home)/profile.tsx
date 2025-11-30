@@ -151,8 +151,12 @@ export default function ProfilePage() {
     });
 
     if (!result.canceled && result.assets?.length) {
-      setIsAvatarLoading(true);
       const asset = result.assets[0];
+      if (asset.fileSize && asset.fileSize > 1024 * 1024) {
+        Alert.alert("File too large", "Please select an image smaller than 1MB.");
+        return;
+      }
+      setIsAvatarLoading(true);
       const uri = asset.uri;
       setAvatar(uri);
       const base64 = asset.base64;

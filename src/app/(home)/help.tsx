@@ -4,11 +4,23 @@ import { useRouter } from "expo-router";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
+import { useHelp } from '../../hooks/useHelp';
 
 export default function HelpPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
+  const { 
+    fullName, 
+    email, 
+    message, 
+    isSubmitting, 
+    errors, 
+    handleFullNameChange,
+    handleEmailChange,
+    handleMessageChange,
+    submitFeedback
+  } = useHelp();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,6 +51,15 @@ export default function HelpPage() {
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <Help
         onBack={handleBack}
+        fullName={fullName}
+        email={email}
+        message={message}
+        isSubmitting={isSubmitting}
+        errors={errors}
+        onFullNameChange={handleFullNameChange}
+        onEmailChange={handleEmailChange}
+        onMessageChange={handleMessageChange}
+        onSubmit={submitFeedback}
       />
     </AuthPageWrapper>
   );

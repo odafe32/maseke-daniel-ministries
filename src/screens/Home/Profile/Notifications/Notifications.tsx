@@ -144,7 +144,7 @@ export function Notifications({
     const colors = getColor();
     return (
       <View style={styles.emptyContainer}>
-        <Icon name="bell" size={56} color={colors.muted} />
+        <Icon name="empty" size={56} color={colors.muted} />
         <ThemeText variant="h4" style={styles.emptyTitle}>
           No notifications yet
         </ThemeText>
