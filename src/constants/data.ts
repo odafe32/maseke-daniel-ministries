@@ -41,7 +41,7 @@ export const onboardingData: OnboardingItem[] = [
   },
 ];
 
-export const avatarUri = "https://i.ibb.co/MxX34v8b/avtar.png";
+export const avatarUri = "https://i.ibb.co/sd4F4kcQ/images.png";
 
 export const quickActions = [
   {
@@ -87,13 +87,14 @@ export const profileActions = [
   { id: "notes", label: "Saved notes", icon: "archive", custom: true, link: "/saved-notes" },
   { id: "orders", label: "My orders", icon: "shopping-bag", link: "/orders" },
   { id: "wishlist", label: "My wishlists", icon: "heart", link: "/wishlists" },
+  { id: "notifications", label: "Notifications", icon: "bell", badgeCount: 5, link: "/notifications" },
+  { id: "change-password", label: "Change Password", icon: "lock", link: "/change-password" },
   { id: "help", label: "Help", icon: "life-buoy", link: "/help" },
   { id: "about", label: "About", icon: "info", link: "/about" },
   { id: "privacy", label: "Privacy Policy", icon: "shield", link: "/privacy-policy" },
   { id: "settings", label: "Settings", icon: "settings", link: "/settings" },
   { id: "logout", label: "Logout", icon: "log-out", link: undefined },
 ];
-
 
 export const settingsData = [
   {

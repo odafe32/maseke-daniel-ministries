@@ -1,37 +1,76 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Profile } from "@/src/screens";
 import { avatarUri, profileActions } from "@/src/constants/data";
 import { useRouter } from "expo-router";
-import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
+import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { Alert } from "react-native";
 import { ConfirmActionSheet } from "@/src/components";
 import { useAuthStore } from "@/src/stores/authStore";
 import { showSuccessToast } from "@/src/utils/toast";
 import { useUser } from '../../hooks/useUser';
+import { useProfile } from '../../hooks/useProfile';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { logout } = useAuthStore();
   const { user } = useUser();
-  const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email } : { name: "", email: "" });
+  const { updateProfile, getProfile, isUpdating, error } = useProfile();
+  const wrapperRef = useRef<AuthPageWrapperRef>(null);
+  const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email, phone: user.phone_number || "", address: user.address || "" } : { name: "", email: "", phone: "", address: "" });
   const [isEditing, setIsEditing] = useState(false);
   const [formName, setFormName] = useState(user?.full_name || "");
   const [formEmail, setFormEmail] = useState(user?.email || "");
+  const [formPhone, setFormPhone] = useState(user?.phone_number || "");
+  const [formAddress, setFormAddress] = useState(user?.address || "");
+  const [formAvatar, setFormAvatar] = useState<any>(user?.avatar || "");
   const [isSaving, setIsSaving] = useState(false);
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (user) {
-      setProfile({ name: user.full_name, email: user.email });
+      setProfile({ name: user.full_name, email: user.email, phone: user.phone_number || "", address: user.address || "" });
       setFormName(user.full_name);
       setFormEmail(user.email);
+      setFormPhone(user.phone_number || "");
+      setFormAddress(user.address || "");
+      setFormAvatar(user.avatar || "");
+      setAvatar(user.avatar_url || avatarUri);
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        await getProfile();
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('notifications');
+        if (stored) {
+          const notifications = JSON.parse(stored);
+          const unread = notifications.filter((n: any) => !n.read).length;
+          setUnreadCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications', error);
+      }
+    };
+    loadNotifications();
+  }, []);
 
   const handleActionPress = (link: string) => {
     if (!link) return;
@@ -41,12 +80,18 @@ export default function ProfilePage() {
   const handleEditPress = () => {
     setFormName(profile.name);
     setFormEmail(profile.email);
+    setFormPhone(profile.phone);
+    setFormAddress(profile.address);
+    setFormAvatar(user?.avatar || "");
     setIsEditing(true);
+    wrapperRef.current?.replayAnimate();
   };
 
   const handleCancelEdit = () => {
     setFormName(profile.name);
     setFormEmail(profile.email);
+    setFormPhone(profile.phone);
+    setFormAddress(profile.address);
     setIsEditing(false);
   };
 
@@ -54,18 +99,29 @@ export default function ProfilePage() {
     if (isEditing) {
       handleCancelEdit();
     } else {
-      router.back();
+      wrapperRef.current?.reverseAnimate(() => router.back());
     }
   };
 
   const handleSaveProfile = async () => {
-    setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setProfile({ name: formName, email: formEmail });
-      setIsEditing(false);
-    } finally {
-      setIsSaving(false);
+      await updateProfile({
+        full_name: formName,
+        email: formEmail,
+        phone_number: formPhone,
+        address: formAddress,
+        avatar: formAvatar,
+      });
+      if (error) {
+        showSuccessToast('Error', error);
+      } else {
+        setProfile({ name: formName, email: formEmail, phone: formPhone, address: formAddress });
+        setIsEditing(false);
+        showSuccessToast('Success', 'Profile updated successfully');
+      }
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      showSuccessToast('Error', 'Failed to update profile');
     }
   };
 
@@ -90,14 +146,20 @@ export default function ProfilePage() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.5,
+      base64: true,
     });
 
     if (!result.canceled && result.assets?.length) {
       setIsAvatarLoading(true);
-      const uri = result.assets[0].uri;
+      const asset = result.assets[0];
+      const uri = asset.uri;
       setAvatar(uri);
-      setTimeout(() => setIsAvatarLoading(false), 500);
+      const base64 = asset.base64;
+      if (base64) {
+        setFormAvatar(base64);
+      }
+      setIsAvatarLoading(false);
     }
   };
 
@@ -129,13 +191,15 @@ export default function ProfilePage() {
     setShowLogoutModal(false);
   };
 
+  const actions = profileActions.map(a => a.id === 'notifications' ? { ...a, badgeCount: unreadCount } : a);
+
   return (
-    <AuthPageWrapper disableLottieLoading={true}>
+    <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <Profile
         avatar={avatar}
         name={profile.name}
         email={profile.email}
-        actions={profileActions}
+        actions={actions}
         onBack={handleBack}
         onActionPress={handleActionPress}
         onLogout={handleLogout}
@@ -149,13 +213,17 @@ export default function ProfilePage() {
           avatar,
           name: formName,
           email: formEmail,
+          phone: formPhone,
+          address: formAddress,
           onNameChange: setFormName,
           onEmailChange: setFormEmail,
+          onPhoneChange: setFormPhone,
+          onAddressChange: setFormAddress,
           onAvatarPress: handleAvatarPress,
           onSave: handleSaveProfile,
           onDelete: handleDeleteAccount,
           onCancel: handleCancelEdit,
-          isSaving,
+          isSaving: isUpdating,
           isAvatarLoading,
         }}
       />

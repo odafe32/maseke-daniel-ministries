@@ -6,6 +6,10 @@ import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-url-polyfill/auto";
 import { useAuthStore } from "../stores/authStore";
+import { registerForPushNotificationsAsync } from "../notifications";
+import BottomMenu from "../components/BottomMenu";
+import { usePathname } from "expo-router";
+import { shouldHideBottomMenu } from "../constants/navigation";
 
 // Toast config for better styling
 const toastConfig = {
@@ -37,7 +41,7 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#EF4444',
       borderRadius: 8,
-  padding: 8,
+      padding: 8,
       marginHorizontal: 10,
       marginTop: 0,
       shadowColor: '#000',
@@ -61,7 +65,7 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#3B82F6',
       borderRadius: 8,
-        padding: 8,
+      padding: 8,
       marginHorizontal: 10,
       marginTop: 0,
       shadowColor: '#000',
@@ -116,6 +120,17 @@ const RootLayout = () => {
 
   useEffect(() => {
     loadStoredAuth(); // Load token and user from AsyncStorage
+    // Register for push notifications
+    registerForPushNotificationsAsync().then((token) => {
+      if (token) {
+        useAuthStore.getState().setPushToken(token);
+        // If already logged in, send token to backend
+        const { token: authToken } = useAuthStore.getState();
+        if (authToken) {
+          useAuthStore.getState().sendPushToken(token);
+        }
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -151,6 +166,9 @@ const RootLayout = () => {
 
 function RootLayoutNav() {
   const { token } = useAuthStore();
+  const pathname = usePathname();
+
+  const showBottomMenu = token && pathname && !shouldHideBottomMenu(pathname);
 
   if (!token) {
     // Auth stack
@@ -178,23 +196,25 @@ function RootLayoutNav() {
 
   // Main stack
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: "#fff",
-          paddingHorizontal: 0,
-          paddingTop: 20,
-        },
-        animation: "fade",
-        animationDuration: 250,
-      }}
-    >
-      <Stack.Screen name="(home)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="home" options={{ headerShown: false }} />
-      {/* Add other main screens here */}
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "#fff",
+            paddingHorizontal: 0,
+            paddingTop: 20,
+            paddingBottom: showBottomMenu ? 80 : 20,
+          },
+          animation: "fade",
+          animationDuration: 250,
+        }}
+      >
+        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+        {/* Add other main screens here */}
+      </Stack>
+      <BottomMenu />
+    </View>
   );
 }
 

@@ -4,10 +4,15 @@
     "slug": "maseke-daniel-ministries",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/icon/icon.svg",
+    "icon": "./src/assets/icon.svg",
     "userInterfaceStyle": "light",
     "scheme": "maseke-daniel-ministries",
     "newArchEnabled": true,
+    "extra": {
+      "eas": {
+       "projectId": "36a3c62a-c2e6-4941-836d-f7bb175e9353"
+      }
+    },
     "plugins": ["expo-env"],
     "splash": {
       "image": "./src/assets/icon/icon.svg",
@@ -15,14 +20,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.maseke.mobile",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/icon/icon.svg",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.maseke.mobile",
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true
     },
     "web": {
       "favicon": "./src/assets/favicon.png"

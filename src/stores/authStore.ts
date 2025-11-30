@@ -4,11 +4,17 @@ import axios from 'axios';
 import { API_URL } from '../env';
 import client from '../api/client';
 
+const LAST_SYNCED_PUSH_TOKEN_KEY = 'lastSyncedPushToken';
+
 interface User {
   id: string;
   email: string;
   full_name: string;
   status: string;
+  phone_number?: string;
+  address?: string;
+  avatar?: string;
+  avatar_url?: string;
 }
 
 interface AuthState {
@@ -17,6 +23,8 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   stayLoggedIn: boolean;
+  pushToken: string | null;
+  lastSyncedPushToken: string | null;
 
   // Actions
   setToken: (token: string) => void;
@@ -24,12 +32,14 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setStayLoggedIn: (stayLoggedIn: boolean) => void;
+  setPushToken: (pushToken: string) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
+  sendPushToken: (pushToken: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -38,17 +48,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
   stayLoggedIn: true, // Default to true for backward compatibility
+  pushToken: null,
+  lastSyncedPushToken: null,
 
   setToken: (token) => set({ token }),
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   setStayLoggedIn: (stayLoggedIn) => set({ stayLoggedIn }),
+  setPushToken: (pushToken) => set({ pushToken }),
 
   async login(email: string, password: string) {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.post(`${API_URL}/mobile/auth/login`, { email, password });
+      const { pushToken } = get();
+      const response = await axios.post(`${API_URL}/mobile/auth/login`, {
+        email,
+        password,
+        push_token: pushToken,
+      });
       const { token, user } = response.data;
 
       const { stayLoggedIn } = get();
@@ -59,9 +77,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       set({ token, user, isLoading: false });
+
+      // If push token exists but backend did not store it (e.g., first login in another device),
+      // ensure it remains synchronized via dedicated endpoint.
+      if (pushToken) {
+        get().sendPushToken(pushToken);
+      }
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Login failed', isLoading: false });
       throw error;
+    }
+  },
+
+  async sendPushToken(pushToken: string) {
+    const { token, lastSyncedPushToken } = get();
+    if (!token || !pushToken) return;
+
+    if (lastSyncedPushToken === pushToken) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/mobile/auth/push-token`, { push_token: pushToken }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      set({ lastSyncedPushToken: pushToken });
+      await AsyncStorage.setItem(LAST_SYNCED_PUSH_TOKEN_KEY, pushToken);
+      console.log('Push token sent to backend');
+    } catch (error) {
+      console.error('Failed to send push token:', error);
     }
   },
 
@@ -84,7 +128,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Always clear local storage first, regardless of API call
     await AsyncStorage.removeItem('authToken');
     await AsyncStorage.removeItem('authUser');
-    set({ token: null, user: null, error: null });
+    await AsyncStorage.removeItem(LAST_SYNCED_PUSH_TOKEN_KEY);
+    set({ token: null, user: null, error: null, lastSyncedPushToken: null });
 
     // Try to call logout API with the saved token
     if (currentToken) {
@@ -132,6 +177,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const user = JSON.parse(userStr);
           set({ token, user });
         }
+      }
+
+      const lastSyncedPushToken = await AsyncStorage.getItem(LAST_SYNCED_PUSH_TOKEN_KEY);
+      if (lastSyncedPushToken) {
+        set({ lastSyncedPushToken });
       }
     } catch (error) {
       console.error('Failed to load stored auth:', error);

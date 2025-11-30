@@ -1,6 +1,6 @@
 import { getColor, hp, wp } from "@/src/utils";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useRef } from "react";
 import { Feather } from "@expo/vector-icons";
 import {
   Pressable,
@@ -8,6 +8,7 @@ import {
   View,
   ViewStyle,
   TextStyle,
+  Animated,
 } from "react-native";
 import { ThemeText } from "./ThemeText";
 
@@ -32,8 +33,25 @@ export const BackHeader = ({
 }: BackHeaderProps) => {
   const router = useRouter();
   const colors = getColor();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handleBack = () => {
+    // Trigger scale animation
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      damping: 15,
+      stiffness: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      // Reset scale after animation
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        damping: 15,
+        stiffness: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
     if (onBackPress) {
       onBackPress();
       return;
@@ -63,16 +81,18 @@ export const BackHeader = ({
     <View style={[styles.container, containerStyle]}>
       <View style={styles.sideColumn}>
         {showBackButton ? (
-          <Pressable
-            onPress={handleBack}
-            style={[
-              styles.backButton,
-              { backgroundColor: "#fff" },
-            ]}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Feather name="chevron-left" size={22} color={colors.primary} />
-          </Pressable>
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            <Pressable
+              onPress={handleBack}
+              style={[
+                styles.backButton,
+                { backgroundColor: "#fff" },
+              ]}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Feather name="chevron-left" size={22} color={colors.primary} />
+            </Pressable>
+          </Animated.View>
         ) : null}
       </View>
 
