@@ -9,6 +9,7 @@ import { useAuthStore } from "../stores/authStore";
 import { registerForPushNotificationsAsync } from "../notifications";
 import BottomMenu from "../components/BottomMenu";
 import { usePathname } from "expo-router";
+import { shouldHideBottomMenu } from "../constants/navigation";
 
 // Toast config for better styling
 const toastConfig = {
@@ -40,7 +41,7 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#EF4444',
       borderRadius: 8,
-  padding: 8,
+      padding: 8,
       marginHorizontal: 10,
       marginTop: 0,
       shadowColor: '#000',
@@ -64,7 +65,7 @@ const toastConfig = {
     <View style={{
       backgroundColor: '#3B82F6',
       borderRadius: 8,
-        padding: 8,
+      padding: 8,
       marginHorizontal: 10,
       marginTop: 0,
       shadowColor: '#000',
@@ -167,7 +168,7 @@ function RootLayoutNav() {
   const { token } = useAuthStore();
   const pathname = usePathname();
 
-  const showBottomMenu = token && pathname && pathname !== '/' && !pathname.includes('/Profile') && !pathname.includes('/profile');
+  const showBottomMenu = token && pathname && !shouldHideBottomMenu(pathname);
 
   if (!token) {
     // Auth stack

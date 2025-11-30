@@ -9,6 +9,7 @@ interface AuthPageWrapperProps {
 
 export interface AuthPageWrapperRef {
   reverseAnimate: (callback?: () => void) => void;
+  replayAnimate: () => void;
 }
 
 export const AuthPageWrapper = forwardRef<AuthPageWrapperRef, AuthPageWrapperProps>(({ children, disableLottieLoading = false }, ref) => {
@@ -32,6 +33,25 @@ export const AuthPageWrapper = forwardRef<AuthPageWrapperRef, AuthPageWrapperPro
       ]).start(() => {
         if (callback) callback();
       });
+    },
+    replayAnimate: () => {
+      // Reset to initial values
+      scaleAnim.setValue(0.5);
+      opacityAnim.setValue(0);
+      // Animate forward
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          damping: 15,
+          stiffness: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
     },
   }));
 

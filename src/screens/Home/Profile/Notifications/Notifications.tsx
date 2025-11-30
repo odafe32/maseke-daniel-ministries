@@ -11,7 +11,6 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { BackHeader, ThemeText } from "@/src/components";
 import { colors, fs, getColor } from "@/src/utils";
-import { notificationsData } from "@/src/constants/data";
 import { Icon } from "@/src/components/icons/Icon";
 
 interface NotificationItem {
@@ -91,7 +90,21 @@ function NotificationCard({ item, onPress }: NotificationCardProps) {
   );
 }
 
-export function Notifications({ onBack, notifications, onNotificationPress, onRefresh, refreshing }: { onBack?: () => void; notifications: NotificationItem[]; onNotificationPress: (id: string) => void; onRefresh?: () => void; refreshing?: boolean }) {
+export function Notifications({
+  onBack,
+  notifications,
+  onNotificationPress,
+  onRefresh,
+  refreshing,
+  onClearAll,
+}: {
+  onBack?: () => void;
+  notifications: NotificationItem[];
+  onNotificationPress: (id: string) => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  onClearAll?: () => void;
+}) {
   const colors = getColor();
   const handleNotificationPress = (id: string) => {
     onNotificationPress(id);
@@ -104,15 +117,24 @@ export function Notifications({ onBack, notifications, onNotificationPress, onRe
       <BackHeader title="Notifications" onBackPress={onBack} />
 
       <View style={styles.header}>
-        <ThemeText variant="h4" style={styles.headerTitle}>
-          Your Notifications
-        </ThemeText>
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <ThemeText variant="caption" style={styles.badgeText}>
-              {unreadCount} unread
+        <View style={styles.headerLeft}>
+          <ThemeText variant="h4" style={styles.headerTitle}>
+            Your Notifications
+          </ThemeText>
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <ThemeText variant="caption" style={styles.badgeText}>
+                {unreadCount} unread
+              </ThemeText>
+            </View>
+          )}
+        </View>
+        {notifications.length > 0 && onClearAll && (
+          <TouchableOpacity onPress={onClearAll} style={styles.clearButton}>
+            <ThemeText variant="bodySmall" style={styles.clearButtonText}>
+              Clear All
             </ThemeText>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
     </View>
@@ -173,6 +195,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 10,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
     color: "#0C154C",
   },
@@ -184,6 +211,15 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: "#fff",
+  },
+  clearButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#F0F4FF',
+  },
+  clearButtonText: {
+    color: '#0C154C',
   },
   listContainer: {
     gap: 12,

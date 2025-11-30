@@ -11,8 +11,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   Animated,
+  Text,
 } from "react-native";
 import { avatarUri } from "@/src/constants/data";
+import { useUser } from '../../hooks/useUser';
 
 export const Home = ({
   loading,
@@ -23,6 +25,7 @@ export const Home = ({
   quickActions,
 }: HomeProps) => {
   const colors = getColor();
+  const { user } = useUser();
   const profileScale = useRef(new Animated.Value(1)).current;
 
   const handleProfilePressInternal = () => {
@@ -76,13 +79,13 @@ export const Home = ({
                 Sunday Service
               </ThemeText>
               <ThemeText variant="h3" style={styles.greeting}>
-                Hello Adam
+               <Text style={{color: colors.error,}}>Hello</Text> {user?.full_name || 'User'},
               </ThemeText>
             </View>
 
             <TouchableOpacity onPress={handleProfilePressInternal} activeOpacity={0.8}>
               <Animated.Image
-                source={{ uri: avatarUri }}
+                source={{ uri: user?.avatar_url || avatarUri }}
                 style={[styles.avatar, { transform: [{ scale: profileScale }] }]}
               />
             </TouchableOpacity>

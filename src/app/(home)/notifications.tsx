@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notificationsData } from "@/src/constants/data";
 
 interface NotificationItem {
   id: string;
@@ -29,13 +28,13 @@ export default function NotificationsPage() {
       const stored = await AsyncStorage.getItem('notifications');
       if (stored) {
         const parsed = JSON.parse(stored);
-        setNotifications(parsed);
+        setNotifications(Array.isArray(parsed) ? parsed : []);
       } else {
-        setNotifications(notificationsData);
+        setNotifications([]);
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
-      setNotifications(notificationsData);
+      setNotifications([]);
     }
   };
 
@@ -64,6 +63,15 @@ export default function NotificationsPage() {
     });
   };
 
+  const handleClearAll = async () => {
+    try {
+      await AsyncStorage.removeItem('notifications');
+      setNotifications([]);
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+    }
+  };
+
   const handleBack = () => {
     wrapperRef.current?.reverseAnimate(() => router.back());
   };
@@ -90,6 +98,7 @@ export default function NotificationsPage() {
         onNotificationPress={handleNotificationPress}
         onRefresh={handleRefresh}
         refreshing={refreshing}
+        onClearAll={handleClearAll}
       />
     </AuthPageWrapper>
   );

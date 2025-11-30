@@ -77,13 +77,19 @@ export function Profile({
                     ) : (
                       <Feather name={typeof action.icon === 'string' ? action.icon as any : 'circle' as any} size={24} color={String(action.id) === 'logout' ? '#DC2626' : '#121116'} />
                     )}
-                    {action.badgeCount && action.badgeCount > 0 && (
+                    {(() => {
+                      const badgeCount = action.badgeCount ?? 0;
+                      if (badgeCount <= 0) {
+                        return null;
+                      }
+                      return (
                       <View style={styles.badge}>
                         <ThemeText variant="caption" style={styles.badgeText}>
-                          {`${action.badgeCount > 99 ? '99+' : action.badgeCount}`}
+                            {badgeCount > 99 ? '99+' : String(badgeCount)}
                         </ThemeText>
                       </View>
-                    )}
+                      );
+                    })()}
                   </View>
 
                   <ThemeText variant="bodyBold" style={[styles.actionLabel, String(action.id) === 'logout' ? styles.logoutLabel : {}]}>
