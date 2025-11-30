@@ -56,7 +56,7 @@ export function SavedNotes({
       style={[
         styles.noteCard, 
         { 
-          width: wpt(48),
+          width: wpt(42),
         }
       ]}
       activeOpacity={0.8}
@@ -79,7 +79,7 @@ export function SavedNotes({
   );
 
   const renderSkeletonNoteCard = (index: number) => {
-    const cardWidth = wpt(48);
+    const cardWidth = wpt(42);
     
     return (
       <View key={`skeleton-${index}`} style={[styles.skeletonNoteCard, { width: cardWidth }]}>
@@ -379,6 +379,8 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: "space-between",
+    paddingHorizontal: wp(4),
+    gap: wp(8),
   },
   separator: {
     height: hp(12),
