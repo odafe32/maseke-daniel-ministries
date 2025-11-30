@@ -1,44 +1,57 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 
 import { BackHeader, ThemeText, InputField, Button } from "@/src/components";
-import { fs, getColor } from "@/src/utils";
+import { getColor } from "@/src/utils";
+import { Ionicons } from '@expo/vector-icons';
 
-export function ChangePassword({ onBack }: { onBack: () => void }) {
-  const colors = getColor();
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSave = async () => {
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Error", "All fields are required.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "New passwords do not match.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "New password must be at least 6 characters.");
-      return;
-    }
-
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      Alert.alert("Success", "Password changed successfully!");
-      onBack();
-    }, 2000);
+interface ChangePasswordProps {
+  onBack: () => void;
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+  showOldPassword: boolean;
+  showNewPassword: boolean;
+  showConfirmPassword: boolean;
+  errors: {
+    oldPassword: string;
+    newPassword: string;
+    confirmPassword: string;
   };
+  isUpdating: boolean;
+  onOldPasswordChange: (text: string) => void;
+  onNewPasswordChange: (text: string) => void;
+  onConfirmPasswordChange: (text: string) => void;
+  onSave: () => void;
+  onToggleOldPassword: () => void;
+  onToggleNewPassword: () => void;
+  onToggleConfirmPassword: () => void;
+}
+
+export function ChangePassword({
+  onBack,
+  oldPassword,
+  newPassword,
+  confirmPassword,
+  showOldPassword,
+  showNewPassword,
+  showConfirmPassword,
+  errors,
+  isUpdating,
+  onOldPasswordChange,
+  onNewPasswordChange,
+  onConfirmPasswordChange,
+  onSave,
+  onToggleOldPassword,
+  onToggleNewPassword,
+  onToggleConfirmPassword,
+}: ChangePasswordProps) {
+  const colors = getColor();
 
   return (
     <ScrollView
@@ -57,25 +70,55 @@ export function ChangePassword({ onBack }: { onBack: () => void }) {
             <InputField
               label="Current Password"
               placeholder="Enter current password"
-              secureTextEntry
+              secureTextEntry={!showOldPassword}
               value={oldPassword}
-              onChangeText={setOldPassword}
+              onChangeText={onOldPasswordChange}
+              errorMessage={errors.oldPassword}
+              rightIcon={
+                <TouchableOpacity onPress={onToggleOldPassword}>
+                  <Ionicons
+                    name={showOldPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color={colors.muted}
+                  />
+                </TouchableOpacity>
+              }
             />
 
             <InputField
               label="New Password"
               placeholder="Enter new password"
-              secureTextEntry
+              secureTextEntry={!showNewPassword}
               value={newPassword}
-              onChangeText={setNewPassword}
+              onChangeText={onNewPasswordChange}
+              errorMessage={errors.newPassword}
+              rightIcon={
+                <TouchableOpacity onPress={onToggleNewPassword}>
+                  <Ionicons
+                    name={showNewPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color={colors.muted}
+                  />
+                </TouchableOpacity>
+              }
             />
 
             <InputField
               label="Confirm New Password"
               placeholder="Confirm new password"
-              secureTextEntry
+              secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={onConfirmPasswordChange}
+              errorMessage={errors.confirmPassword}
+              rightIcon={
+                <TouchableOpacity onPress={onToggleConfirmPassword}>
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color={colors.muted}
+                  />
+                </TouchableOpacity>
+              }
             />
           </View>
         </View>
@@ -84,8 +127,8 @@ export function ChangePassword({ onBack }: { onBack: () => void }) {
       <View style={styles.actions}>
         <Button
           title="Change Password"
-          onPress={handleSave}
-          loading={isLoading}
+          onPress={onSave}
+          loading={isUpdating}
           style={styles.saveButton}
         />
       </View>

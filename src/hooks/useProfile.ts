@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import client from '../api/client';
+import { profileApi } from '../api/profileApi';
 import { useAuthStore } from '../stores/authStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useProfile = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -13,15 +14,16 @@ export const useProfile = () => {
     email?: string;
     phone_number?: string;
     address?: string;
-    avatar?: any; // File object or blob
+    avatar?: any; 
     password?: string;
   }) => {
     setIsUpdating(true);
     setError(null);
     try {
-      const response = await client.put('/mobile/profile', data);
+      const response = await profileApi.updateProfile(data);
       const { user } = response.data;
       setUser(user);
+      await AsyncStorage.setItem('authUser', JSON.stringify(user));
       return user;
     } catch (err: any) {
       console.error('Update profile error:', err.response?.data);
@@ -44,9 +46,10 @@ export const useProfile = () => {
     setIsFetching(true);
     setError(null);
     try {
-      const response = await client.get('/mobile/profile');
+      const response = await profileApi.getProfile();
       const { user } = response.data;
       setUser(user);
+      await AsyncStorage.setItem('authUser', JSON.stringify(user));
       return user;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch profile');
@@ -56,9 +59,37 @@ export const useProfile = () => {
     }
   };
 
+  const changePassword = async (data: {
+    old_password: string;
+    password: string;
+    password_confirmation: string;
+  }) => {
+    setIsUpdating(true);
+    setError(null);
+    try {
+      const response = await profileApi.changePassword(data);
+      return response.data;
+    } catch (err: any) {
+      console.error('Change password error:', err.response?.data);
+      const errors = err.response?.data?.errors;
+      let errorMessage = 'Failed to change password';
+      if (errors) {
+        const firstField = Object.keys(errors)[0];
+        errorMessage = errors[firstField][0] || errorMessage;
+      } else {
+        errorMessage = err.response?.data?.message || errorMessage;
+      }
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return {
     updateProfile,
     getProfile,
+    changePassword,
     isUpdating,
     isFetching,
     error,
