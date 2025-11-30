@@ -87,6 +87,8 @@ export const profileActions = [
   { id: "notes", label: "Saved notes", icon: "archive", custom: true, link: "/saved-notes" },
   { id: "orders", label: "My orders", icon: "shopping-bag", link: "/orders" },
   { id: "wishlist", label: "My wishlists", icon: "heart", link: "/wishlists" },
+  { id: "prayer-request", label: "Prayer requests", icon: "message-circle", link: "/prayer-request" },
+  { id: "store", label: "Visit Store", icon: "shopping-cart", link: "/store" },
   { id: "notifications", label: "Notifications", icon: "bell", badgeCount: 5, link: "/notifications" },
   { id: "change-password", label: "Change Password", icon: "lock", link: "/change-password" },
   { id: "help", label: "Help", icon: "life-buoy", link: "/help" },

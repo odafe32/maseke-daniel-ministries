@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
@@ -28,144 +30,151 @@ export function Profile({
   const colors = getColor();
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-      <BackHeader title={isEditing ? "Edit profile" : "My Profile"} onBackPress={onBack} />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <BackHeader title={isEditing ? "Edit profile" : "My Profile"} onBackPress={onBack} />
 
-      {!isEditing ? (
-        <>
-          <TouchableOpacity activeOpacity={0.85} onPress={onEditPress}>
-            <View style={styles.profileCard}>
-              <Image source={{ uri: avatar }} style={styles.avatar} />
+        {!isEditing ? (
+          <>
+            <TouchableOpacity activeOpacity={0.85} onPress={onEditPress}>
+              <View style={styles.profileCard}>
+                <Image source={{ uri: avatar }} style={styles.avatar} />
 
-              <View style={styles.profileMeta}>
-                <ThemeText variant="h4" style={styles.name}>
-                  {name}
-                </ThemeText>
-                <ThemeText variant="body" color={colors.muted}>
-                  {email}
-                </ThemeText>
-              </View>
-
-              <Feather name="chevron-right" size={20} color="#0C154C" />
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.section}>
-            {actions.map((action, index) => (
-              <TouchableOpacity
-                key={String(action.id)}
-                style={[
-                  styles.actionRow,
-                  index < actions.length - 1 && styles.actionSpacing,
-                ]}
-                activeOpacity={0.8}
-                onPress={() => {
-                  if (String(action.id) === 'logout') {
-                    onLogoutPress();
-                  } else if (action.link) {
-                    onActionPress(action.link);
-                  }
-                }}
-              >
-                <View style={styles.actionLeft}>
-                  <View style={styles.iconBadge}>
-                    {action.custom ? (
-                      <Icon name={typeof action.icon === 'string' ? action.icon as "archive" : "archive"} color="#121116" size={24} />
-                    ) : (
-                      <Feather name={typeof action.icon === 'string' ? action.icon as any : 'circle' as any} size={24} color={String(action.id) === 'logout' ? '#DC2626' : '#121116'} />
-                    )}
-                    {(() => {
-                      const badgeCount = action.badgeCount ?? 0;
-                      if (badgeCount <= 0) {
-                        return null;
-                      }
-                      return (
-                      <View style={styles.badge}>
-                        <ThemeText variant="caption" style={styles.badgeText}>
-                            {badgeCount > 99 ? '99+' : String(badgeCount)}
-                        </ThemeText>
-                      </View>
-                      );
-                    })()}
-                  </View>
-
-                  <ThemeText variant="bodyBold" style={[styles.actionLabel, String(action.id) === 'logout' ? styles.logoutLabel : {}]}>
-                    {String(action.label)}
+                <View style={styles.profileMeta}>
+                  <ThemeText variant="h4" style={styles.name}>
+                    {name}
+                  </ThemeText>
+                  <ThemeText variant="body" color={colors.muted}>
+                    {email}
                   </ThemeText>
                 </View>
 
-                <Feather name="chevron-right" size={18} color="#5E596E" />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </>
-      ) : (
-        <View style={styles.editContainer}>
-          <View style={styles.editCard}>
-            <View style={styles.editContent}>
-              <Pressable onPress={editForm.onAvatarPress} style={styles.editAvatarWrapper}>
-                <Image source={{ uri: editForm.avatar }} style={styles.editAvatar} />
-                <View style={styles.cameraBadge}>
-                  <Feather name="camera" size={18} color="#fff" />
+                <Feather name="chevron-right" size={20} color="#0C154C" />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.section}>
+              {actions.map((action, index) => (
+                <TouchableOpacity
+                  key={String(action.id)}
+                  style={[
+                    styles.actionRow,
+                    index < actions.length - 1 && styles.actionSpacing,
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (String(action.id) === 'logout') {
+                      onLogoutPress();
+                    } else if (action.link) {
+                      onActionPress(action.link);
+                    }
+                  }}
+                >
+                  <View style={styles.actionLeft}>
+                    <View style={styles.iconBadge}>
+                      {action.custom ? (
+                        <Icon name={typeof action.icon === 'string' ? action.icon as "archive" : "archive"} color="#121116" size={24} />
+                      ) : (
+                        <Feather name={typeof action.icon === 'string' ? action.icon as any : 'circle' as any} size={24} color={String(action.id) === 'logout' ? '#DC2626' : '#121116'} />
+                      )}
+                      {(() => {
+                        const badgeCount = action.badgeCount ?? 0;
+                        if (badgeCount <= 0) {
+                          return null;
+                        }
+                        return (
+                        <View style={styles.badge}>
+                          <ThemeText variant="caption" style={styles.badgeText}>
+                              {badgeCount > 99 ? '99+' : String(badgeCount)}
+                          </ThemeText>
+                        </View>
+                        );
+                      })()}
+                    </View>
+
+                    <ThemeText variant="bodyBold" style={[styles.actionLabel, String(action.id) === 'logout' ? styles.logoutLabel : {}]}>
+                      {String(action.label)}
+                    </ThemeText>
+                  </View>
+
+                  <Feather name="chevron-right" size={18} color="#5E596E" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        ) : (
+          <View style={styles.editContainer}>
+            <View style={styles.editCard}>
+              <View style={styles.editContent}>
+                <Pressable onPress={editForm.onAvatarPress} style={styles.editAvatarWrapper}>
+                  <Image source={{ uri: editForm.avatar }} style={styles.editAvatar} />
+                  <View style={styles.cameraBadge}>
+                    <Feather name="camera" size={18} color="#fff" />
+                  </View>
+                </Pressable>
+
+                <View style={styles.editForm}>
+                  <InputField
+                    label="Full name"
+                    placeholder="Enter full name"
+                    value={editForm.name}
+                    onChangeText={editForm.onNameChange}
+                  />
+
+                  <InputField
+                    label="Email"
+                    placeholder="Enter email"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    value={editForm.email}
+                    onChangeText={editForm.onEmailChange}
+                  />
+
+                  <InputField
+                    label="Phone Number"
+                    placeholder="Enter phone number"
+                    keyboardType="phone-pad"
+                    value={editForm.phone}
+                    onChangeText={editForm.onPhoneChange}
+                  />
+
+                  <InputField
+                    label="Address"
+                    placeholder="Enter address"
+                    value={editForm.address}
+                    onChangeText={editForm.onAddressChange}
+                  />
                 </View>
-              </Pressable>
-
-              <View style={styles.editForm}>
-                <InputField
-                  label="Full name"
-                  placeholder="Enter full name"
-                  value={editForm.name}
-                  onChangeText={editForm.onNameChange}
-                />
-
-                <InputField
-                  label="Email"
-                  placeholder="Enter email"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  value={editForm.email}
-                  onChangeText={editForm.onEmailChange}
-                />
-
-                <InputField
-                  label="Phone Number"
-                  placeholder="Enter phone number"
-                  keyboardType="phone-pad"
-                  value={editForm.phone}
-                  onChangeText={editForm.onPhoneChange}
-                />
-
-                <InputField
-                  label="Address"
-                  placeholder="Enter address"
-                  value={editForm.address}
-                  onChangeText={editForm.onAddressChange}
-                />
               </View>
             </View>
-          </View>
-          <View style={styles.editActions}>
-            <Button
-              title="Save changes"
-              onPress={editForm.onSave}
-              loading={editForm.isSaving}
-              style={styles.saveButton}
-            />
+            <View style={styles.editActions}>
+              <Button
+                title="Save changes"
+                onPress={editForm.onSave}
+                loading={editForm.isSaving}
+                style={styles.saveButton}
+              />
 
-            <Button
-              title="Delete Account"
-              onPress={editForm.onDelete}
-              variant="outline"
-              textStyle={{ color: "#0C154C" }}
-              style={styles.secondaryButton}
-            />
+              <Button
+                title="Delete Account"
+                onPress={editForm.onDelete}
+                variant="outline"
+                textStyle={{ color: "#0C154C" }}
+                style={styles.secondaryButton}
+              />
+            </View>
           </View>
-        </View>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
