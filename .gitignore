@@ -41,3 +41,6 @@ yarn-error.*
 # custom
 .env
 .qodo
+env.ts
+google-services.json
+GoogleService-Info.plist

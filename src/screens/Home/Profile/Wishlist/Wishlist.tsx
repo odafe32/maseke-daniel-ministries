@@ -26,7 +26,7 @@ export function Wishlist({ wishListData, onBack, loading = false }: WishlistProp
         {item.beforePrice && (
           <View style={styles.discountBadge}>
             <ThemeText variant="caption" style={styles.discountText}>
-              {calculateDiscount(item.price, item.beforePrice)}% OFF
+              {`${calculateDiscount(item.price, item.beforePrice)}% OFF`}
             </ThemeText>
           </View>
         )}

@@ -7,6 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 import "react-native-url-polyfill/auto";
 import { useAuthStore } from "../stores/authStore";
 import { registerForPushNotificationsAsync } from "../notifications";
+import BottomMenu from "../components/BottomMenu";
+import { usePathname } from "expo-router";
 
 // Toast config for better styling
 const toastConfig = {
@@ -163,6 +165,9 @@ const RootLayout = () => {
 
 function RootLayoutNav() {
   const { token } = useAuthStore();
+  const pathname = usePathname();
+
+  const showBottomMenu = token && pathname && pathname !== '/' && !pathname.includes('/Profile') && !pathname.includes('/profile');
 
   if (!token) {
     // Auth stack
@@ -190,23 +195,25 @@ function RootLayoutNav() {
 
   // Main stack
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: "#fff",
-          paddingHorizontal: 0,
-          paddingTop: 20,
-        },
-        animation: "fade",
-        animationDuration: 250,
-      }}
-    >
-      <Stack.Screen name="(home)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="home" options={{ headerShown: false }} />
-      {/* Add other main screens here */}
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "#fff",
+            paddingHorizontal: 0,
+            paddingTop: 20,
+            paddingBottom: showBottomMenu ? 80 : 20,
+          },
+          animation: "fade",
+          animationDuration: 250,
+        }}
+      >
+        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+        {/* Add other main screens here */}
+      </Stack>
+      <BottomMenu />
+    </View>
   );
 }
 

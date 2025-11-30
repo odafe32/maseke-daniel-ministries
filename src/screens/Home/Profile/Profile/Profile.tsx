@@ -56,14 +56,14 @@ export function Profile({
           <View style={styles.section}>
             {actions.map((action, index) => (
               <TouchableOpacity
-                key={action.id}
+                key={String(action.id)}
                 style={[
                   styles.actionRow,
                   index < actions.length - 1 && styles.actionSpacing,
                 ]}
                 activeOpacity={0.8}
                 onPress={() => {
-                  if (action.id === 'logout') {
+                  if (String(action.id) === 'logout') {
                     onLogoutPress();
                   } else if (action.link) {
                     onActionPress(action.link);
@@ -73,21 +73,21 @@ export function Profile({
                 <View style={styles.actionLeft}>
                   <View style={styles.iconBadge}>
                     {action.custom ? (
-                      <Icon name={action.icon as "archive"} color="#121116" size={24} />
+                      <Icon name={typeof action.icon === 'string' ? action.icon as "archive" : "archive"} color="#121116" size={24} />
                     ) : (
-                      <Feather name={action.icon as any} size={24} color={action.id === 'logout' ? '#DC2626' : '#121116'} />
+                      <Feather name={typeof action.icon === 'string' ? action.icon as any : 'circle' as any} size={24} color={String(action.id) === 'logout' ? '#DC2626' : '#121116'} />
                     )}
                     {action.badgeCount && action.badgeCount > 0 && (
                       <View style={styles.badge}>
                         <ThemeText variant="caption" style={styles.badgeText}>
-                          {action.badgeCount > 99 ? '99+' : action.badgeCount}
+                          {`${action.badgeCount > 99 ? '99+' : action.badgeCount}`}
                         </ThemeText>
                       </View>
                     )}
                   </View>
 
-                  <ThemeText variant="bodyBold" style={[styles.actionLabel, action.id === 'logout' ? styles.logoutLabel : {}]}>
-                    {action.label}
+                  <ThemeText variant="bodyBold" style={[styles.actionLabel, String(action.id) === 'logout' ? styles.logoutLabel : {}]}>
+                    {String(action.label)}
                   </ThemeText>
                 </View>
 
