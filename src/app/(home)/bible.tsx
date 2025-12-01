@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { Bible } from "@/src/screens";
 import { useBible } from "@/src/hooks/useBible";
+import { useNotes } from "@/src/hooks/useNotes";
 import { Book } from "@/src/api/bibleApi";
 import { BibleStorage } from "@/src/utils/bibleStorage";
 import { BibleDownloadManager } from "@/src/components/BibleDownloadManager";
@@ -92,6 +93,9 @@ export default function BiblePage() {
 
     const { currentChapter, fetchChapter, clearCurrentChapter, isLoadingChapter, downloadProgress } = useBible();
 
+    // Initialize notes store
+    useNotes();
+
     // Load preferences on component mount
     useEffect(() => {
         const loadPreferences = async () => {
@@ -178,6 +182,9 @@ export default function BiblePage() {
 
     const readingContent = currentChapter || defaultContent;
 
+    // Get current theme for download manager
+    const currentTheme = bibleThemes.find(theme => theme.id === selectedThemeId) || bibleThemes[0];
+
     const handleOpenSidebar = () => setSidebarVisible(true);
     const handleCloseSidebar = () => setSidebarVisible(false);
 
@@ -189,6 +196,8 @@ export default function BiblePage() {
     };
 
     const handleToggleSettings = () => setSettingsVisible((prev) => !prev);
+    const handleShowSettings = () => setSettingsVisible(true);
+    const handleHideSettings = () => setSettingsVisible(false);
 
     const handleSelectTheme = (themeId: string) => {
         setSelectedThemeId(themeId);
@@ -226,9 +235,9 @@ export default function BiblePage() {
         <>
             {isInitializing ? (
                 // Loading screen while checking preferences and data
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0C154C" />
-                    <Text style={styles.loadingText}>Loading Bible...</Text>
+                <View style={[styles.loadingContainer, { backgroundColor: currentTheme.backgroundColor }]}>
+                    <ActivityIndicator size="large" color={currentTheme.textColor} />
+                    <Text style={[styles.loadingText, { color: currentTheme.textColor }]}>Loading Bible...</Text>
                 </View>
             ) : (
                 <>
@@ -243,6 +252,8 @@ export default function BiblePage() {
                         isLoadingChapter={isLoadingChapter}
                         settingsVisible={settingsVisible}
                         onToggleSettings={handleToggleSettings}
+                        onShowSettings={handleShowSettings}
+                        onHideSettings={handleHideSettings}
                         themeOptions={bibleThemes}
                         selectedThemeId={selectedThemeId}
                         onSelectTheme={handleSelectTheme}
@@ -259,6 +270,10 @@ export default function BiblePage() {
                         <BibleDownloadManager
                             onComplete={handleDownloadComplete}
                             onCancel={handleDownloadCancel}
+                            surfaceColor={currentTheme.panelBackground}
+                            textColor={currentTheme.panelTextColor}
+                            accentColor={currentTheme.accentColor}
+                            backgroundColor={`rgba(0,0,0,0.7)`}
                         />
                     )}
                 </>

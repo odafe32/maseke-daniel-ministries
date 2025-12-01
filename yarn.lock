@@ -1805,6 +1805,11 @@
   dependencies:
     merge-options "^3.0.4"
 
+"@react-native-community/netinfo@^11.4.1":
+  version "11.4.1"
+  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-11.4.1.tgz#a3c247aceab35f75dd0aa4bfa85d2be5a4508688"
+  integrity sha512-B0BYAkghz3Q2V09BF88RA601XursIEA111tnc2JOaN7axJWmNefmfjZqw/KdSxKZp7CZUuPpjBmz/WCR9uaHYg==
+
 "@react-native/assets-registry@0.80.1":
   version "0.80.1"
   resolved "https://registry.yarnpkg.com/@react-native/assets-registry/-/assets-registry-0.80.1.tgz#f692115d706e2b9b1847fca81ad8c2bbec67f6ef"
@@ -4089,6 +4094,11 @@ expo-modules-core@3.0.26:
   integrity sha512-WWjficXz32VmQ+xDoO+c0+jwDME0n/47wONrJkRvtm32H9W8n3MXkOMGemDl95HyPKYsaYKhjFGUOVOxIF3hcQ==
   dependencies:
     invariant "^2.2.4"
+
+expo-network@~8.0.7:
+  version "8.0.7"
+  resolved "https://registry.npmjs.org/expo-network/-/expo-network-8.0.7.tgz#37f0ed984f4cc57482d3c1c3bf4d4eb3359e0b03"
+  integrity sha512-qmISU2tcSHmy1PD3Zd83XXxegcvGPlZSxACTSjE+bD9o3miQRT0HS5YP5MeH97PLiRduGpyUq38kMF5N//mqrQ==
 
 expo-notifications@~0.32.13:
   version "0.32.13"

@@ -71,7 +71,7 @@ export const useBibleBooks = (testamentId?: number) => {
         setIsLoading(false);
       });
     }
-  }, [testamentId, bibleStore]);
+  }, [testamentId]); // Remove bibleStore from dependencies
 
   return { books, isLoading };
 };
@@ -89,7 +89,7 @@ export const useBibleChapter = (bookId?: number, chapter?: number) => {
         setIsLoading(false);
       });
     }
-  }, [bookId, chapter, bibleStore]);
+  }, [bookId, chapter]); // Remove bibleStore from dependencies
 
   return { isLoading };
 };

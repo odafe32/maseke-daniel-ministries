@@ -20,12 +20,24 @@ interface BibleDownloadProgress {
 interface BibleDownloadManagerProps {
   onComplete: () => void;
   onCancel: () => void;
+  // Theme colors
+  surfaceColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
 }
 
 // Essential books to download on first launch (most commonly read)
-const ESSENTIAL_BOOKS = [1, 44, 45]; // Genesis, Psalms,
+const ESSENTIAL_BOOKS = [1, 40]; // Genesis, Matthew,
 
-export function BibleDownloadManager({ onComplete, onCancel }: BibleDownloadManagerProps) {
+export function BibleDownloadManager({ 
+  onComplete, 
+  onCancel,
+  surfaceColor = 'white',
+  textColor = '#0C154C',
+  accentColor = '#0C154C',
+  backgroundColor = 'rgba(0,0,0,0.7)'
+}: BibleDownloadManagerProps) {
   const [progress, setProgress] = useState<BibleDownloadProgress>({
     current: 0,
     total: ESSENTIAL_BOOKS.length, // Only essential books
@@ -153,10 +165,10 @@ export function BibleDownloadManager({ onComplete, onCancel }: BibleDownloadMana
   const progressPercentage = Math.round((progress.current / progress.total) * 100);
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Download Bible Books</Text>
-        <Text style={styles.subtitle}>
+    <View style={[styles.overlay, { backgroundColor }]}>
+      <View style={[styles.container, { backgroundColor: surfaceColor }]}>
+        <Text style={[styles.title, { color: textColor }]}>Download Bible Books</Text>
+        <Text style={[styles.subtitle, { color: textColor, opacity: 0.7 }]}>
           For faster offline reading, you can download some frequently accessed books first. All other books will also be available offline automatically as you open them
         </Text>
 
@@ -168,28 +180,28 @@ export function BibleDownloadManager({ onComplete, onCancel }: BibleDownloadMana
 
         {isDownloading && (
           <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>
+            <Text style={[styles.progressText, { color: textColor }]}>
               Downloading: {progress.bookName}
             </Text>
-            <Text style={styles.progressNumbers}>
+            <Text style={[styles.progressNumbers, { color: textColor, opacity: 0.6 }]}>
               {progress.current} / {progress.total} essential books
             </Text>
-            <View style={styles.progressBar}>
+            <View style={[styles.progressBar, { backgroundColor: surfaceColor, opacity: 0.3 }]}>
               <View
                 style={[
                   styles.progressFill,
-                  { width: `${progressPercentage}%` }
+                  { backgroundColor: accentColor, width: `${progressPercentage}%` }
                 ]}
               />
             </View>
-            <Text style={styles.percentage}>{progressPercentage}%</Text>
-            <ActivityIndicator size="small" color="#0C154C" style={styles.spinner} />
+            <Text style={[styles.percentage, { color: textColor }]}>{progressPercentage}%</Text>
+            <ActivityIndicator size="small" color={accentColor} style={styles.spinner} />
           </View>
         )}
 
         {!isDownloading && !progress.isComplete && (
-          <TouchableOpacity style={styles.downloadButton} onPress={startDownload}>
-            <Text style={styles.downloadButtonText}>Download Now</Text>
+          <TouchableOpacity style={[styles.downloadButton, { backgroundColor: accentColor }]} onPress={startDownload}>
+            <Text style={[styles.downloadButtonText, { color: surfaceColor }]}>Download Now</Text>
           </TouchableOpacity>
         )}
 
@@ -198,8 +210,8 @@ export function BibleDownloadManager({ onComplete, onCancel }: BibleDownloadMana
           onPress={handleCancel}
           disabled={isDownloading}
         >
-          <Text style={[styles.cancelButtonText, isDownloading && styles.cancelButtonTextDisabled]}>
-            {isDownloading ? 'Downloading...' : 'Cancel'}
+          <Text style={[styles.cancelButtonText, isDownloading && styles.cancelButtonTextDisabled, { color: textColor, opacity: isDownloading ? 0.5 : 0.7 }]}>
+            {isDownloading ? 'Downloading, Please wait...' : 'Cancel'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -310,6 +322,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   cancelButtonTextDisabled: {
-    color: '#ccc',
+    color: '#5b5b5bff',
   },
 });

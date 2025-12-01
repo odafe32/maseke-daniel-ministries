@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   Text,
@@ -9,6 +9,8 @@ import {
   Pressable,
   Animated,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -16,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { BibleSidebar } from "./BibleSidebar";
 import { Book } from "@/src/api/bibleApi";
+import { useNotes } from "@/src/hooks/useNotes";
 
 type BibleProps = {
   sidebarVisible: boolean;
@@ -43,6 +46,8 @@ type BibleProps = {
   onPrevPage: () => void;
   onNextPage: () => void;
   downloadProgress?: { current: number; total: number; bookName: string } | null;
+  onShowSettings?: () => void;
+  onHideSettings?: () => void;
 };
 
 type BibleTheme = {
@@ -66,6 +71,29 @@ const hexToRgba = (hex: string, alpha: number) => {
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const getContrastRatio = (color1: string, color2: string) => {
+  const getLuminance = (hex: string) => {
+    const sanitized = hex.replace("#", "");
+    const bigint = parseInt(sanitized, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    const rsRGB = r / 255;
+    const gsRGB = g / 255;
+    const bsRGB = b / 255;
+    const rLinear = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+    const gLinear = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+    const bLinear = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+    return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+  };
+
+  const lum1 = getLuminance(color1);
+  const lum2 = getLuminance(color2);
+  const brightest = Math.max(lum1, lum2);
+  const darkest = Math.min(lum1, lum2);
+  return (brightest + 0.05) / (darkest + 0.05);
 };
 
 const isHexWhite = (hex?: string) => {
@@ -104,17 +132,24 @@ export function Bible({
   onSelectTheme,
   fontSize,
   onFontSizeChange,
-  currentPage,
-  totalPages,
   onPrevPage,
   onNextPage,
   downloadProgress,
+  onShowSettings,
+  onHideSettings,
 }: BibleProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const selectedTheme =
     themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0];
   const [panelHeight, setPanelHeight] = useState(0);
+  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [isSavingBookmark, setIsSavingBookmark] = useState(false);
+  const {
+    getSavedVersesForReference,
+    saveVersesForReference,
+    unsaveVersesForReference
+  } = useNotes();
 
   const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
   const statusBarBackground = selectedTheme?.backgroundColor ?? "#fff";
@@ -159,8 +194,113 @@ export function Bible({
   const isUserScrolling = useRef(false);
   const scrollToggleLock = useRef(false);
   const scrollResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollOffset = useRef(0);
+  const SCROLL_DIRECTION_THRESHOLD = 12;
 
   const readingBodyLineHeight = Math.max(26, fontSize * 1.6);
+  const verses = useMemo(() => {
+    if (!content?.body) return [];
+    const byLine = content.body
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const segments = byLine.length > 1 ? byLine : content.body.split(/(?<=[.!?])\s+/);
+    return segments
+      .map((segment) => segment.trim())
+      .filter(Boolean)
+      .map((text, index) => ({ id: index + 1, text }));
+  }, [content?.body]);
+
+  const savedVerseColor = useMemo(() => {
+    const accent = selectedTheme?.accentColor;
+    if (!accent || isHexDark(accent)) {
+      return "#F2B705";
+    }
+    return accent;
+  }, [selectedTheme]);
+
+  const isSelectionMode = selectedVerses.length > 0;
+  const hasUnsavedSelection = selectedVerses.some((id) => !getSavedVersesForReference(currentBook?.id || 0, currentChapterNumber || 0).includes(id));
+
+  const resolvedAccentForIcon = useMemo(() => {
+    const accent = selectedTheme?.accentColor;
+    const background = selectedTheme?.backgroundColor;
+    const themeId = selectedTheme?.id;
+
+    // Special case: use black for sepia, mist, and dusk themes
+    if (themeId === "sepia" || themeId === "mist" || themeId === "dusk") {
+      return "#000000";
+    }
+
+    if (!accent) return selectedTheme?.textColor ?? "#0C154C";
+
+    // If accent is white, use a dark color for contrast
+    if (isHexWhite(accent)) {
+      return isHexDark(background) ? "#FFFFFF" : "#0C154C";
+    }
+
+    // If accent is dark, use white
+    if (isHexDark(accent)) {
+      return "#FFFFFF";
+    }
+
+    // For colored accents, check contrast ratio against background
+    // WCAG AA requires 4.5:1 contrast ratio for normal text
+    const contrastRatio = getContrastRatio(accent, background || "#FFFFFF");
+
+    if (contrastRatio < 4.5) {
+      // Low contrast - use high contrast color
+      return isHexDark(background) ? "#FFFFFF" : "#0C154C";
+    }
+
+    // Good contrast - use the accent color
+    return accent;
+  }, [selectedTheme]);
+
+  const selectionIconColor = useMemo(() => {
+    if (!isSelectionMode) {
+      return selectedTheme?.textColor ?? "#FFFFFF";
+    }
+    if (hasUnsavedSelection) {
+      return resolvedAccentForIcon;
+    }
+    return "#ff9c5eff";
+  }, [isSelectionMode, hasUnsavedSelection, resolvedAccentForIcon, selectedTheme]);
+
+  const toggleVerseSelection = (verseId: number) => {
+    setSelectedVerses((prev) =>
+      prev.includes(verseId) ? prev.filter((id) => id !== verseId) : [...prev, verseId]
+    );
+  };
+
+  const handleSaveSelection = async () => {
+    if (!selectedVerses.length || !currentBook || !currentChapterNumber || isSavingBookmark) return;
+
+    const bookId = currentBook.id;
+    const chapter = currentChapterNumber;
+    const savedVerses = getSavedVersesForReference(bookId, chapter);
+
+    const hasUnsaved = selectedVerses.some((id) => !savedVerses.includes(id));
+
+    setIsSavingBookmark(true);
+    try {
+      if (hasUnsaved) {
+        // Save the selected verses
+        await saveVersesForReference(bookId, chapter, selectedVerses);
+      } else {
+        // Unsave the selected verses
+        await unsaveVersesForReference(bookId, chapter, selectedVerses);
+      }
+
+      // Clear selection after save/unsave
+      setSelectedVerses([]);
+    } catch (error) {
+      console.error('Failed to save/unsave verses:', error);
+      // Could add error handling here if needed
+    } finally {
+      setIsSavingBookmark(false);
+    }
+  };
 
   useEffect(() => {
     Animated.spring(settingsPanelProgress, {
@@ -212,10 +352,6 @@ export function Bible({
       clearTimeout(scrollResetTimeout.current);
       scrollResetTimeout.current = null;
     }
-    if (settingsVisible && !scrollToggleLock.current) {
-      scrollToggleLock.current = true;
-      onToggleSettings();
-    }
   };
 
   const handleScrollEndDrag = () => {
@@ -240,6 +376,21 @@ export function Bible({
       scrollToggleLock.current = true;
       resetScrollFlag();
     }
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    const diff = currentOffset - lastScrollOffset.current;
+
+    if (Math.abs(diff) >= SCROLL_DIRECTION_THRESHOLD) {
+      if (diff > 0 && settingsVisible) {
+        onHideSettings?.();
+      } else if (diff < 0 && !settingsVisible) {
+        onShowSettings?.();
+      }
+    }
+
+    lastScrollOffset.current = Math.max(0, currentOffset);
   };
 
   const handleBack = () => {
@@ -292,7 +443,7 @@ export function Bible({
         </Text>
 
         <Pressable
-          onPress={onOpenSidebar}
+          onPress={isSelectionMode ? handleSaveSelection : onOpenSidebar}
           style={[
             styles.headerButton,
             {
@@ -302,8 +453,17 @@ export function Bible({
             },
           ]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          disabled={isSavingBookmark}
         >
-          <Feather name="menu" size={20} color={selectedTheme?.textColor} />
+          {isSavingBookmark ? (
+            <ActivityIndicator size="small" color={selectionIconColor} />
+          ) : (
+            <Feather
+              name={isSelectionMode ? "bookmark" : "menu"}
+              size={20}
+              color={selectionIconColor}
+            />
+          )}
         </Pressable>
       </View>
 
@@ -346,6 +506,7 @@ export function Bible({
             onScrollEndDrag={handleScrollEndDrag}
             onMomentumScrollBegin={handleMomentumScrollBegin}
             onMomentumScrollEnd={handleMomentumScrollEnd}
+            onScroll={handleScroll}
             scrollEventThrottle={16}
           >
             <Text
@@ -356,14 +517,48 @@ export function Bible({
             >
               {content.title}
             </Text>
-            <Text
-              style={[
-                styles.readingBody,
-                { color: selectedTheme?.textColor, fontSize, lineHeight: readingBodyLineHeight },
-              ]}
-            >
-              {content.body}
-            </Text>
+            {verses.length > 0 ? (
+              <View style={styles.versesContainer}>
+                {verses.map((verse) => {
+                  const isSelected = selectedVerses.includes(verse.id);
+                  const isSaved = currentBook && currentChapterNumber
+                    ? getSavedVersesForReference(currentBook.id, currentChapterNumber).includes(verse.id)
+                    : false;
+                  return (
+                    <TouchableOpacity
+                      key={verse.id}
+                      activeOpacity={0.9}
+                      onPress={() => toggleVerseSelection(verse.id)}
+                      style={styles.verseLine}
+                    >
+                      <Text
+                        style={[
+                          styles.verseText,
+                          {
+                            color: isSaved ? savedVerseColor : selectedTheme?.textColor,
+                            fontSize,
+                            lineHeight: readingBodyLineHeight,
+                            textDecorationLine: isSelected ? "underline" : "none",
+                            textDecorationColor: selectedTheme?.accentColor ?? selectedTheme?.textColor,
+                          },
+                        ]}
+                      >
+                        {verse.text}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : (
+              <Text
+                style={[
+                  styles.readingBody,
+                  { color: selectedTheme?.textColor, fontSize, lineHeight: readingBodyLineHeight },
+                ]}
+              >
+                {content.body}
+              </Text>
+            )}
           </ScrollView>
         )}
       </View>
@@ -521,6 +716,15 @@ const styles = StyleSheet.create({
   },
   readingBody: {
     lineHeight: 26,
+    fontFamily: "DMSans-Regular",
+  },
+  versesContainer: {
+    gap: 15,
+  },
+  verseLine: {
+    marginBottom: 0,
+  },
+  verseText: {
     fontFamily: "DMSans-Regular",
   },
   settingsPanel: {

@@ -1,7 +1,9 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { ThemeText } from "@/src/components";
 import { fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
+import { HomeStorage, HomeData } from "@/src/utils/homeStorage";
+import { quickActions } from "@/src/constants/data";
 import {
   StyleSheet,
   View,
@@ -22,11 +24,28 @@ export const Home = ({
   onRefresh,
   onCardPress,
   onProfilePress,
-  quickActions,
+  quickActions: propQuickActions = quickActions,
 }: HomeProps) => {
   const colors = getColor();
-  const { user } = useUser();
+  const { user: apiUser } = useUser();
   const profileScale = useRef(new Animated.Value(1)).current;
+
+  // Offline data state
+  const [localUser, setLocalUser] = useState<any>(null);
+  const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  // Use local data if available, otherwise use API data
+  const user = localUser || apiUser;
+  const displayQuickActions = localQuickActions;
+
+  // Get avatar URI (network or default)
+  const getAvatarUri = () => {
+    if (user?.avatar_url) {
+      return user.avatar_url;
+    }
+    return avatarUri; // Fallback to default
+  };
 
   const handleProfilePressInternal = () => {
     Animated.sequence([
@@ -42,6 +61,54 @@ export const Home = ({
       }),
     ]).start(() => onProfilePress());
   };
+
+  // Load offline data on component mount
+  useEffect(() => {
+    const loadOfflineData = async () => {
+      try {
+        const homeData = await HomeStorage.getHomeData();
+        if (homeData) {
+          if (homeData.user) {
+            setLocalUser(homeData.user);
+          }
+          if (homeData.quickActions) {
+            setLocalQuickActions(homeData.quickActions);
+          }
+
+          // Check if data is stale (older than 24 hours)
+          const isStale = await HomeStorage.isDataStale(24);
+          setIsOfflineMode(isStale);
+        }
+      } catch (error) {
+        console.error('Failed to load offline home data:', error);
+      }
+    };
+
+    loadOfflineData();
+  }, []);
+
+  // Sync with API data when user data changes
+  useEffect(() => {
+    if (apiUser && !isOfflineMode) {
+      const syncUserData = async () => {
+        try {
+          const userData = {
+            full_name: apiUser.full_name || '',
+            avatar_url: apiUser.avatar_url,
+            last_updated: new Date().toISOString(),
+          };
+
+          await HomeStorage.saveUserData(userData);
+          setLocalUser(userData);
+          setIsOfflineMode(false);
+        } catch (error) {
+          console.error('Failed to sync user data:', error);
+        }
+      };
+
+      syncUserData();
+    }
+  }, [apiUser, isOfflineMode]);
 
   return (
     <ScrollView
@@ -85,14 +152,14 @@ export const Home = ({
 
             <TouchableOpacity onPress={handleProfilePressInternal} activeOpacity={0.8}>
               <Animated.Image
-                source={{ uri: user?.avatar_url || avatarUri }}
+                source={{ uri: getAvatarUri() }}
                 style={[styles.avatar, { transform: [{ scale: profileScale }] }]}
               />
             </TouchableOpacity>
           </View>
 
           <View style={styles.cardsWrapper}>
-            {quickActions.map((item) => (
+            {displayQuickActions.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 activeOpacity={0.8}
