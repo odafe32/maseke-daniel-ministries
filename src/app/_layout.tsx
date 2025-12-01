@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { StatusBar, View, Text } from "react-native";
+import { StatusBar, View, Text, StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-url-polyfill/auto";
@@ -10,78 +10,92 @@ import { registerForPushNotificationsAsync } from "../notifications";
 import BottomMenu from "../components/BottomMenu";
 import { usePathname } from "expo-router";
 import { shouldHideBottomMenu } from "../constants/navigation";
+import { useInternetConnectivity } from "../hooks/useInternetConnectivity";
+
+// Color constants
+const Colors = {
+  success: '#10B981',
+  error: '#EF4444', 
+  info: '#3B82F6',
+  white: '#FFF',
+  black: '#000',
+  whiteBg: '#fff',
+} as const;
+
+interface ToastProps {
+  text1?: string;
+  text2?: string;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  errorToast: {
+    backgroundColor: Colors.error,
+  },
+  iconMargin: {
+    marginRight: 12,
+  },
+  infoToast: {
+    backgroundColor: Colors.info,
+  },
+  successToast: {
+    backgroundColor: Colors.success,
+  },
+  toastContainer: {
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    borderRadius: 8,
+    elevation: 5,
+    flexDirection: 'row',
+    marginHorizontal: 10,
+    marginTop: 0,
+    maxWidth: '80%',
+    padding: 8,
+    shadowColor: Colors.black,
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  toastSubText: {
+    color: Colors.white,
+    fontSize: 14,
+    marginTop: 4,
+  },
+  toastText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 // Toast config for better styling
 const toastConfig = {
-  success: (props: any) => (
-    <View style={{
-      backgroundColor: '#10B981',
-      borderRadius: 8,
-      padding: 8,
-      marginHorizontal: 10,
-      marginTop: 0,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
-      alignSelf: 'flex-end',
-      flexDirection: 'row',
-      alignItems: 'center',
-      maxWidth: '80%',
-    }}>
-      <Ionicons name="checkmark-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
+  error: (props: ToastProps) => (
+    <View style={[styles.toastContainer, styles.errorToast]}>
+      <Ionicons name="close-circle" size={24} color={Colors.white} style={styles.iconMargin} />
       <View>
-        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
-        {props.text2 && <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>}
+        <Text style={styles.toastText}>{props.text1}</Text>
+        {props.text2 && <Text style={styles.toastSubText}>{props.text2}</Text>}
       </View>
     </View>
   ),
-  error: (props: any) => (
-    <View style={{
-      backgroundColor: '#EF4444',
-      borderRadius: 8,
-      padding: 8,
-      marginHorizontal: 10,
-      marginTop: 0,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
-      alignSelf: 'flex-end',
-      flexDirection: 'row',
-      alignItems: 'center',
-      maxWidth: '80%',
-    }}>
-      <Ionicons name="close-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
+  info: (props: ToastProps) => (
+    <View style={[styles.toastContainer, styles.infoToast]}>
+      <Ionicons name="information-circle" size={24} color={Colors.white} style={styles.iconMargin} />
       <View>
-        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
-        {props.text2 && <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>}
+        <Text style={styles.toastText}>{props.text1}</Text>
+        {props.text2 && <Text style={styles.toastSubText}>{props.text2}</Text>}
       </View>
     </View>
   ),
-  info: (props: any) => (
-    <View style={{
-      backgroundColor: '#3B82F6',
-      borderRadius: 8,
-      padding: 8,
-      marginHorizontal: 10,
-      marginTop: 0,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
-      alignSelf: 'flex-end',
-      flexDirection: 'row',
-      alignItems: 'center',
-      maxWidth: '80%',
-    }}>
-      <Ionicons name="information-circle" size={24} color="#FFF" style={{ marginRight: 12 }} />
+  success: (props: ToastProps) => (
+    <View style={[styles.toastContainer, styles.successToast]}>
+      <Ionicons name="checkmark-circle" size={24} color={Colors.white} style={styles.iconMargin} />
       <View>
-        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
-        {props.text2 && <Text style={{ color: '#FFF', fontSize: 14, marginTop: 4 }}>{props.text2}</Text>}
+        <Text style={styles.toastText}>{props.text1}</Text>
+        {props.text2 && <Text style={styles.toastSubText}>{props.text2}</Text>}
       </View>
     </View>
   ),
@@ -154,7 +168,7 @@ const RootLayout = () => {
 
   return (
     <>
-      <StatusBar barStyle={"dark-content"} backgroundColor="#fff" />
+      <StatusBar barStyle={"dark-content"} backgroundColor={Colors.whiteBg} />
 
       {showContent && (
         <RootLayoutNav />
@@ -169,6 +183,9 @@ function RootLayoutNav() {
   const pathname = usePathname();
 
   const showBottomMenu = token && pathname && !shouldHideBottomMenu(pathname);
+  
+  // Monitor internet connectivity for both auth and home sections
+  useInternetConnectivity();
 
   if (!token) {
     // Auth stack
@@ -177,7 +194,7 @@ function RootLayoutNav() {
         screenOptions={{
           headerShown: false,
           contentStyle: {
-            backgroundColor: "#fff",
+            backgroundColor: Colors.whiteBg,
             paddingHorizontal: 0,
             paddingTop: 20,
           },
@@ -196,12 +213,12 @@ function RootLayoutNav() {
 
   // Main stack
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: {
-            backgroundColor: "#fff",
+            backgroundColor: Colors.whiteBg,
             paddingHorizontal: 0,
             paddingTop: 20,
             paddingBottom: showBottomMenu ? 80 : 20,
@@ -213,7 +230,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(home)" options={{ headerShown: false }} />
         {/* Add other main screens here */}
       </Stack>
-      <BottomMenu />
+      {showBottomMenu && <BottomMenu />}
     </View>
   );
 }
