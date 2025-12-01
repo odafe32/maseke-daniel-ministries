@@ -10,6 +10,7 @@ import { registerForPushNotificationsAsync } from "../notifications";
 import BottomMenu from "../components/BottomMenu";
 import { usePathname } from "expo-router";
 import { shouldHideBottomMenu } from "../constants/navigation";
+import { useInternetConnectivity } from "../hooks/useInternetConnectivity";
 
 // Color constants
 const Colors = {
@@ -182,6 +183,9 @@ function RootLayoutNav() {
   const pathname = usePathname();
 
   const showBottomMenu = token && pathname && !shouldHideBottomMenu(pathname);
+  
+  // Monitor internet connectivity for both auth and home sections
+  useInternetConnectivity();
 
   if (!token) {
     // Auth stack
