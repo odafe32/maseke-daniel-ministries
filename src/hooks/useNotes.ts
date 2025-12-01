@@ -4,6 +4,7 @@ import { useNotesStore } from '@/src/stores/notesStore';
 export const useNotes = () => {
   const notesStore = useNotesStore();
   const initializedRef = useRef(false);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   // Initialize notes loading on first use (only once)
   useEffect(() => {
@@ -11,11 +12,19 @@ export const useNotes = () => {
       initializedRef.current = true;
       console.log('Initializing notes data loading...');
 
-      // Load notes from API
+      // Load pending notes & start connectivity listener
+      notesStore.loadPendingNotes().catch(err => console.error('Failed to load pending notes:', err));
+      unsubscribeRef.current = notesStore.startPendingProcessing();
+
+      // Load notes from API (with cached fallback handled in store)
       notesStore.fetchNotes().catch(error => {
         console.error('Failed to initialize notes:', error);
       });
     }
+
+    return () => {
+      unsubscribeRef.current?.();
+    };
   }, []); // Empty dependency array - only run once on mount
 
   return {

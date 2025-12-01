@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
+
 import {
   Modal,
   View,
@@ -38,18 +39,76 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
   const [selectedTestament, setSelectedTestament] = useState<ApiTestament | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [downloadingBook, setDownloadingBook] = useState<Book | null>(null);
+  const [downloadedBookIds, setDownloadedBookIds] = useState<Set<number>>(new Set());
+  const [downloadedChaptersMap, setDownloadedChaptersMap] = useState<Record<number, Set<number>>>({});
+  const { books: testamentBooks, isLoading: isLoadingBooks } = useBibleBooks(selectedTestament?.id);
 
   // Custom modal states
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showOfflineModal, setShowOfflineModal] = useState(false);
   const [modalBook, setModalBook] = useState<Book | null>(null);
 
-  // Determine if accent color is light (needs dark text) or dark (needs light text)
-  const getButtonTextColor = (accentColor: string) => {
-    // Convert hex to RGB to check brightness
-    let hex = accentColor.replace('#', '');
+  const loadDownloadedData = useCallback(async () => {
+    try {
+      const localData = await BibleStorage.getBibleData();
 
-    // Handle 3-digit hex codes (e.g., #fff → #ffffff)
+      if (!localData) {
+        setDownloadedBookIds(new Set());
+        setDownloadedChaptersMap({});
+        return;
+      }
+
+      const booksSet = new Set<number>((localData.books || []).map(book => book.id));
+      const chapters: Record<number, Set<number>> = {};
+
+      const chapterEntries = localData.chapters || {};
+      Object.entries(chapterEntries).forEach(([bookKey, chapterObj]) => {
+        const bookId = parseInt(bookKey.replace('book_', ''), 10);
+        if (!Number.isNaN(bookId)) {
+          chapters[bookId] = new Set(Object.keys(chapterObj).map(ch => Number(ch)));
+        }
+      });
+
+      setDownloadedBookIds(booksSet);
+      setDownloadedChaptersMap(chapters);
+    } catch (error) {
+      console.error('Failed to load downloaded Bible data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      loadDownloadedData();
+    }
+  }, [visible, loadDownloadedData]);
+
+  useEffect(() => {
+    if (visible && bibleStore.downloadProgress === null) {
+      loadDownloadedData();
+    }
+  }, [visible, bibleStore.downloadProgress, loadDownloadedData]);
+
+  const wasVisibleRef = useRef(false);
+
+  useEffect(() => {
+    if (visible && !wasVisibleRef.current && currentBook) {
+      if (!selectedBook || selectedBook.id !== currentBook.id) {
+        setSelectedBook(currentBook);
+      }
+
+      if (!selectedTestament) {
+        const testament = testaments.find(t => t.books?.some(b => b.id === currentBook.id));
+        if (testament) {
+          setSelectedTestament(testament);
+        }
+      }
+    }
+
+    wasVisibleRef.current = visible;
+  }, [visible, currentBook, testaments, selectedBook, selectedTestament]);
+
+  const getButtonTextColor = (accentColor: string) => {
+    let hex = accentColor.replace('#', '');
     if (hex.length === 3) {
       hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
@@ -57,11 +116,7 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-
-    // Calculate brightness (YIQ formula)
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-
-    // Return dark text for light backgrounds, light text for dark backgrounds
     return brightness > 128 ? '#333' : '#fff';
   };
 
@@ -70,29 +125,19 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
   const accent = accentColor ?? colors.primary;
   const buttonTextColor = getButtonTextColor(accent);
 
-  // Reset selections when sidebar closes, or auto-select testament when sidebar opens with currentBook
-  useEffect(() => {
-    if (!visible) {
-      setSelectedTestament(null);
-      setSelectedBook(null);
-    } else if (visible && currentBook && testaments.length > 0) {
-      // Find the testament that contains the currentBook
-      const testament = testaments.find(t => 
-        t.books && t.books.some(b => b.id === currentBook.id)
-      );
-      if (testament) {
-        setSelectedTestament(testament);
-      }
-    }
-  }, [visible, currentBook, testaments]);
-
-  const { books: testamentBooks, isLoading: isLoadingBooks } = useBibleBooks(selectedTestament?.id);
-
   // Check if a book is downloaded locally
   const isBookDownloaded = async (bookId: number): Promise<boolean> => {
+    if (downloadedBookIds.has(bookId)) {
+      return true;
+    }
+
     try {
       const localData = await BibleStorage.getBibleData();
-      return localData ? localData.books.some(book => book.id === bookId) : false;
+      const downloaded = localData ? localData.books.some(book => book.id === bookId) : false;
+      if (downloaded) {
+        loadDownloadedData();
+      }
+      return downloaded;
     } catch {
       return false;
     }
@@ -105,7 +150,7 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-      const response = await fetch('https://httpbin.org/status/200', {
+      const response = await fetch('https://api.github.com', {
         method: 'HEAD',
         signal: controller.signal,
       });
@@ -145,8 +190,6 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
   };
 
   const handleClose = () => {
-    setSelectedBook(null);
-    setSelectedTestament(null);
     onClose();
   };
 
@@ -223,13 +266,18 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
     }
 
     if (!selectedBook) {
-      return testamentBooks.map((book) => (
+      return testamentBooks.map((book: Book) => (
         <SidebarRow
           key={book.id}
           label={`${book.name}`}
           onPress={() => handleBookPress(book)}
           textColor={primaryText}
           accentColor={accent}
+          badgeLabel={downloadedBookIds.has(book.id)
+            ? 'Downloaded'
+            : downloadedChaptersMap[book.id]?.size
+              ? `${downloadedChaptersMap[book.id]?.size || 0} saved`
+              : undefined}
         />
       ));
     }
@@ -242,6 +290,7 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
         onPress={() => handleChapterPress(chapter)}
         textColor={primaryText}
         accentColor={accent}
+        badgeLabel={downloadedChaptersMap[selectedBook.id]?.has(chapter) ? 'Offline' : undefined}
       />
     ));
   };
@@ -316,14 +365,14 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.secondaryButton, { borderColor: accent }]}
+                style={[styles.modalButton, styles.secondaryButton, { borderColor: primaryText }]}
                 onPress={() => {
                   // Access online without downloading
                   setShowDownloadModal(false);
                   setSelectedBook(modalBook);
                 }}
               >
-                <Text style={[styles.modalButtonText, { color: accent }]}>Access Online</Text>
+                <Text style={[styles.modalButtonText, { color: primaryText }]}>Access Online</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton, { backgroundColor: accent }]}
@@ -391,7 +440,7 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
                 style={[styles.modalButton, styles.confirmButton, { backgroundColor: accent }]}
                 onPress={() => setShowOfflineModal(false)}
               >
-                <Text style={[styles.modalButtonText, { color: 'white' }]}>OK</Text>
+                <Text style={[styles.modalButtonText, { color: 'black' }]}>OK</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -406,14 +455,22 @@ type SidebarRowProps = {
   onPress: () => void;
   textColor?: string;
   accentColor?: string;
+  badgeLabel?: string;
 };
 
-const SidebarRow = ({ label, onPress, textColor = "#0C154C", accentColor = "#0C154C" }: SidebarRowProps) => (
+const SidebarRow = ({ label, onPress, textColor = "#0C154C", accentColor = "#0C154C", badgeLabel }: SidebarRowProps) => (
   <TouchableOpacity style={styles.row} onPress={onPress}>
     <ThemeText variant="bodyBold" style={[styles.rowLabel, { color: textColor }]}>
       {label}
     </ThemeText>
-    <Feather name="chevron-right" size={18} color={accentColor} />
+    <View style={styles.rowRight}>
+      {badgeLabel ? (
+        <View style={[styles.badge, { borderColor: accentColor }]}> 
+          <Text style={[styles.badgeText, { color: accentColor }]}>{badgeLabel}</Text>
+        </View>
+      ) : null}
+      <Feather name="chevron-right" size={18} color={accentColor} />
+    </View>
   </TouchableOpacity>
 );
 
@@ -478,6 +535,21 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontFamily: "DMSans-Medium",
     color: "#0C154C",
+  },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp(8),
+  },
+  badge: {
+    borderRadius: 999,
+    paddingHorizontal: wp(10),
+    paddingVertical: wp(4),
+    borderWidth: 1,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   notesRow: {
     flexDirection: "row",

@@ -42,7 +42,7 @@ interface BibleState {
   // Actions
   fetchTestaments: () => Promise<void>;
   fetchBooks: (testamentId: number) => Promise<Book[]>;
-  fetchChapter: (bookId: number, chapterNumber: number) => Promise<void>;
+  fetchChapter: (bookId: number, chapterNumber: number, bookInfo?: Book) => Promise<void>;
   setSelectedBook: (book: Book | null) => void;
   clearCurrentChapter: () => void;
   loadLocalData: () => Promise<void>;
@@ -157,7 +157,7 @@ export const useBibleStore = create<BibleState>((set, get) => ({
   },
 
   // Fetch chapter - use local data if available, otherwise API
-  fetchChapter: async (bookId: number, chapterNumber: number) => {
+  fetchChapter: async (bookId: number, chapterNumber: number, bookInfo?: Book) => {
     set({ isLoadingChapter: true });
 
     try {
@@ -188,6 +188,16 @@ export const useBibleStore = create<BibleState>((set, get) => ({
           currentChapter: response,
           isLoadingChapter: false
         });
+
+        // Cache chapter locally for future offline access
+        if (response.body) {
+          const { testaments } = get();
+          const resolvedBookInfo = bookInfo ?? testaments
+            .flatMap(testament => testament.books)
+            .find(book => book.id === bookId);
+
+          await BibleStorage.saveChapterContent(bookId, chapterNumber, response.body, resolvedBookInfo);
+        }
       } else {
         throw new Error('Failed to fetch chapter');
       }

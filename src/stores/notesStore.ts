@@ -1,10 +1,14 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { Note, notesApi, CreateNoteRequest, UpdateNoteRequest } from '../api/notesApi';
 
 interface NotesState {
   // Data
   notes: Note[];
   savedVerses: { [key: string]: number[] }; // bookId-chapter: verseIds[]
+  pendingNotes: CreateNoteRequest[];
+  isConnected: boolean;
 
   // Loading states
   isLoadingNotes: boolean;
@@ -24,6 +28,12 @@ interface NotesState {
   getSavedVersesForReference: (bookId: number, chapter: number) => number[];
   saveVersesForReference: (bookId: number, chapter: number, verseIds: number[]) => Promise<Note | null>;
   unsaveVersesForReference: (bookId: number, chapter: number, verseIds: number[]) => Promise<boolean>;
+  loadCachedNotes: () => Promise<Note[]>;
+  saveCachedNotes: () => Promise<void>;
+  loadPendingNotes: () => Promise<void>;
+  savePendingNotes: () => Promise<void>;
+  processPendingNotes: () => Promise<void>;
+  startPendingProcessing: () => () => void;
   clearError: () => void;
 }
 
@@ -31,6 +41,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   // Initial state
   notes: [],
   savedVerses: {},
+  pendingNotes: [],
+  isConnected: true,
 
   isLoadingNotes: false,
   isCreatingNote: false,
@@ -43,12 +55,20 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   fetchNotes: async () => {
     set({ isLoadingNotes: true, error: null });
 
+    // Load cached notes immediately for offline use
+    const cachedNotes = await get().loadCachedNotes();
+    if (cachedNotes.length) {
+      set({ notes: cachedNotes });
+    }
+
     try {
       const notes = await notesApi.getNotes();
       set({
         notes,
         isLoadingNotes: false
       });
+
+      await get().saveCachedNotes();
 
       // Update savedVerses cache
       const savedVerses: { [key: string]: number[] } = {};
@@ -65,12 +85,24 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       });
       set({ savedVerses });
 
+      // If we successfully fetched, attempt to process pending notes in background
+      get().processPendingNotes().catch((err) => console.error('Failed to process pending notes:', err));
+
     } catch (error) {
       console.error('Failed to fetch notes:', error);
       set({
         isLoadingNotes: false,
         error: 'Failed to load notes'
       });
+    }
+  },
+
+  saveCachedNotes: async () => {
+    try {
+      const { notes } = get();
+      await AsyncStorage.setItem('cached_notes', JSON.stringify(notes));
+    } catch (error) {
+      console.error('Failed to save cached notes:', error);
     }
   },
 
@@ -86,6 +118,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
         isCreatingNote: false
       }));
 
+      await get().saveCachedNotes();
+
       // Update savedVerses cache
       const key = `${noteData.book_id}-${noteData.chapter}`;
       set(state => ({
@@ -98,10 +132,15 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       return newNote;
     } catch (error) {
       console.error('Failed to create note:', error);
-      set({
+
+      // If network error, queue this note for later
+      set(state => ({
+        pendingNotes: [...state.pendingNotes, noteData],
         isCreatingNote: false,
-        error: 'Failed to create note'
-      });
+      }));
+      get().savePendingNotes().catch(err => console.error('Failed to persist pending notes:', err));
+
+      set({ error: 'Note saved offline. Will sync when online.' });
       return null;
     }
   },
@@ -113,10 +152,40 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     try {
       const updatedNote = await notesApi.updateNote(noteId, noteData);
 
-      set(state => ({
-        notes: state.notes.map(note => note.id === noteId ? updatedNote : note),
-        isUpdatingNote: false
-      }));
+      set(state => {
+        const newNotes = state.notes.map(note => note.id === noteId ? updatedNote : note);
+
+        // Update savedVerses cache
+        const newSavedVerses = { ...state.savedVerses };
+        const key = `${updatedNote.book.id}-${updatedNote.chapter}`;
+
+        // Remove old verses from cache
+        if (newSavedVerses[key]) {
+          // Find the old note to remove its verses
+          const oldNote = state.notes.find(note => note.id === noteId);
+          if (oldNote) {
+            newSavedVerses[key] = newSavedVerses[key].filter(verseId => !oldNote.verses.includes(verseId));
+          }
+        }
+
+        // Add new verses to cache
+        if (!newSavedVerses[key]) {
+          newSavedVerses[key] = [];
+        }
+        updatedNote.verses.forEach(verseId => {
+          if (!newSavedVerses[key].includes(verseId)) {
+            newSavedVerses[key].push(verseId);
+          }
+        });
+
+        return {
+          notes: newNotes,
+          savedVerses: newSavedVerses,
+          isUpdatingNote: false
+        };
+      });
+
+      await get().saveCachedNotes();
 
       return updatedNote;
     } catch (error) {
@@ -136,10 +205,31 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     try {
       await notesApi.deleteNote(noteId);
 
-      set(state => ({
-        notes: state.notes.filter(note => note.id !== noteId),
-        isDeletingNote: false
-      }));
+      set(state => {
+        // Find the note being deleted to remove its verses from cache
+        const noteToDelete = state.notes.find(note => note.id === noteId);
+        const newSavedVerses = { ...state.savedVerses };
+
+        if (noteToDelete) {
+          const key = `${noteToDelete.book.id}-${noteToDelete.chapter}`;
+          if (newSavedVerses[key]) {
+            newSavedVerses[key] = newSavedVerses[key].filter(verseId => !noteToDelete.verses.includes(verseId));
+
+            // Remove the key if no verses remain
+            if (newSavedVerses[key].length === 0) {
+              delete newSavedVerses[key];
+            }
+          }
+        }
+
+        return {
+          notes: state.notes.filter(note => note.id !== noteId),
+          savedVerses: newSavedVerses,
+          isDeletingNote: false
+        };
+      });
+
+      await get().saveCachedNotes();
 
       return true;
     } catch (error) {
@@ -182,11 +272,31 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       });
     } else {
       // Create new note
-      return await get().createNote({
+      const newNote = await get().createNote({
         book_id: bookId,
         chapter,
         verses: verseIds
       });
+
+      // If offline, optimistically add to notes list so UI reflects bookmark immediately
+      if (!newNote) {
+        const optimisticNote: Note = {
+          id: Date.now(),
+          book: { id: bookId, name: 'Pending', testament: 'Pending' },
+          chapter,
+          verses: verseIds,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        set(state => ({
+          notes: [optimisticNote, ...state.notes],
+        }));
+
+        await get().saveCachedNotes();
+      }
+
+      return newNote;
     }
   },
 
@@ -216,6 +326,80 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
 
     return true;
+  },
+
+  loadPendingNotes: async () => {
+    try {
+      const stored = await AsyncStorage.getItem('pending_notes');
+      if (stored) {
+        const parsed = JSON.parse(stored) as CreateNoteRequest[];
+        set({ pendingNotes: parsed });
+      }
+    } catch (error) {
+      console.error('Failed to load pending notes:', error);
+    }
+  },
+
+  loadCachedNotes: async (): Promise<Note[]> => {
+    try {
+      const cached = await AsyncStorage.getItem('cached_notes');
+      return cached ? JSON.parse(cached) : [];
+    } catch (error) {
+      console.error('Failed to load cached notes:', error);
+      return [];
+    }
+  },
+
+  savePendingNotes: async () => {
+    try {
+      const { pendingNotes } = get();
+      await AsyncStorage.setItem('pending_notes', JSON.stringify(pendingNotes));
+    } catch (error) {
+      console.error('Failed to save pending notes:', error);
+    }
+  },
+
+  processPendingNotes: async () => {
+    const { pendingNotes, isConnected } = get();
+    if (!isConnected || !pendingNotes.length) return;
+
+    const [next, ...rest] = pendingNotes;
+
+    try {
+      const createdNote = await notesApi.createNote(next);
+
+      set(state => ({
+        notes: [createdNote, ...state.notes],
+        pendingNotes: rest,
+      }));
+
+      await get().savePendingNotes();
+
+    } catch (error) {
+      console.error('Failed to sync pending note:', error);
+      return;
+    }
+
+    if (get().pendingNotes.length) {
+      setTimeout(() => {
+        get().processPendingNotes().catch(err => console.error('Failed to process pending notes:', err));
+      }, 20000);
+    }
+  },
+
+  startPendingProcessing: () => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const connected = Boolean(state.isConnected && state.isInternetReachable);
+      set({ isConnected: connected });
+
+      if (connected) {
+        get().processPendingNotes().catch(err => console.error('Failed to process pending notes:', err));
+      }
+    });
+
+    get().loadPendingNotes().catch(err => console.error('Failed to load pending notes on start:', err));
+
+    return unsubscribe;
   },
 
   clearError: () => {

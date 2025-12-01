@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Book } from '@/src/api/bibleApi';
 
 export interface UserPreferences {
   themeId: string;
@@ -46,6 +47,19 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     showVerseNumbers: true,
   },
 };
+
+const createEmptyBibleData = (): BibleData => ({
+  metadata: {
+    version: CURRENT_VERSION,
+    lastUpdated: new Date().toISOString(),
+    totalBooks: 0,
+    totalChapters: 0,
+    totalVerses: 0,
+  },
+  testaments: [],
+  books: [],
+  chapters: {},
+});
 
 export class BibleStorage {
   // Preferences Management
@@ -130,6 +144,55 @@ export class BibleStorage {
     } catch (error) {
       console.error('Failed to load Bible data:', error);
       return null;
+    }
+  }
+
+  static async saveChapterContent(bookId: number, chapterNumber: number, content: string, bookInfo?: Book): Promise<void> {
+    try {
+      const data = (await this.getBibleData()) ?? createEmptyBibleData();
+      const bookKey = `book_${bookId}`;
+
+      if (!data.chapters[bookKey]) {
+        data.chapters[bookKey] = {};
+      }
+
+      data.chapters[bookKey][chapterNumber.toString()] = content;
+
+      if (bookInfo) {
+        const existingBookIndex = data.books.findIndex(book => book.id === bookInfo.id);
+        if (existingBookIndex >= 0) {
+          data.books[existingBookIndex] = bookInfo;
+        } else {
+          data.books.push(bookInfo);
+        }
+
+        if (!data.testaments.find((t: { id: number }) => t.id === bookInfo.testament_id)) {
+          data.testaments.push({ id: bookInfo.testament_id, name: '', books: [bookInfo] });
+        } else {
+          const testament = data.testaments.find((t: { id: number }) => t.id === bookInfo.testament_id);
+          if (testament) {
+            const existing = testament.books?.find((b: Book) => b.id === bookInfo.id);
+            if (!existing) {
+              testament.books = [...(testament.books || []), bookInfo];
+            }
+          }
+        }
+      }
+
+      const totalChapters = Object.values(data.chapters).reduce((sum, chapters) => sum + Object.keys(chapters).length, 0);
+      const totalVerses = Object.values(data.chapters).reduce((sum, chapters) => sum + Object.keys(chapters).length * 20, 0);
+
+      data.metadata = {
+        ...data.metadata,
+        lastUpdated: new Date().toISOString(),
+        totalBooks: Object.keys(data.chapters).length,
+        totalChapters,
+        totalVerses,
+      };
+
+      await this.saveBibleData(data);
+    } catch (error) {
+      console.error('Failed to save chapter content:', error);
     }
   }
 

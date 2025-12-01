@@ -9,6 +9,8 @@ import {
   Pressable,
   Animated,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -44,6 +46,8 @@ type BibleProps = {
   onPrevPage: () => void;
   onNextPage: () => void;
   downloadProgress?: { current: number; total: number; bookName: string } | null;
+  onShowSettings?: () => void;
+  onHideSettings?: () => void;
 };
 
 type BibleTheme = {
@@ -131,6 +135,8 @@ export function Bible({
   onPrevPage,
   onNextPage,
   downloadProgress,
+  onShowSettings,
+  onHideSettings,
 }: BibleProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -138,8 +144,7 @@ export function Bible({
     themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0];
   const [panelHeight, setPanelHeight] = useState(0);
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
-
-  // Use notes hook for saved verses functionality
+  const [isSavingBookmark, setIsSavingBookmark] = useState(false);
   const {
     getSavedVersesForReference,
     saveVersesForReference,
@@ -189,6 +194,8 @@ export function Bible({
   const isUserScrolling = useRef(false);
   const scrollToggleLock = useRef(false);
   const scrollResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollOffset = useRef(0);
+  const SCROLL_DIRECTION_THRESHOLD = 12;
 
   const readingBodyLineHeight = Math.max(26, fontSize * 1.6);
   const verses = useMemo(() => {
@@ -267,7 +274,7 @@ export function Bible({
   };
 
   const handleSaveSelection = async () => {
-    if (!selectedVerses.length || !currentBook || !currentChapterNumber) return;
+    if (!selectedVerses.length || !currentBook || !currentChapterNumber || isSavingBookmark) return;
 
     const bookId = currentBook.id;
     const chapter = currentChapterNumber;
@@ -275,6 +282,7 @@ export function Bible({
 
     const hasUnsaved = selectedVerses.some((id) => !savedVerses.includes(id));
 
+    setIsSavingBookmark(true);
     try {
       if (hasUnsaved) {
         // Save the selected verses
@@ -289,6 +297,8 @@ export function Bible({
     } catch (error) {
       console.error('Failed to save/unsave verses:', error);
       // Could add error handling here if needed
+    } finally {
+      setIsSavingBookmark(false);
     }
   };
 
@@ -342,10 +352,6 @@ export function Bible({
       clearTimeout(scrollResetTimeout.current);
       scrollResetTimeout.current = null;
     }
-    if (settingsVisible && !scrollToggleLock.current) {
-      scrollToggleLock.current = true;
-      onToggleSettings();
-    }
   };
 
   const handleScrollEndDrag = () => {
@@ -370,6 +376,21 @@ export function Bible({
       scrollToggleLock.current = true;
       resetScrollFlag();
     }
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    const diff = currentOffset - lastScrollOffset.current;
+
+    if (Math.abs(diff) >= SCROLL_DIRECTION_THRESHOLD) {
+      if (diff > 0 && settingsVisible) {
+        onHideSettings?.();
+      } else if (diff < 0 && !settingsVisible) {
+        onShowSettings?.();
+      }
+    }
+
+    lastScrollOffset.current = Math.max(0, currentOffset);
   };
 
   const handleBack = () => {
@@ -432,12 +453,17 @@ export function Bible({
             },
           ]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          disabled={isSavingBookmark}
         >
-          <Feather
-            name={isSelectionMode ? "bookmark" : "menu"}
-            size={20}
-            color={selectionIconColor}
-          />
+          {isSavingBookmark ? (
+            <ActivityIndicator size="small" color={selectionIconColor} />
+          ) : (
+            <Feather
+              name={isSelectionMode ? "bookmark" : "menu"}
+              size={20}
+              color={selectionIconColor}
+            />
+          )}
         </Pressable>
       </View>
 
@@ -480,6 +506,7 @@ export function Bible({
             onScrollEndDrag={handleScrollEndDrag}
             onMomentumScrollBegin={handleMomentumScrollBegin}
             onMomentumScrollEnd={handleMomentumScrollEnd}
+            onScroll={handleScroll}
             scrollEventThrottle={16}
           >
             <Text
