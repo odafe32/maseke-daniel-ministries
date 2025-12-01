@@ -316,14 +316,14 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.secondaryButton]}
+                style={[styles.modalButton, styles.secondaryButton, { borderColor: accent }]}
                 onPress={() => {
                   // Access online without downloading
                   setShowDownloadModal(false);
                   setSelectedBook(modalBook);
                 }}
               >
-                <Text style={[styles.modalButtonText, { color: primaryText }]}>Access Online</Text>
+                <Text style={[styles.modalButtonText, { color: accent }]}>Access Online</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton, { backgroundColor: accent }]}

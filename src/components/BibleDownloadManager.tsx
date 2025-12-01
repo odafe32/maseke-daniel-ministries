@@ -23,7 +23,7 @@ interface BibleDownloadManagerProps {
 }
 
 // Essential books to download on first launch (most commonly read)
-const ESSENTIAL_BOOKS = [1, 44, 45]; // Genesis, Psalms,
+const ESSENTIAL_BOOKS = [1, 40]; // Genesis, Matthew,
 
 export function BibleDownloadManager({ onComplete, onCancel }: BibleDownloadManagerProps) {
   const [progress, setProgress] = useState<BibleDownloadProgress>({
@@ -199,7 +199,7 @@ export function BibleDownloadManager({ onComplete, onCancel }: BibleDownloadMana
           disabled={isDownloading}
         >
           <Text style={[styles.cancelButtonText, isDownloading && styles.cancelButtonTextDisabled]}>
-            {isDownloading ? 'Downloading...' : 'Cancel'}
+            {isDownloading ? 'Downloading, Please wait...' : 'Cancel'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -310,6 +310,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   cancelButtonTextDisabled: {
-    color: '#ccc',
+    color: '#5b5b5bff',
   },
 });

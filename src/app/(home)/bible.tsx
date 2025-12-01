@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { Bible } from "@/src/screens";
 import { useBible } from "@/src/hooks/useBible";
+import { useNotes } from "@/src/hooks/useNotes";
 import { Book } from "@/src/api/bibleApi";
 import { BibleStorage } from "@/src/utils/bibleStorage";
 import { BibleDownloadManager } from "@/src/components/BibleDownloadManager";
@@ -91,6 +92,9 @@ export default function BiblePage() {
     const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
     const { currentChapter, fetchChapter, clearCurrentChapter, isLoadingChapter, downloadProgress } = useBible();
+
+    // Initialize notes store
+    useNotes();
 
     // Load preferences on component mount
     useEffect(() => {
