@@ -1,5 +1,6 @@
 export const bottomMenuHiddenSegments = [
   "/profile",
+  "/bible",
   "/saved-notes",
   "/orders",
   "/wishlists",
