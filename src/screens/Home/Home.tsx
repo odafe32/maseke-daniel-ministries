@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { ThemeText } from "@/src/components";
-import { fs, getColor, hp, wp } from "@/src/utils";
+import { colors, fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
 import { HomeStorage, HomeData } from "@/src/utils/homeStorage";
 import { quickActions } from "@/src/constants/data";
@@ -17,6 +17,8 @@ import {
 } from "react-native";
 import { avatarUri } from "@/src/constants/data";
 import { useUser } from '../../hooks/useUser';
+import { useOrientation, Orientation } from '../../hooks/useOrientation';
+import Feather from "@expo/vector-icons/Feather";
 
 export const Home = ({
   loading,
@@ -24,16 +26,36 @@ export const Home = ({
   onRefresh,
   onCardPress,
   onProfilePress,
+  onNotificationPress,
+  notificationCount,
   quickActions: propQuickActions = quickActions,
 }: HomeProps) => {
   const colors = getColor();
   const { user: apiUser } = useUser();
+  const orientation: Orientation = useOrientation();
   const profileScale = useRef(new Animated.Value(1)).current;
 
   // Offline data state
   const [localUser, setLocalUser] = useState<any>(null);
   const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  // Dynamic styles for elements that use colors
+  const dynamicStyles = {
+    notificationBadge: {
+      position: 'absolute' as const,
+      top: -4,
+      right: -4,
+      backgroundColor: '#DC2626',
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      borderWidth: 1,
+      borderColor: '#fff',
+    },
+  };
 
   // Use local data if available, otherwise use API data
   const user = localUser || apiUser;
@@ -61,6 +83,22 @@ export const Home = ({
       }),
     ]).start(() => onProfilePress());
   };
+
+  const handleNotificationPress = () => {
+    onNotificationPress();
+  };
+
+  // const getCurrentDayAndTime = () => {
+  //   const now = new Date();
+  //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  //   const day = days[now.getDay()];
+  //   const time = now.toLocaleTimeString('en-US', {
+  //     hour: '2-digit',
+  //     minute: '2-digit',
+  //     timeZone: 'UTC'
+  //   });
+  //   return `${day} ${time} UTC`;
+  // };
 
   // Load offline data on component mount
   useEffect(() => {
@@ -111,44 +149,27 @@ export const Home = ({
   }, [apiUser, isOfflineMode]);
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-      }
-    >
-      {loading ? (
-        <>
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <View style={[styles.skeletonBar, { width: 120 }]} />
-              <View style={[styles.skeletonBar, { width: 180, marginTop: 8 }]} />
-            </View>
-            <View style={styles.skeletonAvatar} />
+    <View style={styles.container}>
+      {/* Fixed Header */}
+      <View style={styles.fixedHeader}>
+        <View style={styles.headerRow}>
+          <View>
+            <ThemeText variant="h3" style={styles.greeting}>
+             <Text style={{color: colors.error,}}>Hello</Text> {user?.full_name || 'User'},
+            </ThemeText>
           </View>
 
-          <View style={styles.cardsWrapper}>
-            {Array.from({ length: 6 }).map((_, index) => (
-              <View key={`skeleton-${index}`} style={styles.skeletonCard} />
-            ))}
-          </View>
-        </>
-      ) : (
-        <>
-          <View style={styles.headerRow}>
-            <View>
-              <ThemeText
-                variant="label"
-                color={colors.muted}
-                style={styles.serviceLabel}
-              >
-                Sunday Service
-              </ThemeText>
-              <ThemeText variant="h3" style={styles.greeting}>
-               <Text style={{color: colors.error,}}>Hello</Text> {user?.full_name || 'User'},
-              </ThemeText>
-            </View>
+          <View style={styles.rightHeader}>
+            <TouchableOpacity onPress={handleNotificationPress} style={styles.notificationWrapper} activeOpacity={0.8}>
+              <Feather name="bell" size={24} color={colors.primary} />
+              {notificationCount > 0 && (
+                <View style={dynamicStyles.notificationBadge}>
+                  <ThemeText variant="caption" style={styles.badgeText}>
+                    {notificationCount > 99 ? '99+' : String(notificationCount)}
+                  </ThemeText>
+                </View>
+              )}
+            </TouchableOpacity>
 
             <TouchableOpacity onPress={handleProfilePressInternal} activeOpacity={0.8}>
               <Animated.Image
@@ -157,7 +178,25 @@ export const Home = ({
               />
             </TouchableOpacity>
           </View>
+        </View>
+      </View>
 
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollableContent}
+        contentContainerStyle={styles.scrollableContentContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
+      >
+        {loading ? (
+          <View style={styles.cardsWrapper}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View key={`skeleton-${index}`} style={styles.skeletonCard} />
+            ))}
+          </View>
+        ) : (
           <View style={styles.cardsWrapper}>
             {displayQuickActions.map((item) => (
               <TouchableOpacity
@@ -176,18 +215,29 @@ export const Home = ({
               </TouchableOpacity>
             ))}
           </View>
-        </>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+  },
+  fixedHeader: {
     paddingHorizontal: 20,
-    paddingVertical: 24,
-
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: '#fff',
+  },
+  scrollableContent: {
+    flex: 1,
+  },
+  scrollableContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   headerRow: {
     flexDirection: "row",
@@ -211,6 +261,19 @@ const styles = StyleSheet.create({
     height: hp(50),
     borderRadius: wp(50),
     backgroundColor: "#E0E0E0",
+  },
+  rightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp(16),
+  },
+  notificationWrapper: {
+    position: 'relative',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: fs(10),
+    fontFamily: 'Geist-SemiBold',
   },
   cardsWrapper: {
     marginTop: hp(32),

@@ -11,6 +11,7 @@ import BottomMenu from "../components/BottomMenu";
 import { usePathname } from "expo-router";
 import { shouldHideBottomMenu } from "../constants/navigation";
 import { useInternetConnectivity } from "../hooks/useInternetConnectivity";
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 // Color constants
 const Colors = {
@@ -145,6 +146,9 @@ const RootLayout = () => {
         }
       }
     });
+
+    // Allow auto-rotation
+    ScreenOrientation.unlockAsync();
   }, []);
 
   useEffect(() => {
