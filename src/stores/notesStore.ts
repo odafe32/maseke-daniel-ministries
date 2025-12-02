@@ -2,12 +2,18 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { Note, notesApi, CreateNoteRequest, UpdateNoteRequest } from '../api/notesApi';
+import { bibleApi } from '../api/bibleApi';
+
+const PREFERENCES_KEY = '@bible_app_preferences';
+const BIBLE_DATA_KEY = '@bible_app_data';
+const VERSE_CACHE_KEY = '@cached_verse_texts';
 
 interface NotesState {
   // Data
   notes: Note[];
   savedVerses: { [key: string]: number[] }; // bookId-chapter: verseIds[]
   pendingNotes: CreateNoteRequest[];
+  chapterVerseCache: Record<string, Record<number, string>>;
   isConnected: boolean;
 
   // Loading states
@@ -30,6 +36,11 @@ interface NotesState {
   unsaveVersesForReference: (bookId: number, chapter: number, verseIds: number[]) => Promise<boolean>;
   loadCachedNotes: () => Promise<Note[]>;
   saveCachedNotes: () => Promise<void>;
+  loadVerseCache: () => Promise<void>;
+  saveVerseCache: () => Promise<void>;
+  ensureChapterVerses: (bookId: number, chapter: number) => Promise<void>;
+  prefetchVersesForNotes: (notes: Note[]) => Promise<void>;
+  getVerseTextForNote: (note: Note) => string;
   loadPendingNotes: () => Promise<void>;
   savePendingNotes: () => Promise<void>;
   processPendingNotes: () => Promise<void>;
@@ -42,6 +53,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   notes: [],
   savedVerses: {},
   pendingNotes: [],
+  chapterVerseCache: {},
   isConnected: true,
 
   isLoadingNotes: false,
@@ -55,10 +67,13 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   fetchNotes: async () => {
     set({ isLoadingNotes: true, error: null });
 
-    // Load cached notes immediately for offline use
+    // Load verse cache and cached notes for offline use
+    await get().loadVerseCache();
+
     const cachedNotes = await get().loadCachedNotes();
     if (cachedNotes.length) {
       set({ notes: cachedNotes });
+      await get().prefetchVersesForNotes(cachedNotes);
     }
 
     try {
@@ -69,6 +84,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       });
 
       await get().saveCachedNotes();
+      await get().prefetchVersesForNotes(notes);
 
       // Update savedVerses cache
       const savedVerses: { [key: string]: number[] } = {};
@@ -106,6 +122,88 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
   },
 
+  loadVerseCache: async () => {
+    try {
+      const stored = await AsyncStorage.getItem(VERSE_CACHE_KEY);
+      if (stored) {
+        set({ chapterVerseCache: JSON.parse(stored) });
+      }
+    } catch (error) {
+      console.error('Failed to load verse cache:', error);
+    }
+  },
+
+  saveVerseCache: async () => {
+    try {
+      const { chapterVerseCache } = get();
+      await AsyncStorage.setItem(VERSE_CACHE_KEY, JSON.stringify(chapterVerseCache));
+    } catch (error) {
+      console.error('Failed to save verse cache:', error);
+    }
+  },
+
+  ensureChapterVerses: async (bookId: number, chapter: number) => {
+    if (!bookId || !chapter) return;
+    const key = `${bookId}-${chapter}`;
+    const { chapterVerseCache } = get();
+    if (chapterVerseCache[key]) {
+      return;
+    }
+
+    try {
+      const verses = await bibleApi.getVerses(bookId, chapter);
+      const verseMap: Record<number, string> = {};
+      verses.forEach(verse => {
+        verseMap[verse.verse] = verse.text;
+      });
+
+      set(state => ({
+        chapterVerseCache: {
+          ...state.chapterVerseCache,
+          [key]: verseMap,
+        },
+      }));
+
+      await get().saveVerseCache();
+    } catch (error) {
+      console.error(`Failed to cache verses for ${key}:`, error);
+    }
+  },
+
+  prefetchVersesForNotes: async (notes: Note[]) => {
+    const combos = new Set<string>();
+    notes.forEach(note => {
+      if (!note.content && note.book?.id && note.chapter) {
+        combos.add(`${note.book.id}-${note.chapter}`);
+      }
+    });
+
+    await Promise.all(Array.from(combos).map(async combo => {
+      const [bookId, chapter] = combo.split('-').map(Number);
+      await get().ensureChapterVerses(bookId, chapter);
+    }));
+  },
+
+  getVerseTextForNote: (note: Note): string => {
+    if (note.content && note.content.trim().length) {
+      return note.content.trim();
+    }
+
+    const bookId = note.book?.id;
+    const chapter = note.chapter;
+    if (!bookId || !chapter) return '';
+
+    const key = `${bookId}-${chapter}`;
+    const cache = get().chapterVerseCache[key];
+    if (!cache) return '';
+
+    return note.verses
+      .map(verseId => cache[verseId])
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  },
+
   // Create a new note
   createNote: async (noteData: CreateNoteRequest): Promise<Note | null> => {
     set({ isCreatingNote: true, error: null });
@@ -119,6 +217,9 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }));
 
       await get().saveCachedNotes();
+      if (newNote.book?.id && newNote.chapter) {
+        await get().ensureChapterVerses(newNote.book.id, newNote.chapter);
+      }
 
       // Update savedVerses cache
       const key = `${noteData.book_id}-${noteData.chapter}`;
@@ -294,6 +395,10 @@ export const useNotesStore = create<NotesState>((set, get) => ({
         }));
 
         await get().saveCachedNotes();
+      }
+
+      if (newNote?.book?.id && newNote.chapter) {
+        await get().ensureChapterVerses(newNote.book.id, newNote.chapter);
       }
 
       return newNote;

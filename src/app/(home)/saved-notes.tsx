@@ -1,42 +1,45 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { SavedNotes } from "@/src/screens/Home/Profile/SavedNotes";
 import { useRouter } from "expo-router";
 import { Animated } from "react-native";
-import { savedNotesData, SavedNote, NoteType } from "@/src/constants/data";
+import { Note } from "@/src/api/notesApi";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
+import { useNotes } from "@/src/hooks/useNotes";
+import { showSuccessToast } from "@/src/utils/toast";
+import { bibleApi } from "@/src/api/bibleApi";
+
+type NoteFilter = "all" | "bible" | "devotional";
 
 export default function SavedNotesPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | NoteType>('all');
+  const { notes, isLoadingNotes, deleteNote, ensureChapterVerses, getVerseTextForNote } = useNotes();
+  const [activeFilter, setActiveFilter] = useState<NoteFilter>('all');
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<SavedNote | null>(null);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   // Animation values
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
   const handleBack = () => {
     wrapperRef.current?.reverseAnimate(() => router.back());
   };
 
-  const handleFilterChange = (filter: 'all' | NoteType) => {
+  const handleFilterChange = (filter: NoteFilter) => {
     setActiveFilter(filter);
   };
 
-  const handleNotePress = (note: SavedNote) => {
+  const handleNotePress = (note: Note) => {
+    if (note.book?.id && note.chapter) {
+      ensureChapterVerses(note.book.id, note.chapter).catch(err =>
+        console.error('Failed to ensure chapter verses:', err)
+      );
+    }
+
     setSelectedNote(note);
     setModalVisible(true);
-    
+
     // Start animations
     Animated.parallel([
       Animated.timing(slideAnim, {
@@ -71,30 +74,50 @@ export default function SavedNotesPage() {
     })
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${months[date.getMonth()]} ${date.getDate()}`;
   };
 
-  const getDisplayDate = (note: SavedNote) => {
-    const date = formatDate(note.date);
+  const getDisplayDate = (note: Note) => {
+    const date = formatDate(note.updated_at ?? note.created_at);
     return activeFilter === 'all' 
-      ? `${note.type === 'devotional' ? 'Dev' : 'Bible'}. ${date}`
+      ? `${note.content ? 'Dev' : 'Bible'}. ${date}`
       : date;
   };
 
-  const filteredNotes = activeFilter === 'all' 
-    ? savedNotesData 
-    : savedNotesData.filter(note => note.type === activeFilter);
+  const filteredNotes = useMemo(() => {
+    if (activeFilter === 'all') return notes;
+
+    if (activeFilter === 'devotional') {
+      return notes.filter(note => Boolean(note.content));
+    }
+
+    return notes.filter(note => !note.content);
+  }, [notes, activeFilter]);
+
+  const handleDeleteNote = (noteId: number) => {
+    return deleteNote(noteId)
+      .then(success => {
+        if (success) {
+          showSuccessToast('Note removed');
+        }
+        return success;
+      })
+      .catch(error => {
+        console.error('Failed to delete note:', error);
+        return false;
+      });
+  };
 
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <SavedNotes 
         onBack={handleBack}
-        savedNotesData={savedNotesData}
         filteredNotes={filteredNotes}
-        loading={loading}
+        loading={isLoadingNotes}
         activeFilter={activeFilter}
         modalVisible={modalVisible}
         selectedNote={selectedNote}
@@ -105,6 +128,8 @@ export default function SavedNotesPage() {
         onCloseModal={handleCloseModal}
         formatDate={formatDate}
         getDisplayDate={getDisplayDate}
+        onDeleteNote={handleDeleteNote}
+        getVerseText={getVerseTextForNote}
       />
     </AuthPageWrapper>
   );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -12,258 +12,12 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { SavedNote, NoteType } from "@/src/constants/data";
 import { fs, hp, wp, wpt } from "@/src/utils";
+import { Note } from "@/src/api/notesApi";
+
+type NoteFilter = 'all' | 'bible' | 'devotional';
 
 const { width: screenWidth } = Dimensions.get("window");
-
-interface SavedNotesProps {
-  onBack: () => void;
-  savedNotesData: SavedNote[];
-  filteredNotes: SavedNote[];
-  loading: boolean;
-  activeFilter: 'all' | NoteType;
-  modalVisible: boolean;
-  selectedNote: SavedNote | null;
-  slideAnim: Animated.Value;
-  fadeAnim: Animated.Value;
-  onFilterChange: (filter: 'all' | NoteType) => void;
-  onNotePress: (note: SavedNote) => void;
-  onCloseModal: () => void;
-  formatDate: (dateString: string) => string;
-  getDisplayDate: (note: SavedNote) => string;
-}
-
-export function SavedNotes({
-  onBack,
-  savedNotesData,
-  filteredNotes,
-  loading,
-  activeFilter,
-  modalVisible,
-  selectedNote,
-  slideAnim,
-  fadeAnim,
-  onFilterChange,
-  onNotePress,
-  onCloseModal,
-  formatDate,
-  getDisplayDate,
-}: SavedNotesProps) {
-
-  const renderNoteCard = ({ item }: { item: SavedNote }) => (
-    <TouchableOpacity 
-      style={[
-        styles.noteCard, 
-        { 
-          width: wpt(42),
-        }
-      ]}
-      activeOpacity={0.8}
-      onPress={() => onNotePress(item)}
-    >
-      <ThemeText variant="body" style={styles.noteText} numberOfLines={6}>
-        {item.text}
-      </ThemeText>
-      
-      <View style={styles.noteFooter}>
-        <View style={styles.savedInfo}>
-          <Icon name="bookmark" size={14} color="#3B4897" />
-        </View>
-        
-        <ThemeText variant="caption" style={styles.noteDate}>
-          {getDisplayDate(item)}
-        </ThemeText>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderSkeletonNoteCard = (index: number) => {
-    const cardWidth = wpt(42);
-    
-    return (
-      <View key={`skeleton-${index}`} style={[styles.skeletonNoteCard, { width: cardWidth }]}>
-        <View style={styles.skeletonTextContainer}>
-          <View style={[styles.skeletonBar, { width: '100%', marginBottom: hp(8) }]} />
-          <View style={[styles.skeletonBar, { width: '85%', marginBottom: hp(8) }]} />
-          <View style={[styles.skeletonBar, { width: '90%', marginBottom: hp(8) }]} />
-          <View style={[styles.skeletonBar, { width: '75%' }]} />
-        </View>
-        
-        <View style={styles.skeletonFooter}>
-          <View style={styles.skeletonBookmark} />
-          <View style={[styles.skeletonBar, { width: wp(60), height: hp(12) }]} />
-        </View>
-      </View>
-    );
-  };
-
-  const FilterButton = ({ filter, label }: { filter: 'all' | NoteType; label: string }) => (
-    <TouchableOpacity
-      style={[
-        styles.filterButton,
-        ...(activeFilter === filter ? [styles.activeFilterButton] : [])
-      ]}
-      onPress={() => onFilterChange(filter)}
-      activeOpacity={0.7}
-    >
-      <ThemeText 
-        variant="bodySmall" 
-        style={[
-          styles.filterButtonText,
-          ...(activeFilter === filter ? [styles.activeFilterButtonText] : [])
-        ]}
-      >
-        {label}
-      </ThemeText>
-    </TouchableOpacity>
-  );
-
-  return (
-    <>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <BackHeader title="Saved Notes" onBackPress={onBack} />
-
-        <View style={styles.filterContainer}>
-          <FilterButton filter="all" label="All" />
-          <FilterButton filter="devotional" label="Devotional Notes" />
-          <FilterButton filter="bible" label="Bible Notes" />
-        </View>
-
-        {loading ? (
-          <View style={styles.skeletonGrid}>
-            {Array.from({ length: 12 }).map((_, index) => renderSkeletonNoteCard(index))}
-          </View>
-        ) : (
-          <FlatList
-            data={filteredNotes}
-            renderItem={({ item }) => renderNoteCard({ item })}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-        )}
-      </ScrollView>
-
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="none"
-        onRequestClose={onCloseModal}
-      >
-        {/* Backdrop */}
-        <Animated.View 
-          style={[
-            styles.modalBackdrop,
-            {
-              opacity: fadeAnim
-            }
-          ]}
-        >
-          <TouchableOpacity 
-            style={styles.backdropTouchable} 
-            activeOpacity={1} 
-            onPress={onCloseModal} 
-          />
-        </Animated.View>
-
-        {/* Modal Content */}
-        <Animated.View
-          style={[
-            styles.modalContent,
-            {
-              transform: [
-                {
-                  translateY: slideAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [screenWidth, 0],
-                  }),
-                },
-              ],
-              opacity: fadeAnim,
-            },
-          ]}
-        >
-          {/* Header */}
-          <View style={styles.modalHeader}>
-            <View style={styles.modalTitleContainer}>
-              <View style={styles.modalTitleIconContainer}>
-                <Feather name="bookmark" size={20} color="#3B4897" />
-              </View>
-              <View style={styles.modalTitleTextContainer}>
-                <ThemeText variant="h3" style={styles.modalTitle}>
-                  {selectedNote?.type === 'devotional' ? 'Devotional Note' : 'Bible Note'}
-                </ThemeText>
-                <ThemeText variant="caption" style={styles.modalSubtitle}>
-                  Saved on {selectedNote ? formatDate(selectedNote.date) : ''}
-                </ThemeText>
-              </View>
-            </View>
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={onCloseModal}
-              activeOpacity={0.7}
-            >
-              <Feather name="x" size={16} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Content */}
-          <View style={styles.modalBody}>
-            <ThemeText variant="body" style={styles.modalNoteText}>
-              {selectedNote?.text}
-            </ThemeText>
-            
-            <View style={styles.modalFooter}>
-              <View style={styles.modalSummaryContainer}>
-                <View style={styles.modalSummaryHeader}>
-                  <ThemeText variant="h4" style={styles.modalSummaryTitle}>
-                    Note Details
-                  </ThemeText>
-                </View>
-                
-                <View style={styles.modalSummaryDetails}>
-                  <View style={styles.modalSummaryRow}>
-                    <ThemeText variant="body" style={styles.modalSummaryLabel}>
-                      Type:
-                    </ThemeText>
-                    <View style={styles.modalNoteTypeBadge}>
-                      <ThemeText variant="bodySmall" style={styles.modalNoteTypeText}>
-                        {selectedNote?.type === 'devotional' ? 'Devotional' : 'Bible'}
-                      </ThemeText>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.modalSummaryDivider} />
-                  
-                  <View style={styles.modalDateContainer}>
-                    <View style={styles.modalDateIconContainer}>
-                      <Feather name="calendar" size={14} color="#3B4897" />
-                    </View>
-                    <View style={styles.modalDateTextContainer}>
-                      <ThemeText variant="caption" style={styles.modalDateLabel}>
-                        Saved Date:
-                      </ThemeText>
-                      <ThemeText variant="body" style={styles.modalDateValue}>
-                        {selectedNote ? formatDate(selectedNote.date) : ''}
-                      </ThemeText>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </Animated.View>
-      </Modal>
-    </>
-  );
-
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -512,6 +266,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
     marginVertical: 4,
   },
+  modalSummaryValue: {
+    color: '#121116',
+    fontFamily: 'Geist-SemiBold',
+    textAlign: 'right',
+  },
   modalNoteTypeBadge: {
     backgroundColor: '#E6F0FF',
     paddingHorizontal: 12,
@@ -523,6 +282,28 @@ const styles = StyleSheet.create({
     color: '#3B4897',
     fontFamily: 'Geist-SemiBold',
     fontSize: fs(12),
+  },
+  noteReference: {
+    color: '#032B6B',
+    fontSize: fs(13),
+    fontFamily: 'Geist-Medium',
+    marginBottom: hp(6),
+  },
+  removeButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  removeButtonText: {
+    color: '#B42318',
+    fontFamily: 'Geist-SemiBold',
   },
   modalDateContainer: {
     flexDirection: 'row',
@@ -551,4 +332,430 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist-SemiBold',
     fontSize: fs(14),
   },
+  deleteConfirmBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteConfirmBackdropTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  deleteConfirmContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+  },
+  deleteConfirmTitle: {
+    color: '#121116',
+    fontFamily: 'Geist-Bold',
+    fontSize: fs(18),
+    marginBottom: 8,
+  },
+  deleteConfirmMessage: {
+    color: '#666',
+    fontFamily: 'Geist-Medium',
+    fontSize: fs(14),
+    marginBottom: 24,
+  },
+  deleteConfirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: wp(16),
+    paddingVertical: hp(8),
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontFamily: 'Geist-Medium',
+    fontSize: fs(14),
+  },
+  confirmDeleteButton: {
+    backgroundColor: '#FF3737',
+    borderRadius: 12,
+    paddingHorizontal: wp(16),
+    paddingVertical: hp(8),
+  },
+  confirmDeleteButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Geist-Medium',
+    fontSize: fs(14),
+  },
 });
+
+interface SavedNotesProps {
+  onBack: () => void;
+  filteredNotes: Note[];
+  loading: boolean;
+  activeFilter: NoteFilter;
+  modalVisible: boolean;
+  selectedNote: Note | null;
+  slideAnim: Animated.Value;
+  fadeAnim: Animated.Value;
+  onFilterChange: (filter: NoteFilter) => void;
+  onNotePress: (note: Note) => void;
+  onCloseModal: () => void;
+  formatDate: (dateString: string | undefined) => string;
+  getDisplayDate: (note: Note) => string;
+  onDeleteNote: (noteId: number) => Promise<boolean>;
+  getVerseText: (note: Note) => string;
+}
+
+export function SavedNotes({
+  onBack,
+  filteredNotes,
+  loading,
+  activeFilter,
+  modalVisible,
+  selectedNote,
+  slideAnim,
+  fadeAnim,
+  onFilterChange,
+  onNotePress,
+  onCloseModal,
+  formatDate,
+  getDisplayDate,
+  onDeleteNote,
+  getVerseText,
+}: SavedNotesProps) {
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isDevotionalNote = (note: Note) => Boolean(note.content && note.content.trim().length);
+
+  const getNotePreview = (note: Note) => {
+    if (note.content && note.content.trim().length) {
+      return note.content.trim();
+    }
+
+    const verseText = getVerseText(note);
+
+    if (verseText) {
+      return verseText;
+    }
+
+    const reference = `${note.book?.name ?? 'Book'} ${note.chapter}`;
+    const verses = note.verses?.length ? `:${note.verses.join(', ')}` : '';
+    return `${reference}${verses}`;
+  };
+
+  const getVerseReference = (note: Note) => {
+    const bookName = note.book?.name ?? 'Book';
+    const chapter = note.chapter ?? '';
+    const verses = note.verses?.length ? note.verses.join(', ') : '';
+
+    if (!chapter) {
+      return bookName;
+    }
+
+    return `${bookName} ${chapter}${verses ? `:${verses}` : ''}`;
+  };
+
+  const getNoteTypeLabel = (note: Note | null) => {
+    if (!note) return '';
+    return isDevotionalNote(note) ? 'Devotional' : 'Bible';
+  };
+
+  const renderNoteCard = ({ item }: { item: Note }) => (
+    <TouchableOpacity 
+      style={[
+        styles.noteCard, 
+        { 
+          width: wpt(42),
+        }
+      ]}
+      activeOpacity={0.8}
+      onPress={() => onNotePress(item)}
+    >
+      <ThemeText variant="body" style={styles.noteText} numberOfLines={6} ellipsizeMode='tail'>
+        {getNotePreview(item)}
+      </ThemeText>
+
+      {!isDevotionalNote(item) && (
+        <ThemeText variant="caption" style={styles.noteReference}>
+          {getVerseReference(item)}
+        </ThemeText>
+      )}
+
+      <View style={styles.noteFooter}>
+        <View style={styles.savedInfo}>
+          <Icon name="bookmark" size={14} color="#3B4897" />
+        </View>
+        
+        <ThemeText variant="caption" style={styles.noteDate}>
+          {getDisplayDate(item)}
+        </ThemeText>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderSkeletonNoteCard = (index: number) => {
+    const cardWidth = wpt(42);
+    
+    return (
+      <View key={`skeleton-${index}`} style={[styles.skeletonNoteCard, { width: cardWidth }]}>
+        <View style={styles.skeletonTextContainer}>
+          <View style={[styles.skeletonBar, { width: '100%', marginBottom: hp(8) }]} />
+          <View style={[styles.skeletonBar, { width: '85%', marginBottom: hp(8) }]} />
+          <View style={[styles.skeletonBar, { width: '90%', marginBottom: hp(8) }]} />
+          <View style={[styles.skeletonBar, { width: '75%' }]} />
+        </View>
+        
+        <View style={styles.skeletonFooter}>
+          <View style={styles.skeletonBookmark} />
+          <View style={[styles.skeletonBar, { width: wp(60), height: hp(12) }]} />
+        </View>
+      </View>
+    );
+  };
+
+  const FilterButton = ({ filter, label }: { filter: NoteFilter; label: string }) => (
+    <TouchableOpacity
+      style={[
+        styles.filterButton,
+        ...(activeFilter === filter ? [styles.activeFilterButton] : [])
+      ]}
+      onPress={() => onFilterChange(filter)}
+      activeOpacity={0.7}
+    >
+      <ThemeText 
+        variant="bodySmall" 
+        style={[
+          styles.filterButtonText,
+          ...(activeFilter === filter ? [styles.activeFilterButtonText] : [])
+        ]}
+      >
+        {label}
+      </ThemeText>
+    </TouchableOpacity>
+  );
+
+  return (
+    <>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <BackHeader title="Saved Notes" onBackPress={onBack} />
+
+        <View style={styles.filterContainer}>
+          <FilterButton filter="all" label="All" />
+          <FilterButton filter="bible" label="Bible Notes" />
+          <FilterButton filter="devotional" label="Devotional Notes" />
+        </View>
+
+        {loading ? (
+          <View style={styles.skeletonGrid}>
+            {Array.from({ length: 12 }).map((_, index) => renderSkeletonNoteCard(index))}
+          </View>
+        ) : (
+          <FlatList
+            data={filteredNotes}
+            renderItem={({ item }) => renderNoteCard({ item })}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="none"
+        onRequestClose={onCloseModal}
+      >
+        {/* Backdrop */}
+        <Animated.View 
+          style={[
+            styles.modalBackdrop,
+            {
+              opacity: fadeAnim
+            }
+          ]}
+        >
+          <TouchableOpacity 
+            style={styles.backdropTouchable} 
+            activeOpacity={1} 
+            onPress={onCloseModal} 
+          />
+        </Animated.View>
+
+        {/* Modal Content */}
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              transform: [
+                {
+                  translateY: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [screenWidth, 0],
+                  }),
+                },
+              ],
+              opacity: fadeAnim,
+            },
+          ]}
+        >
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <View style={styles.modalTitleContainer}>
+              <View style={styles.modalTitleIconContainer}>
+                <Feather name="bookmark" size={20} color="#3B4897" />
+              </View>
+              <View style={styles.modalTitleTextContainer}>
+                <ThemeText variant="h3" style={styles.modalTitle}>
+                  {getNoteTypeLabel(selectedNote)} Note
+                </ThemeText>
+                <ThemeText variant="caption" style={styles.modalSubtitle}>
+                  Saved on {selectedNote ? formatDate(selectedNote.updated_at ?? selectedNote.created_at) : ''}
+                </ThemeText>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={onCloseModal}
+              activeOpacity={0.7}
+            >
+              <Feather name="x" size={16} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Content */}
+          <View style={styles.modalBody}>
+            <ThemeText variant="body" style={styles.modalNoteText}>
+              {selectedNote ? getNotePreview(selectedNote) : ''}
+            </ThemeText>
+            
+            <View style={styles.modalFooter}>
+              <View style={styles.modalSummaryContainer}>
+                <View style={styles.modalSummaryHeader}>
+                  <ThemeText variant="h4" style={styles.modalSummaryTitle}>
+                    Note Details
+                  </ThemeText>
+                </View>
+                
+                <View style={styles.modalSummaryDetails}>
+                  {selectedNote && !isDevotionalNote(selectedNote) ? (
+                    <View style={styles.modalSummaryRow}>
+                      <ThemeText variant="body" style={styles.modalSummaryLabel}>
+                        Reference:
+                      </ThemeText>
+                      <ThemeText variant="body" style={styles.modalSummaryValue}>
+                        {getVerseReference(selectedNote)}
+                      </ThemeText>
+                    </View>
+                  ) : null}
+
+                  {selectedNote ? <View style={styles.modalSummaryDivider} /> : null}
+
+                  <View style={styles.modalSummaryRow}>
+                    <ThemeText variant="body" style={styles.modalSummaryLabel}>
+                      Type:
+                    </ThemeText>
+                    <View style={styles.modalNoteTypeBadge}>
+                      <ThemeText variant="bodySmall" style={styles.modalNoteTypeText}>
+                        {getNoteTypeLabel(selectedNote)}
+                      </ThemeText>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.modalSummaryDivider} />
+                  
+                  <View style={styles.modalDateContainer}>
+                    <View style={styles.modalDateIconContainer}>
+                      <Feather name="calendar" size={14} color="#3B4897" />
+                    </View>
+                    <View style={styles.modalDateTextContainer}>
+                      <ThemeText variant="caption" style={styles.modalDateLabel}>
+                        Saved Date:
+                      </ThemeText>
+                      <ThemeText variant="body" style={styles.modalDateValue}>
+                        {selectedNote ? formatDate(selectedNote.updated_at ?? selectedNote.created_at) : ''}
+                      </ThemeText>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.removeButton}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setShowDeleteConfirm(true);
+                }}
+              >
+                <Feather name="trash-2" size={16} color="#B42318" />
+                <ThemeText variant="body" style={styles.removeButtonText}>
+                  Remove note
+                </ThemeText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      </Modal>
+
+      <Modal
+        visible={showDeleteConfirm}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteConfirm(false)}
+      >
+        <View style={styles.deleteConfirmBackdrop}>
+          <TouchableOpacity
+            style={styles.deleteConfirmBackdropTouchable}
+            activeOpacity={1}
+            onPress={() => setShowDeleteConfirm(false)}
+          />
+          <View style={styles.deleteConfirmContent}>
+            <ThemeText variant="h3" style={styles.deleteConfirmTitle}>
+              Remove note
+            </ThemeText>
+            <ThemeText variant="body" style={styles.deleteConfirmMessage}>
+              Are you sure you want to delete this saved note?
+            </ThemeText>
+            <View style={styles.deleteConfirmButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowDeleteConfirm(false)}
+                activeOpacity={0.8}
+                disabled={isDeleting}
+              >
+                <ThemeText variant="body" style={styles.cancelButtonText}>
+                  Cancel
+                </ThemeText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmDeleteButton}
+                onPress={async () => {
+                  setIsDeleting(true);
+                  await onDeleteNote(selectedNote!.id);
+                  setIsDeleting(false);
+                  setShowDeleteConfirm(false);
+                  onCloseModal();
+                }}
+                activeOpacity={0.8}
+                disabled={isDeleting}
+              >
+                <ThemeText variant="body" style={styles.confirmDeleteButtonText}>
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </ThemeText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
