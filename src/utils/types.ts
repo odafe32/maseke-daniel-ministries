@@ -55,6 +55,8 @@ export interface HomeProps {
   onRefresh: () => void;
   onCardPress: (link: string) => void;
   onProfilePress: () => void;
+  onNotificationPress: () => void;
+  notificationCount: number;
   quickActions: QuickAction[];
 }
 

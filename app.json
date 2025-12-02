@@ -3,7 +3,6 @@
     "name": "maseke-daniel-ministries",
     "slug": "maseke-daniel-ministries",
     "version": "1.0.0",
-    "orientation": "portrait",
     "icon": "./src/assets/icon.svg",
     "userInterfaceStyle": "light",
     "scheme": "maseke-daniel-ministries",

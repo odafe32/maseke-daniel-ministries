@@ -66,7 +66,6 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
     }
   });
 
-  // Handle notification responses
   const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
     console.log('Notification response:', response);
   });

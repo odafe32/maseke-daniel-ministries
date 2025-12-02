@@ -4147,6 +4147,11 @@ expo-router@~6.0.15:
     use-latest-callback "^0.2.1"
     vaul "^1.1.2"
 
+expo-screen-orientation@~9.0.7:
+  version "9.0.7"
+  resolved "https://registry.npmjs.org/expo-screen-orientation/-/expo-screen-orientation-9.0.7.tgz#27eb8c9f57af22e1917fc025d318dd9bf31e05c3"
+  integrity sha512-UH/XlB9eMw+I2cyHSkXhAHRAPk83WyA3k5bst7GLu14wRuWiTch9fb6I7qEJK5CN6+XelcWxlBJymys6Fr/FKA==
+
 expo-server@^1.0.4:
   version "1.0.4"
   resolved "https://registry.npmjs.org/expo-server/-/expo-server-1.0.4.tgz#cb90f23272257f8cb0c9dceaade26bb169d8a3f7"

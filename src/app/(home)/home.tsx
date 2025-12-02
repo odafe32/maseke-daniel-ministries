@@ -4,15 +4,33 @@ import { quickActions } from "@/src/constants/data";
 import { useRouter } from "expo-router";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { HomeStorage } from "@/src/utils/homeStorage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('notifications');
+        if (stored) {
+          const notifications = JSON.parse(stored);
+          const unread = notifications.filter((n: any) => !n.read).length;
+          setNotificationCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications', error);
+      }
+    };
+    loadNotifications();
   }, []);
 
   // Initialize home data on first load
@@ -70,6 +88,10 @@ export default function HomePage() {
     router.push("/profile");
   };
 
+  const handleNotificationPress = () => {
+    router.push("/notifications");
+  };
+
   return (
     <AuthPageWrapper disableLottieLoading={true}>
       <Home
@@ -78,6 +100,8 @@ export default function HomePage() {
         onRefresh={handleRefresh}
         onCardPress={handleCardPress}
         onProfilePress={handleProfilePress}
+        onNotificationPress={handleNotificationPress}
+        notificationCount={notificationCount}
         quickActions={quickActions}
       />
     </AuthPageWrapper>
