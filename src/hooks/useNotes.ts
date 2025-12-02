@@ -31,6 +31,7 @@ export const useNotes = () => {
     // State
     notes: notesStore.notes,
     savedVerses: notesStore.savedVerses,
+    chapterVerseCache: notesStore.chapterVerseCache,
 
     // Loading states
     isLoadingNotes: notesStore.isLoadingNotes,
@@ -46,12 +47,15 @@ export const useNotes = () => {
     createNote: notesStore.createNote,
     updateNote: notesStore.updateNote,
     deleteNote: notesStore.deleteNote,
+    ensureChapterVerses: notesStore.ensureChapterVerses,
+    prefetchVersesForNotes: notesStore.prefetchVersesForNotes,
 
     // Helper functions
     getNotesForReference: notesStore.getNotesForReference,
     getSavedVersesForReference: notesStore.getSavedVersesForReference,
     saveVersesForReference: notesStore.saveVersesForReference,
     unsaveVersesForReference: notesStore.unsaveVersesForReference,
+    getVerseTextForNote: notesStore.getVerseTextForNote,
 
     clearError: notesStore.clearError,
   };
