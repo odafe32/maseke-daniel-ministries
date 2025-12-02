@@ -18,6 +18,7 @@ export const useInternetConnectivity = () => {
             type: 'success',
             text1: 'Connection Restored',
             text2: 'You are back online',
+            position: 'top',
           });
         } else if (isConnected === true && currentlyConnected === false) {
           // Connection lost
@@ -25,6 +26,7 @@ export const useInternetConnectivity = () => {
             type: 'error',
             text1: 'No Internet Connection',
             text2: 'Please check your network settings',
+            position: 'top',
           });
         }
       }

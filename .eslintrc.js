@@ -27,6 +27,9 @@ module.exports = {
     'react-native/no-unused-styles': 'warn',
     'react-native/split-platform-components': 'off', // Adjust as needed
     '@typescript-eslint/no-unused-vars': 'warn',
+     'react-native/no-color-literals': 'off',
+     'react-native/sort-styles': 'off',
+     'react-native/no-raw-text': 'off',
   },
   settings: {
     react: {

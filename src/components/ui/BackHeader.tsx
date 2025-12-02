@@ -11,6 +11,7 @@ import {
   Animated,
 } from "react-native";
 import { ThemeText } from "./ThemeText";
+import { Icon } from "@/src/components";
 
 interface BackHeaderProps {
   title: string;
@@ -20,6 +21,8 @@ interface BackHeaderProps {
   titleStyle?: TextStyle;
   showBackButton?: boolean;
   showMoreButton?: boolean;
+  showCartButton?: boolean;
+  cartCount?: number; // New prop for cart item count
 }
 
 export const BackHeader = ({
@@ -30,6 +33,8 @@ export const BackHeader = ({
   titleStyle,
   showBackButton = true,
   showMoreButton = false,
+  showCartButton = false,
+  cartCount = 0, // Default to 0 items
 }: BackHeaderProps) => {
   const router = useRouter();
   const colors = getColor();
@@ -77,6 +82,10 @@ export const BackHeader = ({
     }
   };
 
+  const handleCart = () => {
+    router.push("/cart");
+  };
+
   return (
     <View style={[styles.container, containerStyle]}>
       <View style={styles.sideColumn}>
@@ -107,7 +116,27 @@ export const BackHeader = ({
         {title}
       </ThemeText>
 
-      {showMoreButton ? (
+      {showCartButton ? (
+        <Pressable
+          onPress={handleCart}
+          style={[
+            styles.backButton,
+            { backgroundColor: "#fff" },
+          ]}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <View style={styles.cartIconContainer}>
+            <Icon name="cart" size={22} color={colors.primary} />
+            {cartCount > 0 && (
+              <View style={styles.cartBadge}>
+                <ThemeText variant="caption" style={styles.cartBadgeText}>
+                  {cartCount > 99 ? '99+' : cartCount}
+                </ThemeText>
+              </View>
+            )}
+          </View>
+        </Pressable>
+      ) : showMoreButton ? (
         <Pressable
           onPress={handleMore}
           style={[
@@ -152,5 +181,30 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "DMSans-Bold",
     flex: 1,
+  },
+  cartIconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  cartBadge: {
+    alignItems: "center",
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    height: 15,
+    justifyContent: "center",
+    width: 15,
+    paddingHorizontal: 4,
+    position: "absolute",
+    right: -6,
+    top: -6,
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: "500",
+    lineHeight: 12,
+    textAlign: "center",
+    fontFamily: "Geist-SemiBold",
   },
 });
