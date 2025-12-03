@@ -4,12 +4,59 @@ import { useRouter } from "expo-router";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { StoreProduct, storeProducts } from "@/src/constants/data";
 import { showSuccessToast, showInfoToast } from "@/src/utils/toast";
-import { Animated } from "react-native";
+import { Animated, Dimensions } from "react-native";
 
 export default function StorePage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
-  
+
+  // Carousel state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const carouselRef = useRef<any>(null);
+
+  // Get screen width for carousel calculations
+  const screenWidth = Dimensions.get('window').width;
+  const containerPadding = 32; // 16px padding on each side
+  const actualCarouselWidth = screenWidth - containerPadding;
+
+  // Carousel data
+  const carouselData = [
+    {
+      id: 1,
+      image: require("@/src/assets/images/store2.jpg"),
+      text: "Get all your items"
+    },
+    {
+      id: 2,
+      image: require("@/src/assets/images/store2.jpg"),
+      text: "Discover amazing products"
+    },
+    {
+      id: 3,
+      image: require("@/src/assets/images/store2.jpg"),
+      text: "Shop with confidence"
+    }
+  ];
+
+  // Auto-slide effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => {
+        const nextSlide = (prev + 1) % carouselData.length;
+        carouselRef.current?.scrollTo({ x: nextSlide * actualCarouselWidth, animated: true });
+        return nextSlide;
+      });
+    }, 3000); // Change slide every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [carouselData.length]);
+
+  // Manual slide navigation
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+    carouselRef.current?.scrollTo({ x: index * actualCarouselWidth, animated: true });
+  };
+
   // State management
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -19,7 +66,7 @@ export default function StorePage() {
   const [products, setProducts] = useState<StoreProduct[]>(storeProducts);
   const [loadingProducts, setLoadingProducts] = useState<Set<string>>(new Set());
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  
+
   // Product modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
@@ -93,30 +140,30 @@ export default function StorePage() {
   const toggleWishlist = async (productId: string) => {
     // Add to loading state
     setLoadingProducts(prev => new Set(prev).add(productId));
-    
+
     // Simulate API call delay (2 seconds)
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     // Update product state
     setProducts(prevProducts => {
       const updatedProducts = prevProducts.map(product => {
         if (product.id === productId) {
           const newWishlistState = !product.isInWishlist;
-          
+
           // Show appropriate toast message
           if (newWishlistState) {
             showSuccessToast("Added to wishlist", "Product has been added to your wishlist");
           } else {
             showInfoToast("Removed from wishlist", "Product has been removed from your wishlist");
           }
-          
+
           return { ...product, isInWishlist: newWishlistState };
         }
         return product;
       });
       return updatedProducts;
     });
-    
+
     // Remove from loading state
     setLoadingProducts(prev => {
       const newSet = new Set(prev);
@@ -134,14 +181,14 @@ export default function StorePage() {
     setSelectedProduct(product);
     setQuantity(1);
     setModalVisible(true);
-    
+
     // Animate modal opening
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 300,
       useNativeDriver: true,
     }).start();
-    
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
@@ -156,7 +203,7 @@ export default function StorePage() {
       duration: 300,
       useNativeDriver: true,
     }).start();
-    
+
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 300,
@@ -211,6 +258,12 @@ export default function StorePage() {
         increaseQuantity={increaseQuantity}
         decreaseQuantity={decreaseQuantity}
         addToCart={addToCart}
+        currentSlide={currentSlide}
+        setCurrentSlide={setCurrentSlide}
+        carouselRef={carouselRef}
+        carouselData={carouselData}
+        goToSlide={goToSlide}
+        actualCarouselWidth={actualCarouselWidth}
       />
     </AuthPageWrapper>
   );

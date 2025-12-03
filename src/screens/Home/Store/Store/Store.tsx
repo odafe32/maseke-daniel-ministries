@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -8,7 +8,9 @@ import {
   Image,
   TextInput,
   Modal,
-  ActivityIndicator
+  ActivityIndicator,
+  Animated,
+  Dimensions
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
@@ -64,6 +66,12 @@ interface StoreUIProps {
   increaseQuantity: () => void;
   decreaseQuantity: () => void;
   addToCart: () => void;
+  currentSlide: number;
+  setCurrentSlide: (slide: number) => void;
+  carouselRef: any;
+  carouselData: Array<{ id: number; image: any; text: string }>;
+  goToSlide: (index: number) => void;
+  actualCarouselWidth: number;
 }
 
 export function StoreUI({
@@ -92,7 +100,14 @@ export function StoreUI({
   increaseQuantity,
   decreaseQuantity,
   addToCart,
+  currentSlide,
+  setCurrentSlide,
+  carouselRef,
+  carouselData,
+  goToSlide,
+  actualCarouselWidth,
 }: StoreUIProps) {
+
   const renderProductItem = ({ item }: { item: StoreProduct }) => {
     // Show skeleton loader only during initial loading
     if (isInitialLoading) {
@@ -190,16 +205,34 @@ export function StoreUI({
         title={"GDM SHOP"} 
         onBackPress={onBack} 
         showCartButton={true} 
-        onCartPress={handleCartPress} 
         cartCount={cartCount}
       />
 
-      {/* Hero Card */}
-      <View style={styles.heroCard}>
-        <Image 
-          source={require("@/src/assets/images/store2.jpg")} 
-          style={styles.heroImage}
-        />
+      {/* Hero Carousel */}
+      <View style={styles.heroCarousel}>
+        {/* Image Cards Container */}
+        <ScrollView
+          ref={carouselRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => {
+            const index = Math.round(e.nativeEvent.contentOffset.x / actualCarouselWidth);
+            setCurrentSlide(index);
+          }}
+          style={{ ...styles.carouselScroll, width: "100%" }}
+        >
+          {carouselData.map((slide) => (
+            <View key={slide.id} style={[styles.heroCard, { width: actualCarouselWidth }]}>
+              <Image 
+                source={slide.image} 
+                style={styles.heroImage}
+              />
+            </View>
+          ))}
+        </ScrollView>
+        
+        {/* Absolute Text Overlay */}
         <LinearGradient
           style={styles.heroOverlay}
           colors={['transparent', 'rgba(0, 0, 0, 0.7)']}
@@ -207,9 +240,25 @@ export function StoreUI({
           end={{ x: 0, y: 1 }}
         >
           <ThemeText variant="h3" style={styles.heroText}>
-            Shop Now
+            {carouselData[currentSlide].text}
           </ThemeText>
         </LinearGradient>
+        
+        {/* Absolute Progress Indicator */}
+        <View style={styles.progressIndicator}>
+          {carouselData.map((_, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => goToSlide(index)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.dot,
+                currentSlide === index && styles.activeDot
+              ]} />
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Search and Filter Section */}
@@ -480,14 +529,22 @@ const styles = StyleSheet.create({
     height: hp(12),
   },
   
-  // Hero Card
-  heroCard: {
+  // Hero Carousel
+  heroCarousel: {
     height: hp(180),
     marginBottom: 24,
-    overflow: 'hidden',
     position: 'relative',
     borderRadius: 12,
-    width: '100%',
+    overflow: 'hidden',
+  },
+  carouselScroll: {
+    flex: 1,
+  },
+  heroCard: {
+    height: "100%",
+    overflow: 'hidden',
+    position: 'relative',
+    flexShrink: 0,
   },
   heroImage: {
     width: '100%',
@@ -501,14 +558,35 @@ const styles = StyleSheet.create({
     right: 0,
     height: '50%',
     justifyContent: 'flex-end',
-    paddingBottom: 16,
+    paddingBottom: 24,
     paddingHorizontal: 16,
   },
   heroText: {
     color: COLORS.WHITE,
     fontSize: fs(24),
-    fontFamily: 'Geist-Bold',
-    fontWeight: '700',
+    fontFamily: 'Geist-SemiBold',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  progressIndicator: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.BORDER_GRAY,
+  },
+  activeDot: {
+    width: 24,
   },
 
   // Search and Filter

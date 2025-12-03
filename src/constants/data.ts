@@ -72,7 +72,7 @@ export const quickActions = [
     id: "giving",
     title: "Giving",
     image: require("../assets/images/giving.jpg"),
-    link: "/giving",
+    link: "/give",
   },
   {
     id: "store",
