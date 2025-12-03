@@ -27,7 +27,7 @@ export default function PaymentPage() {
     Toast.show({
       type: 'info',
       text1: 'Processing Payment',
-      text2: 'Please wait while we process your payment...',
+      text2: 'Please wait while we process your payment ...',
       position: 'top',
     });
     

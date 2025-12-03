@@ -59,8 +59,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     maxWidth: '90%',
-    padding: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingLeft: 20,
+    paddingRight: 0,
     shadowColor: '#000',
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.15,
@@ -73,6 +74,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 4,
     fontFamily: 'Geist-Regular',
+    flexWrap: 'wrap',
+    paddingRight:20,
   },
   toastText: {
     color: '#FFFFFF',
@@ -80,6 +83,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 22,
     fontFamily: 'Geist-SemiBold',
+    flexWrap: 'wrap',
+    paddingRight:20,
+  },
+  textContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    minWidth: 0,
   },
 });
 
@@ -88,7 +98,7 @@ const toastConfig = {
   error: (props: ToastProps) => (
     <View style={[styles.toastContainer, styles.errorToast]}>
       <Ionicons name="close-circle" size={24} color={Colors.white} style={styles.iconMargin} />
-      <View>
+      <View style={styles.textContainer}>
         <Text style={styles.toastText}>{props.text1}</Text>
         {props.text2 && <Text style={styles.toastSubText}>{props.text2}</Text>}
       </View>
@@ -97,7 +107,7 @@ const toastConfig = {
   info: (props: ToastProps) => (
     <View style={[styles.toastContainer, styles.infoToast]}>
       <Ionicons name="information-circle" size={24} color={Colors.white} style={styles.iconMargin} />
-      <View>
+      <View style={styles.textContainer}>
         <Text style={styles.toastText}>{props.text1}</Text>
         {props.text2 && <Text style={styles.toastSubText}>{props.text2}</Text>}
       </View>
@@ -106,7 +116,7 @@ const toastConfig = {
   success: (props: ToastProps) => (
     <View style={[styles.toastContainer, styles.successToast]}>
       <Ionicons name="checkmark-circle" size={24} color={Colors.white} style={styles.iconMargin} />
-      <View>
+      <View style={styles.textContainer}>
         <Text style={styles.toastText}>{props.text1}</Text>
         {props.text2 && <Text style={styles.toastSubText}>{props.text2}</Text>}
       </View>
