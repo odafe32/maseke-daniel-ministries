@@ -21,6 +21,8 @@ interface GiveProps {
   giftTypeError: string;
   amountError: string;
   isLoading: boolean;
+  showPaystack: boolean;
+  onPayment: () => void;
 }
 
 export function Give({
@@ -34,6 +36,8 @@ export function Give({
   giftTypeError,
   amountError,
   isLoading,
+  showPaystack,
+  onPayment,
 }: GiveProps) {
 
   return (
@@ -93,7 +97,7 @@ export function Give({
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[styles.continueButton, isLoading && styles.continueButtonDisabled]}
-          onPress={onSubmit}
+          onPress={onPayment}
           disabled={isLoading}
           activeOpacity={isLoading ? 1 : 0.8}
         >
@@ -106,7 +110,7 @@ export function Give({
             </View>
           ) : (
             <ThemeText variant="body" style={styles.continueButtonText}>
-              Continue
+              Proceed
             </ThemeText>
           )}
         </TouchableOpacity>

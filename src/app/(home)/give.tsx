@@ -5,21 +5,12 @@ import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWr
 import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
 import { useGive } from "@/src/hooks/useGive";
+import { PaystackProvider } from 'react-native-paystack-webview';
 
 export default function GivePage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
-  const { 
-    giftType,
-    amount,
-    errors,
-    isSubmitting, 
-    giftTypeOptions,
-    handleGiftTypeChange,
-    handleAmountChange,
-    submitGive 
-  } = useGive();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -48,8 +39,32 @@ export default function GivePage() {
 
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
-      <Give
-        onBack={handleBack}
+      <PaystackProvider
+        publicKey="pk_test_c37160decf98d151a7ef957d11c7567374e6ba62"
+      >
+        <GivePageContent onBack={handleBack} />
+      </PaystackProvider>
+    </AuthPageWrapper>
+  );
+}
+
+function GivePageContent({ onBack }: { onBack: () => void }) {
+  const { 
+    giftType,
+    amount,
+    errors,
+    isSubmitting, 
+    giftTypeOptions,
+    showPaystack,
+    handleGiftTypeChange,
+    handleAmountChange,
+    submitGive,
+    handlePayment,
+  } = useGive();
+
+  return (
+    <Give
+        onBack={onBack}
         giftType={giftType}
         amount={amount}
         onGiftTypeChange={handleGiftTypeChange}
@@ -59,8 +74,9 @@ export default function GivePage() {
         giftTypeError={errors.giftType}
         amountError={errors.amount}
         isLoading={isSubmitting}
-      />
-    </AuthPageWrapper>
+        showPaystack={showPaystack}
+        onPayment={handlePayment}
+    />
   );
 }
 
