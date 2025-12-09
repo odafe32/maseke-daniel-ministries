@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const env = z.object({
-  API_URL: z.string().url().default('http://192.168.0.85:8000/api'),
+  API_URL: z.string().url().default('http://192.168.0.106:8000/api'),
   APP_ENV: z.string().default('development'),
 });
 

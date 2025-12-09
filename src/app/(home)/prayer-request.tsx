@@ -11,10 +11,12 @@ export default function PrayerRequestPage() {
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
   const { 
+    name,
     email,
     message, 
     errors,
     isSubmitting, 
+    handleNameChange,
     handleEmailChange,
     handleMessageChange,
     submitPrayerRequest 
@@ -57,12 +59,15 @@ export default function PrayerRequestPage() {
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <PrayerRequest
         onBack={handleBack}
+        name={name}
         email={email}
         message={message}
+        onNameChange={handleNameChange}
         onEmailChange={handleEmailChange}
         onMessageChange={handleMessageChange}
         onSubmit={submitPrayerRequest}
         onCancel={handleCancel}
+        nameError={errors.name}
         emailError={errors.email}
         messageError={errors.message}
         isLoading={isSubmitting}

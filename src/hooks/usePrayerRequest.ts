@@ -3,20 +3,31 @@ import { prayerRequestApi, PrayerRequestData } from '../api/prayerRequestApi';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 
 export const usePrayerRequest = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({
+    name: '',
     email: '',
     message: '',
   });
 
   const validateForm = () => {
     const newErrors = {
+      name: '',
       email: '',
       message: '',
     };
     let isValid = true;
+
+    if (!name.trim()) {
+      newErrors.name = 'Name is required';
+      isValid = false;
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+      isValid = false;
+    }
 
     if (!email.trim()) {
       newErrors.email = 'Email is required';
@@ -53,6 +64,7 @@ export const usePrayerRequest = () => {
     setIsSubmitting(true);
     try {
       const data: PrayerRequestData = {
+        name: name.trim(),
         email: email.trim(),
         message: message.trim(),
       };
@@ -62,28 +74,41 @@ export const usePrayerRequest = () => {
       if (response.success) {
         showSuccessToast('Success', 'Your prayer request has been submitted successfully');
         // Clear form
+        setName('');
         setEmail('');
         setMessage('');
-        setErrors({ email: '', message: '' });
+        setErrors({ name: '', email: '', message: '' });
       } else {
         showErrorToast('Error', response.message || 'Failed to submit prayer request');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Prayer request submission error:', error);
 
-      if (error.response?.data?.errors) {
-        // Handle validation errors from backend
-        const backendErrors = error.response.data.errors;
-        setErrors({
-          email: backendErrors.email?.[0] || '',
-          message: backendErrors.message?.[0] || '',
-        });
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } };
+        
+        if (axiosError.response?.data?.errors) {
+          // Handle validation errors from backend
+          const backendErrors = axiosError.response.data.errors;
+          setErrors({
+            name: backendErrors.name?.[0] || '',
+            email: backendErrors.email?.[0] || '',
+            message: backendErrors.message?.[0] || '',
+          });
+        } else {
+          showErrorToast('Error', axiosError.response?.data?.message || 'Failed to submit prayer request');
+        }
       } else {
-        showErrorToast('Error', error.response?.data?.message || 'Failed to submit prayer request');
+        showErrorToast('Error', 'Failed to submit prayer request');
       }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleNameChange = (text: string) => {
+    setName(text);
+    clearError('name');
   };
 
   const handleEmailChange = (text: string) => {
@@ -97,10 +122,12 @@ export const usePrayerRequest = () => {
   };
 
   return {
+    name,
     email,
     message,
     isSubmitting,
     errors,
+    handleNameChange,
     handleEmailChange,
     handleMessageChange,
     submitPrayerRequest,
