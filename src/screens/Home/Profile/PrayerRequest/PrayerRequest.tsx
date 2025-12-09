@@ -56,13 +56,13 @@ export function PrayerRequest({
         
         <View style={styles.formContainer}>
           <ThemeText variant="body" style={styles.label}>
-            Name
+            Full Name
           </ThemeText>
           <TextInput
             style={[styles.input, nameError && styles.inputError]}
             value={name}
             onChangeText={onNameChange}
-            placeholder="Enter your name"
+            placeholder="Enter your full name"
             placeholderTextColor="#999"
             autoCapitalize="words"
           />
