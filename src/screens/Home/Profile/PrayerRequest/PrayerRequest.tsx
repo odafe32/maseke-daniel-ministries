@@ -5,18 +5,22 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
 
 interface PrayerRequestProps {
   onBack: () => void;
+  name: string;
   email: string;
   message: string;
+  onNameChange: (text: string) => void;
   onEmailChange: (text: string) => void;
   onMessageChange: (text: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
+  nameError: string;
   emailError: string;
   messageError: string;
   isLoading: boolean;
@@ -24,12 +28,15 @@ interface PrayerRequestProps {
 
 export function PrayerRequest({
   onBack,
+  name,
   email,
   message,
+  onNameChange,
   onEmailChange,
   onMessageChange,
   onSubmit,
   onCancel,
+  nameError,
   emailError,
   messageError,
   isLoading,
@@ -48,6 +55,23 @@ export function PrayerRequest({
         </ThemeText>
         
         <View style={styles.formContainer}>
+          <ThemeText variant="body" style={styles.label}>
+            Name
+          </ThemeText>
+          <TextInput
+            style={[styles.input, nameError && styles.inputError]}
+            value={name}
+            onChangeText={onNameChange}
+            placeholder="Enter your name"
+            placeholderTextColor="#999"
+            autoCapitalize="words"
+          />
+          {nameError ? (
+            <ThemeText variant="caption" style={styles.errorText}>
+              {nameError}
+            </ThemeText>
+          ) : null}
+          
           <ThemeText variant="body" style={styles.label}>
             Email Address
           </ThemeText>
@@ -91,9 +115,18 @@ export function PrayerRequest({
             disabled={isLoading}
             activeOpacity={isLoading ? 1 : 0.8}
           >
-            <ThemeText variant="body" style={styles.sendButtonText}>
-              {isLoading ? "Sending..." : "Send Request"}
-            </ThemeText>
+            <View style={styles.buttonContent}>
+              {isLoading && (
+                <ActivityIndicator 
+                  size="small" 
+                  color="#FFFFFF" 
+                  style={styles.spinner} 
+                />
+              )}
+              <ThemeText variant="body" style={styles.sendButtonText}>
+                {isLoading ? "Sending..." : "Send Request"}
+              </ThemeText>
+            </View>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -125,11 +158,6 @@ const styles = StyleSheet.create({
     textAlign: "left",
     fontFamily: "Geist-SemiBold",
     color: "#000000",
-  },
-  description: {
-    lineHeight: 24,
-    color: "#424242",
-    textAlign: "left",
   },
   formContainer: {
     gap: 12,
@@ -195,5 +223,13 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: "#94A3B8",
     opacity: 0.7,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  spinner: {
+    marginRight: 8,
   },
 });

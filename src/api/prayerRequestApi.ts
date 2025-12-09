@@ -1,6 +1,7 @@
 import client from './client';
 
 export interface PrayerRequestData {
+  name: string;
   email: string;
   message: string;
 }
