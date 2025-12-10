@@ -40,7 +40,8 @@ yarn-error.*
 
 # custom
 .env
-src\env.ts
+*.env.*
+src/env.ts
 .qodo
 env.ts
 google-services.json

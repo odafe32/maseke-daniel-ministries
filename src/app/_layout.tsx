@@ -231,7 +231,22 @@ function RootLayoutNav() {
           animationDuration: 250,
         }}
       >
-        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/home" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/profile" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/bible" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/saved-notes" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/settings" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/store" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/cart" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/orders" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/wishlists" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/about" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/help" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/prayer-request" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/privacy-policy" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/change-password" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/payment" options={{ headerShown: false }} />
         {/* Add other main screens here */}
       </Stack>
       {showBottomMenu && <BottomMenu />}
