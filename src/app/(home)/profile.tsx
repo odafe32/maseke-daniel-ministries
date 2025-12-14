@@ -8,7 +8,7 @@ import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWr
 import { Alert } from "react-native";
 import { ConfirmActionSheet } from "@/src/components";
 import { useAuthStore } from "@/src/stores/authStore";
-import { showSuccessToast } from "@/src/utils/toast";
+import { showSuccessToast , showErrorToast } from "@/src/utils/toast";
 import { useUser } from '../../hooks/useUser';
 import { useProfile } from '../../hooks/useProfile';
 
@@ -16,7 +16,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { logout } = useAuthStore();
   const { user } = useUser();
-  const { updateProfile, getProfile, isUpdating, error } = useProfile();
+  const { updateProfile, updateAvatar, getProfile, isUpdating, error } = useProfile();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email, phone: user.phone_number || "", address: user.address || "" } : { name: "", email: "", phone: "", address: "" });
   const [isEditing, setIsEditing] = useState(false);
@@ -24,7 +24,6 @@ export default function ProfilePage() {
   const [formEmail, setFormEmail] = useState(user?.email || "");
   const [formPhone, setFormPhone] = useState(user?.phone_number || "");
   const [formAddress, setFormAddress] = useState(user?.address || "");
-  const [formAvatar, setFormAvatar] = useState<any>(user?.avatar || "");
   const [isSaving, setIsSaving] = useState(false);
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
@@ -40,7 +39,6 @@ export default function ProfilePage() {
       setFormEmail(user.email);
       setFormPhone(user.phone_number || "");
       setFormAddress(user.address || "");
-      setFormAvatar(user.avatar || "");
       setAvatar(user.avatar_url || avatarUri);
     }
   }, [user]);
@@ -82,7 +80,6 @@ export default function ProfilePage() {
     setFormEmail(profile.email);
     setFormPhone(profile.phone);
     setFormAddress(profile.address);
-    setFormAvatar(user?.avatar || "");
     setIsEditing(true);
     wrapperRef.current?.replayAnimate();
   };
@@ -110,7 +107,6 @@ export default function ProfilePage() {
         email: formEmail,
         phone_number: formPhone,
         address: formAddress,
-        avatar: formAvatar,
       });
       if (error) {
         showSuccessToast('Error', error);
@@ -152,16 +148,26 @@ export default function ProfilePage() {
 
     if (!result.canceled && result.assets?.length) {
       const asset = result.assets[0];
-      if (asset.fileSize && asset.fileSize > 1024 * 1024) {
+      if (asset.fileSize && asset.fileSize > ((1024 * 1024) * 2 )) {
         Alert.alert("File too large", "Please select an image smaller than 1MB.");
         return;
       }
       setIsAvatarLoading(true);
       const uri = asset.uri;
-      setAvatar(uri);
       const base64 = asset.base64;
       if (base64) {
-        setFormAvatar(base64);
+        try {
+          const uploadStatus = await updateAvatar( { avatar : base64 } );
+          if(uploadStatus){
+            showSuccessToast('Success', 'Avatar updated successfully');
+            setAvatar(uri);
+          }else{
+            showErrorToast('Error', 'Failed to update avatar');
+          }
+        } catch (error) {
+          console.error('Failed to update avatar:', error);
+          showErrorToast('Error', 'Failed to update avatar');
+        }
       }
       setIsAvatarLoading(false);
     }

@@ -8,6 +8,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
@@ -115,7 +116,13 @@ export function Profile({
             <View style={styles.editCard}>
               <View style={styles.editContent}>
                 <Pressable onPress={editForm.onAvatarPress} style={styles.editAvatarWrapper}>
-                  <Image source={{ uri: editForm.avatar }} style={styles.editAvatar} />
+                  {editForm.isAvatarLoading ? (
+                    <View style={styles.editAvatarLoading}>
+                      <ActivityIndicator size="small" color="#333" />
+                    </View>
+                  ) : (
+                    <Image source={{ uri: editForm.avatar }} style={styles.editAvatar} />
+                  )}
                   <View style={styles.cameraBadge}>
                     <Feather name="camera" size={18} color="#fff" />
                   </View>
@@ -282,6 +289,17 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     marginBottom: 12,
+  },
+  editAvatarLoading: {
+    width: 120,
+    height: 120,
+    borderRadius: "100%",
+    marginBottom: 12,
+    borderColor: "#0C154C",
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f9f9f9",
   },
   cameraBadge: {
     position: "absolute",
