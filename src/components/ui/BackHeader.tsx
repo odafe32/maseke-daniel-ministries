@@ -1,4 +1,4 @@
-import { getColor, hp, wp } from "@/src/utils";
+import { getColor,  wp } from "@/src/utils";
 import { useRouter } from "expo-router";
 import React, { useRef } from "react";
 import { Feather } from "@expo/vector-icons";

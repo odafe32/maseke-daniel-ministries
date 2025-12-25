@@ -5,17 +5,24 @@ import { useRouter, usePathname } from 'expo-router';
 import { getColor } from '../utils';
 import { shouldHideBottomMenu } from '../constants/navigation';
 
+type FeatherIconName = keyof typeof Feather.glyphMap;
+
+interface TabItem {
+  name: string;
+  icon: FeatherIconName;
+  route: string;
+}
+
 const BottomMenu = () => {
   const router = useRouter();
   const pathname = usePathname();
   const colors = getColor();
 
-  // Hide during initial loading or on Profile page
   if (shouldHideBottomMenu(pathname)) {
     return null;
   }
 
-  const tabs = [
+  const tabs: TabItem[] = [
     { name: 'Home', icon: 'home', route: '/home' },
     { name: 'Sermons', icon: 'play-circle', route: '/sermons' },
     { name: 'Devotional', icon: 'book-open', route: '/devotionals' },
@@ -32,12 +39,6 @@ const BottomMenu = () => {
     return false;
   };
 
-  const activeIndex = Math.max(
-    0,
-    tabs.findIndex((tab) => getActiveRoute(tab.route))
-  );
-  const activeTab = tabs[activeIndex] ?? tabs[0];
-
   return (
     <View style={[styles.wrapper, { backgroundColor: colors.card }]}> 
       <View style={styles.inner}>
@@ -48,13 +49,13 @@ const BottomMenu = () => {
               <TouchableOpacity
                 key={tab.name}
                 style={styles.tab}
-                onPress={() => router.push(tab.route as any)}
+                onPress={() => router.push(tab.route)}
                 activeOpacity={0.85}
               >
                 <View style={styles.tabContent}>
                   {isActive && <View style={[styles.activeBar, { backgroundColor: colors.primary }]} />}
                   <Feather
-                    name={tab.icon as any}
+                    name={tab.icon}
                     size={22}
                     color={isActive ? colors.primary : colors.muted}
                   />

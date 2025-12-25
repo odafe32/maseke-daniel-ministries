@@ -1,13 +1,16 @@
+import { ImageSourcePropType } from 'react-native';
+
 export interface OnboardingItem {
   id: string;
   title: string;
   description: string;
-  image: any;
+  image: ImageSourcePropType;
 }
 
 export const images = {
   logo: require("../assets/logo.png"),
   logovector: require("../assets/topvector.png"),
+  HeroSection: require("../assets/images/sermonhero.jpg"),
 };
 
 export const onboardingData: OnboardingItem[] = [
@@ -215,7 +218,7 @@ export interface OrderItem {
   title: string;
   price: number;
   quantity: number;
-  image: any;
+  image: ImageSourcePropType;
 }
 
 export interface Order {
@@ -378,7 +381,7 @@ export interface StoreProduct {
   title: string;
   price: number;
   beforePrice?: number | null;
-  image: any;
+  image: ImageSourcePropType;
   category: string;
   description: string;
   inStock: boolean;
@@ -393,7 +396,7 @@ export interface CartItem {
   productId: string;
   title: string;
   price: number;
-  image: any;
+  image: ImageSourcePropType;
   quantity: number;
 }
 

@@ -32,7 +32,6 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
 
 # typescript
 *.tsbuildinfo
@@ -41,8 +40,6 @@ yarn-error.*
 # custom
 .env
 *.env.*
-src/env.ts
 .qodo
-env.ts
 google-services.json
 GoogleService-Info.plist

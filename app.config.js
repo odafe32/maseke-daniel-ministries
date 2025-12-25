@@ -12,4 +12,8 @@ export default {
     "expo-router",
     "expo-web-browser",
   ],
+  android: {
+    package: "com.maseke.mobile",
+    versionCode: 2,
+  }
 };

@@ -52,12 +52,7 @@ const styles = StyleSheet.create({
   activeFilterButtonText: {
     color: '#032B6B',
   },
-  notesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: wp(12),
-  },
+
   noteCard: {
     padding: hp(12),
     borderRadius: wp(12),
@@ -127,10 +122,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-  skeletonItemContainer: {
-    width: wp(48),
-    marginBottom: hp(12),
-  },
+
   row: {
     justifyContent: "space-between",
     paddingHorizontal: wp(4),

@@ -1,9 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
-  let token: string | undefined;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -28,10 +28,9 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
   }
 
   const tokenResponse = await Notifications.getExpoPushTokenAsync();
-  token = tokenResponse.data;
+  const token = tokenResponse.data;
   console.log('Expo Push Token:', token);
 
-  // Set up notification handlers
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -42,8 +41,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
     }),
   });
 
-  // Handle notifications when received
-  const subscription = Notifications.addNotificationReceivedListener(async notification => {
+  const subscription = Notifications.addNotificationReceivedListener(async notification => { // eslint-disable-line @typescript-eslint/no-unused-vars
     console.log('Notification received:', notification);
     try {
       const stored = await AsyncStorage.getItem('notifications');
@@ -51,7 +49,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       const now = new Date();
       const date = now.toLocaleDateString();
       const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      notifications.push({
+
+      const notificationData = {
         id: `${Date.now()}-${Math.random()}`,
         title: notification.request.content.title || 'Notification',
         message: notification.request.content.body || '',
@@ -59,14 +58,27 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
         time,
         read: false,
         type: notification.request.content.data?.type || 'push',
-      });
+      };
+
+      notifications.push(notificationData);
       await AsyncStorage.setItem('notifications', JSON.stringify(notifications));
+
+      // Show toast for live stream notifications
+      if (notificationData.type === 'live_stream_started') {
+        Toast.show({
+          type: 'info',
+          text1: notificationData.title,
+          text2: notificationData.message,
+          visibilityTime: 10000, // Show for 5 seconds
+        });
+      }
+
     } catch (error) {
       console.error('Failed to save notification:', error);
     }
   });
 
-  const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => { // eslint-disable-line @typescript-eslint/no-unused-vars
     console.log('Notification response:', response);
   });
 

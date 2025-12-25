@@ -6,6 +6,10 @@ import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { HomeStorage } from "@/src/utils/homeStorage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+interface Notification {
+  read: boolean;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -23,7 +27,7 @@ export default function HomePage() {
         const stored = await AsyncStorage.getItem('notifications');
         if (stored) {
           const notifications = JSON.parse(stored);
-          const unread = notifications.filter((n: any) => !n.read).length;
+          const unread = notifications.filter((n: Notification) => !n.read).length;
           setNotificationCount(unread);
         }
       } catch (error) {

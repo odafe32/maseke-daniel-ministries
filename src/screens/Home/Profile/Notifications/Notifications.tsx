@@ -2,7 +2,6 @@ import React from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   TouchableOpacity,
   FlatList,
   RefreshControl,
@@ -10,7 +9,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { BackHeader, ThemeText } from "@/src/components";
-import { colors, fs, getColor } from "@/src/utils";
+import {  fs, getColor } from "@/src/utils";
 import { Icon } from "@/src/components/icons/Icon";
 
 interface NotificationItem {
@@ -62,7 +61,7 @@ function NotificationCard({ item, onPress }: NotificationCardProps) {
     >
       <View style={styles.iconContainer}>
         <Feather
-          name={getIcon(item.type) as any}
+          name={getIcon(item.type) as keyof typeof Feather.glyphMap}
           size={24}
           color={item.read ? colors.muted : "#0C154C"}
         />
@@ -105,7 +104,6 @@ export function Notifications({
   refreshing?: boolean;
   onClearAll?: () => void;
 }) {
-  const colors = getColor();
   const handleNotificationPress = (id: string) => {
     onNotificationPress(id);
   };

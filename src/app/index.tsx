@@ -1,8 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState, useRef } from "react";
 import {
-  ActivityIndicator,
   View,
   Image,
   StyleSheet,
@@ -110,15 +108,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  topSection: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 60, 
-    alignItems: "center",
-    zIndex: 1,
-  },
+  
   centerSection: {
     flex: 1,
     justifyContent: "center",
@@ -132,20 +122,7 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
   },
-  vectorContainer: {
-    alignItems: "center",
-  },
-  vectorLogo: {
-    width: 150,
-    height: 40,
-  },
-  slogan: {
-    marginTop: 20,
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#000000",
-    fontStyle: "italic",
-  },
+
 });
 
 export default Index;

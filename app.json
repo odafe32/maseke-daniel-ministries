@@ -6,7 +6,7 @@
     "icon": "./src/assets/icon.svg",
     "userInterfaceStyle": "light",
     "scheme": "maseke-daniel-ministries",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "extra": {
       "eas": {
        "projectId": "36a3c62a-c2e6-4941-836d-f7bb175e9353"
@@ -31,7 +31,8 @@
       "edgeToEdgeEnabled": true,
       "package": "com.maseke.mobile",
       "googleServicesFile": "./google-services.json",
-      "useNextNotificationsApi": true
+      "useNextNotificationsApi": true,
+            "versionCode": 2
     },
     "web": {
       "favicon": "./src/assets/favicon.png"

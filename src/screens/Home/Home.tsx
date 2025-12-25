@@ -1,13 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
 import { ThemeText } from "@/src/components";
-import { colors, fs, getColor, hp, wp } from "@/src/utils";
+import { fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
-import { HomeStorage, HomeData } from "@/src/utils/homeStorage";
+import { HomeStorage } from "@/src/utils/homeStorage";
 import { quickActions } from "@/src/constants/data";
 import {
   StyleSheet,
   View,
-  Image,
   ScrollView,
   ImageBackground,
   TouchableOpacity,
@@ -17,8 +16,13 @@ import {
 } from "react-native";
 import { avatarUri } from "@/src/constants/data";
 import { useUser } from '../../hooks/useUser';
-import { useOrientation, Orientation } from '../../hooks/useOrientation';
 import Feather from "@expo/vector-icons/Feather";
+
+interface LocalUser {
+  full_name: string;
+  avatar_url?: string;
+  last_updated: string;
+}
 
 export const Home = ({
   loading,
@@ -32,11 +36,10 @@ export const Home = ({
 }: HomeProps) => {
   const colors = getColor();
   const { user: apiUser } = useUser();
-  const orientation: Orientation = useOrientation();
   const profileScale = useRef(new Animated.Value(1)).current;
 
   // Offline data state
-  const [localUser, setLocalUser] = useState<any>(null);
+  const [localUser, setLocalUser] = useState<LocalUser | null>(null);
   const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
@@ -244,12 +247,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  serviceLabel: {
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    fontFamily: "Geist-Medium",
-    fontSize: fs(12),
-  },
   greeting: {
     marginTop: 4,
     fontFamily: "Geist-Medium",
@@ -305,17 +302,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Geist-SemiBold",
     fontSize: fs(18),
-  },
-  skeletonBar: {
-    height: hp(14),
-    borderRadius: wp(8),
-    backgroundColor: "#E3E6EB",
-  },
-  skeletonAvatar: {
-    width: wp(40),
-    height: hp(40),
-    borderRadius: wp(20),
-    backgroundColor: "#E3E6EB",
   },
   skeletonCard: {
     height: hp(160),
