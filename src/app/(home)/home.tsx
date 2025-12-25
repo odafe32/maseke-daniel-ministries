@@ -37,13 +37,11 @@ export default function HomePage() {
     loadNotifications();
   }, []);
 
-  // Initialize home data on first load
   useEffect(() => {
     const initializeHomeData = async () => {
       try {
         const hasHomeData = await HomeStorage.hasHomeData();
         if (!hasHomeData) {
-          // Save initial quick actions data
           const initialHomeData = {
             user: null,
             quickActions: quickActions,
@@ -63,13 +61,10 @@ export default function HomePage() {
     setRefreshing(true);
     setLoading(true);
 
-    // Force sync with fresh API data
     const timer = setTimeout(async () => {
       try {
-        // Clear stale data flag to force API sync
         const homeData = await HomeStorage.getHomeData();
         if (homeData) {
-          // Update last_synced to force refresh
           homeData.last_synced = new Date().toISOString();
           await HomeStorage.saveHomeData(homeData);
         }

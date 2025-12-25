@@ -21,6 +21,7 @@ import Feather from "@expo/vector-icons/Feather";
 interface LocalUser {
   full_name: string;
   avatar_url?: string;
+  avatar_base64?: string;
   last_updated: string;
 }
 
@@ -38,12 +39,10 @@ export const Home = ({
   const { user: apiUser } = useUser();
   const profileScale = useRef(new Animated.Value(1)).current;
 
-  // Offline data state
   const [localUser, setLocalUser] = useState<LocalUser | null>(null);
   const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // Dynamic styles for elements that use colors
   const dynamicStyles = {
     notificationBadge: {
       position: 'absolute' as const,
@@ -60,14 +59,16 @@ export const Home = ({
     },
   };
 
-  // Use local data if available, otherwise use API data
   const user = localUser || apiUser;
   const displayQuickActions = localQuickActions;
 
-  // Get avatar URI (network or default)
+  // Get avatar URI (base64 or network or default)
   const getAvatarUri = () => {
+    if (user?.avatar_base64) {
+      return user.avatar_base64; // Use base64 for instant display
+    }
     if (user?.avatar_url) {
-      return user.avatar_url;
+      return user.avatar_url; // Fallback to URL
     }
     return avatarUri; // Fallback to default
   };
@@ -136,6 +137,7 @@ export const Home = ({
           const userData = {
             full_name: apiUser.full_name || '',
             avatar_url: apiUser.avatar_url,
+            avatar_base64: apiUser.avatar_base64, 
             last_updated: new Date().toISOString(),
           };
 

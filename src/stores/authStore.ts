@@ -15,6 +15,7 @@ interface User {
   address?: string;
   avatar?: string;
   avatar_url?: string;
+  avatar_base64?: string;
 }
 
 interface AuthState {

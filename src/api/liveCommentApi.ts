@@ -11,6 +11,7 @@ export interface LiveComment {
     id: string;
     name: string;
     avatar: string;
+    avatar_base64?: string;
   };
   replyTo?: {
     id: number;

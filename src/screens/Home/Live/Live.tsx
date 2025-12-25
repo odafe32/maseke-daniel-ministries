@@ -256,6 +256,16 @@ const renderChatMessage = ({ item }: { item: LiveComment }) => {
   const isOwnMessage = item.can_edit || item.can_delete;
   const userColor = getUserColor(item.user.name);
   
+  const getAvatarSource = () => {
+    if (item.user.avatar_base64) {
+      return { uri: item.user.avatar_base64 };
+    }
+    if (item.user.avatar) {
+      return { uri: `${process.env.API_URL}/storage/${item.user.avatar}` };
+    }
+    return { uri: 'https://i.ibb.co/sd4F4kcQ/images.png' };
+  };
+  
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -266,7 +276,7 @@ const renderChatMessage = ({ item }: { item: LiveComment }) => {
       <View style={styles.messageRow}>
         {/* 1. Avatar */}
         <Image 
-          source={item.user.avatar ? { uri: item.user.avatar } : { uri: 'https://i.ibb.co/sd4F4kcQ/images.png' }} 
+          source={getAvatarSource()} 
           style={styles.inlineAvatar} 
         />
         

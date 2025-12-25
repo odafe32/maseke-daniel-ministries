@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { profileApi } from '../api/profileApi';
 import { useAuthStore } from '../stores/authStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AxiosError } from 'axios';
+
+interface ApiErrorResponse {
+  message?: string;
+  errors?: Record<string, string[]>;
+}
 
 export const useProfile = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -14,26 +20,51 @@ export const useProfile = () => {
     email?: string;
     phone_number?: string;
     address?: string;
-    avatar?: any; 
+    avatar?: string; 
     password?: string;
   }) => {
     setIsUpdating(true);
     setError(null);
     try {
-      const response = await profileApi.updateProfile(data);
+      let response;
+
+      // Handle avatar update separately if avatar is provided
+      if (data.avatar) {
+        await profileApi.updateProfileAvatar(data.avatar);
+        
+        // Remove avatar from data for general profile update
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { avatar: _, ...profileData } = data;
+        
+        // Always get fresh profile data after avatar upload to ensure avatar_url is updated
+        response = await profileApi.getProfile();
+        
+        // If there are other profile changes, update them as well
+        if (Object.keys(profileData).length > 0) {
+          await profileApi.updateProfile(profileData);
+          // Get updated profile data again
+          response = await profileApi.getProfile();
+        }
+      } else {
+        // No avatar update, use general profile update
+        response = await profileApi.updateProfile(data);
+      }
+
       const { user } = response.data;
       setUser(user);
       await AsyncStorage.setItem('authUser', JSON.stringify(user));
       return user;
-    } catch (err: any) {
-      console.error('Update profile error:', err.response?.data);
-      const errors = err.response?.data?.errors;
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError;
+      console.error('Update profile error:', axiosError.response?.data);
+      const responseData = axiosError.response?.data as ApiErrorResponse;
+      const errors = responseData?.errors;
       let errorMessage = 'Failed to update profile';
       if (errors) {
         const firstField = Object.keys(errors)[0];
         errorMessage = errors[firstField][0] || errorMessage;
       } else {
-        errorMessage = err.response?.data?.message || errorMessage;
+        errorMessage = responseData?.message || errorMessage;
       }
       setError(errorMessage);
       throw err;
@@ -51,8 +82,10 @@ export const useProfile = () => {
       setUser(user);
       await AsyncStorage.setItem('authUser', JSON.stringify(user));
       return user;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch profile');
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError;
+      const responseData = axiosError.response?.data as ApiErrorResponse;
+      setError(responseData?.message || 'Failed to fetch profile');
       throw err;
     } finally {
       setIsFetching(false);
@@ -69,15 +102,17 @@ export const useProfile = () => {
     try {
       const response = await profileApi.changePassword(data);
       return response.data;
-    } catch (err: any) {
-      console.error('Change password error:', err.response?.data);
-      const errors = err.response?.data?.errors;
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError;
+      console.error('Change password error:', axiosError.response?.data);
+      const responseData = axiosError.response?.data as ApiErrorResponse;
+      const errors = responseData?.errors;
       let errorMessage = 'Failed to change password';
       if (errors) {
         const firstField = Object.keys(errors)[0];
         errorMessage = errors[firstField][0] || errorMessage;
       } else {
-        errorMessage = err.response?.data?.message || errorMessage;
+        errorMessage = responseData?.message || errorMessage;
       }
       setError(errorMessage);
       throw err;
