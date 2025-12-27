@@ -9,7 +9,7 @@ interface SermonItem {
   duration: string;
   timeAgo: string;
   category: 'All' | 'Sunday Service' | 'Weekday Service';
-  image: string;
+  thumbnailUrl?: string;
 }
 
 const filters = ['All', 'Sunday Service', 'Weekday Service'] as const;
@@ -27,25 +27,31 @@ interface SermonsListProps {
   setPage: React.Dispatch<React.SetStateAction<number>>;
   ref?: React.RefObject<View | null>;
   onLayoutY: (y: number) => void;
+  onCardPress?: (id: string) => void;
 }
 
-export const SermonsList = ({ onSeeAllPress, activeFilter, setActiveFilter, dropdownOpen, setDropdownOpen, searchQuery, setSearchQuery, displayedData, totalItems, setPage, ref, onLayoutY }: SermonsListProps) => {
+export const SermonsList = ({ onSeeAllPress, activeFilter, setActiveFilter, dropdownOpen, setDropdownOpen, searchQuery, setSearchQuery, displayedData, totalItems, setPage, ref, onLayoutY, onCardPress }: SermonsListProps) => {
 
   const showFilters = true;
 
-  const renderItem = ({ item }: { item: SermonItem }) => (
-    <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.cardImage} />
-      <Text style={styles.cardTitle} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <View style={styles.cardMetaRow}>
-        <Text style={styles.cardMeta}>{item.duration}</Text>
-        <View style={styles.dot} />
-        <Text style={styles.cardMeta}>{item.timeAgo}</Text>
-      </View>
-    </View>
-  );
+  const renderItem = ({ item }: { item: SermonItem }) => {
+    const CardComponent = onCardPress ? TouchableOpacity : View;
+    const cardProps = onCardPress ? { onPress: () => onCardPress(item.id), activeOpacity: 0.85 } : {};
+    
+    return (
+      <CardComponent style={styles.card} {...cardProps}>
+        <Image source={item.thumbnailUrl ? { uri: item.thumbnailUrl } : require('@/src/assets/images/fallback.png')} style={styles.cardImage} />
+        <Text style={styles.cardTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <View style={styles.cardMetaRow}>
+          <Text style={styles.cardMeta}>{item.duration}</Text>
+          <View style={styles.dot} />
+          <Text style={styles.cardMeta}>{item.timeAgo}</Text>
+        </View>
+      </CardComponent>
+    );
+  };
 
   return (
     <View style={styles.container} ref={ref} onLayout={(event) => onLayoutY(event.nativeEvent.layout.y)}>

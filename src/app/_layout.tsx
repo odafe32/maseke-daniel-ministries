@@ -277,6 +277,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(home)/change-password" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/payment" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/live" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/sermon-detail" options={{ headerShown: false }} />
         {/* Add other main screens here */}
       </Stack>
       {showBottomMenu && <BottomMenu />}

@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Feather } from '@expo/vector-icons';
-import * as ScreenOrientation from 'expo-screen-orientation';
+import Constants from 'expo-constants';
 import { hp, wp } from '@/src/utils';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface MediaPlayerProps {
   uri: string;
@@ -11,307 +12,213 @@ interface MediaPlayerProps {
   posterUri?: string;
 }
 
-const PLAYBACK_SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+interface AVPlaybackStatusSuccess {
+  isLoaded: true;
+  isPlaying?: boolean;
+  positionMillis?: number;
+  durationMillis?: number;
+}
 
 export const MediaPlayer = ({ uri, isAudio = false, posterUri }: MediaPlayerProps) => {
-  const videoRef = useRef<Video>(null);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
-  const [isBuffering, setIsBuffering] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const [isEnded, setIsEnded] = useState(false);
-  const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [volume, setVolume] = useState(1.0);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+  const videoRef = useRef<Video | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (videoRef.current) {
+          videoRef.current.pauseAsync();
+        }
+      };
+    }, [])
+  );
 
   useEffect(() => {
-    const video = videoRef.current;
+    let interval: NodeJS.Timeout;
+    
+    if (isAudio && isPlaying && duration > 0) {
+      interval = setInterval(async () => {
+        if (videoRef.current) {
+          try {
+            const status = await videoRef.current.getStatusAsync();
+            if (status.isLoaded && !('error' in status)) {
+              const currentStatus: AVPlaybackStatusSuccess = status;
+              setPosition(currentStatus.positionMillis || 0);
+              console.log('Manual position update:', currentStatus.positionMillis);
+            }
+          } catch (error) {
+            console.error('Error getting status:', error);
+          }
+        }
+      }, 500); // Update every 500ms for smoother display
+    }
+    
     return () => {
-      if (video) {
-        video.unloadAsync().catch((error) => {
-          // Ignore unload errors if video hasn't loaded yet
-          console.log('Video unload skipped:', error.message);
-        });
-      }
-      if (hideControlsTimeout.current) {
-        clearTimeout(hideControlsTimeout.current);
+      if (interval) {
+        clearInterval(interval);
       }
     };
-  }, []);
+  }, [isAudio, isPlaying, duration]);
 
-  const resetHideControlsTimer = () => {
-    if (hideControlsTimeout.current) {
-      clearTimeout(hideControlsTimeout.current);
-    }
-    setShowControls(true);
-    hideControlsTimeout.current = setTimeout(() => {
-      if (isPlaying) {
-        setShowControls(false);
-      }
-    }, 3000);
+  const baseUrl = Constants.manifest?.extra?.apiUrl || 'http://10.19.14.161:8000';
+  const fullUri = uri && uri.startsWith('http') ? uri : uri && uri.startsWith('file:///') ? uri : uri ? `${baseUrl}${uri}` : '';
+  const fullPosterUri = posterUri && posterUri.startsWith('http') ? posterUri : posterUri && posterUri.startsWith('file:///') ? posterUri : posterUri ? `${baseUrl}${posterUri}` : undefined;
+
+  console.log('MediaPlayer Debug:', {
+    originalUri: uri,
+    isAudio,
+    posterUri,
+    fullUri,
+    fullPosterUri,
+  });
+
+  if (!uri || uri.trim() === '') {
+    console.log('MediaPlayer: No URI provided, showing placeholder');
+    return (
+      <View style={[styles.container, isAudio && styles.audioContainer]}>
+        <View style={styles.noMediaContainer}>
+          <Feather name="play-circle" size={48} color="#666" />
+          <Text style={styles.noMediaText}>No media available</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const handleVideoError = (error: string) => {
+    console.error('MediaPlayer Video Error:', error);
+    setIsLoadingMedia(false);
   };
 
-  const handlePlayerPress = () => {
-    if (showControls) {
-      setShowControls(false);
-      if (hideControlsTimeout.current) {
-        clearTimeout(hideControlsTimeout.current);
-      }
-    } else {
-      resetHideControlsTimer();
-    }
+  const handleLoadStart = () => {
+    console.log('MediaPlayer: Load started');
+    setIsLoadingMedia(true);
   };
 
-  const formatTime = (millis: number) => {
-    const totalSeconds = Math.floor(millis / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const handleLoad = () => {
+    console.log('MediaPlayer: Load completed');
+    setIsLoadingMedia(false);
   };
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) {
-      if (status.error) {
-        console.error('Playback error:', status.error);
-      }
-      return;
-    }
-
-    setIsPlaying(status.isPlaying);
-    setIsMuted(status.isMuted);
-    setDuration(status.durationMillis || 0);
-    setPosition(status.positionMillis || 0);
-    setIsBuffering(status.isBuffering);
-
-    // Check if media has ended
-    if (status.didJustFinish) {
-      setIsEnded(true);
-      setShowControls(true);
-      if (hideControlsTimeout.current) {
-        clearTimeout(hideControlsTimeout.current);
-      }
-    } else {
-      setIsEnded(false);
+    console.log('Playback status update:', status);
+    
+    // Type guard to check if status is successful
+    if (status.isLoaded && !('error' in status)) {
+      const successStatus: AVPlaybackStatusSuccess = status;
+      const newPlaying = successStatus.isPlaying || false;
+      const newDuration = successStatus.durationMillis || 0;
+      const newPosition = successStatus.positionMillis || 0;
+      
+      console.log('Updating state - playing:', newPlaying, 'duration:', newDuration, 'position:', newPosition);
+      
+      setIsPlaying(newPlaying);
+      setDuration(newDuration);
+      setPosition(newPosition);
     }
   };
 
   const togglePlayPause = async () => {
-    if (!videoRef.current) return;
-
-    if (isEnded) {
-      // If media ended, replay from beginning
-      await videoRef.current.setPositionAsync(0);
-      await videoRef.current.playAsync();
-      setIsEnded(false);
-      resetHideControlsTimer();
-      return;
-    }
-
-    if (isPlaying) {
-      await videoRef.current.pauseAsync();
-      setShowControls(true);
-    } else {
-      await videoRef.current.playAsync();
-      resetHideControlsTimer();
+    if (videoRef.current) {
+      if (isPlaying) {
+        await videoRef.current.pauseAsync();
+      } else {
+        await videoRef.current.playAsync();
+      }
     }
   };
 
-  const toggleMute = async () => {
-    if (!videoRef.current) return;
-    await videoRef.current.setIsMutedAsync(!isMuted);
-  };
-
-  const toggleFullscreen = async () => {
-    if (isAudio) return;
-
-    if (!isFullscreen) {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-      setIsFullscreen(true);
-    } else {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
-      setIsFullscreen(false);
+  const seekBackward = async () => {
+    if (videoRef.current) {
+      const newPosition = Math.max(0, position - 10000); // 10 seconds back
+      await videoRef.current.setPositionAsync(newPosition);
     }
   };
 
-  const changeSpeed = async (speed: number) => {
-    if (!videoRef.current) return;
-    await videoRef.current.setRateAsync(speed, true);
-    setPlaybackSpeed(speed);
-    setShowSpeedMenu(false);
+  const seekForward = async () => {
+    if (videoRef.current) {
+      const newPosition = Math.min(duration, position + 10000); // 10 seconds forward
+      await videoRef.current.setPositionAsync(newPosition);
+    }
   };
 
-  const skipForward = async () => {
-    if (!videoRef.current) return;
-    const newPosition = Math.min(position + 10000, duration);
-    await videoRef.current.setPositionAsync(newPosition);
-    resetHideControlsTimer();
+  const toggleVolume = async () => {
+    if (videoRef.current) {
+      const newVolume = volume > 0 ? 0 : 1.0;
+      setVolume(newVolume);
+      await videoRef.current.setVolumeAsync(newVolume);
+    }
   };
 
-  const skipBackward = async () => {
-    if (!videoRef.current) return;
-    const newPosition = Math.max(position - 10000, 0);
-    await videoRef.current.setPositionAsync(newPosition);
-    resetHideControlsTimer();
+  const cyclePlaybackRate = async () => {
+    if (videoRef.current) {
+      const rates = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+      const currentIndex = rates.indexOf(playbackRate);
+      const nextIndex = (currentIndex + 1) % rates.length;
+      const newRate = rates[nextIndex];
+      setPlaybackRate(newRate);
+      await videoRef.current.setRateAsync(newRate, true);
+    }
   };
 
-  const renderControls = () => {
-    if (!showControls && isPlaying) return null;
-
-    const progress = duration > 0 ? position / duration : 0;
-
-    return (
-      <View style={styles.controlsContainer}>
-        <View style={styles.topControls}>
-          <TouchableOpacity onPress={() => setShowSpeedMenu(true)} style={styles.speedButton}>
-            <Text style={styles.speedText}>{playbackSpeed}x</Text>
-          </TouchableOpacity>
-          {!isAudio && (
-            <TouchableOpacity onPress={toggleFullscreen} style={styles.iconButton}>
-              <Feather name={isFullscreen ? 'minimize' : 'maximize'} size={20} color="#fff" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <TouchableOpacity 
-          style={styles.centerPlayButton}
-          onPress={togglePlayPause}
-          activeOpacity={0.9}
-        >
-          {isEnded ? (
-            <View style={styles.centerReplayIcon}>
-              <Feather name="rotate-ccw" size={32} color="#fff" />
-              <Text style={styles.replayText}>Replay</Text>
-            </View>
-          ) : !isPlaying ? (
-            <View style={styles.centerPlayIcon}>
-              <Feather name="play" size={48} color="#fff" />
-            </View>
-          ) : null}
-        </TouchableOpacity>
-
-        <View style={styles.bottomControlsWrapper}>
-          <View style={styles.seekbarContainer}>
-            <Text style={styles.timeText}>{formatTime(position)}</Text>
-            <View style={styles.seekbar}>
-              <View style={styles.seekbarTrack}>
-                <View style={[styles.seekbarProgress, { width: `${progress * 100}%` }]} />
-              </View>
-            </View>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
-          </View>
-
-          <View style={styles.bottomControls}>
-            <TouchableOpacity onPress={skipBackward} style={styles.smallControlButton}>
-              <Feather name="rotate-ccw" size={20} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={togglePlayPause} style={styles.smallControlButton}>
-              {isBuffering ? (
-                <Text style={styles.smallBufferingText}>...</Text>
-              ) : (
-                <Feather name={isPlaying ? 'pause' : 'play'} size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={skipForward} style={styles.smallControlButton}>
-              <Feather name="rotate-cw" size={20} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={toggleMute} style={styles.smallControlButton}>
-              <Feather name={isMuted ? 'volume-x' : 'volume-2'} size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
+  const formatTime = (millis: number) => {
+    const minutes = Math.floor(millis / 60000);
+    const seconds = Math.floor((millis % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-
-  const renderSpeedMenu = () => (
-    <Modal visible={showSpeedMenu} transparent animationType="fade">
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={() => setShowSpeedMenu(false)}
-      >
-        <View style={styles.speedMenu}>
-          <Text style={styles.speedMenuTitle}>Playback Speed</Text>
-          {PLAYBACK_SPEEDS.map((speed) => (
-            <TouchableOpacity
-              key={speed}
-              style={[
-                styles.speedOption,
-                playbackSpeed === speed && styles.speedOptionActive,
-              ]}
-              onPress={() => changeSpeed(speed)}
-            >
-              <Text
-                style={[
-                  styles.speedOptionText,
-                  playbackSpeed === speed && styles.speedOptionTextActive,
-                ]}
-              >
-                {speed}x
-              </Text>
-              {playbackSpeed === speed && (
-                <Feather name="check" size={18} color="#4F6BFF" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  if (isFullscreen) {
-    return (
-      <Modal visible={isFullscreen} animationType="fade">
-        <View style={styles.fullscreenContainer}>
-          <Video
-            ref={videoRef}
-            source={{ uri }}
-            style={styles.fullscreenVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            shouldPlay={isPlaying}
-            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-            useNativeControls={false}
-          />
-          {renderControls()}
-          {renderSpeedMenu()}
-        </View>
-      </Modal>
-    );
-  }
 
   return (
     <View style={[styles.container, isAudio && styles.audioContainer]}>
-      {!showControls && (
-        <TouchableOpacity
-          style={styles.videoTouchable}
-          onPress={handlePlayerPress}
-          activeOpacity={1}
-        />
-      )}
+      {isAudio && fullPosterUri && <Image source={{ uri: fullPosterUri }} style={styles.audioPoster} />}
       <Video
         ref={videoRef}
-        source={{ uri }}
+        source={{ uri: fullUri }}
         style={isAudio ? styles.audioPlayer : styles.videoPlayer}
         resizeMode={ResizeMode.CONTAIN}
-        shouldPlay={false}
-        onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-        useNativeControls={false}
-        posterSource={posterUri ? { uri: posterUri } : undefined}
-        usePoster={!!posterUri}
+        useNativeControls={!isAudio}
+        posterSource={fullPosterUri ? { uri: fullPosterUri } : undefined}
+        usePoster={!!fullPosterUri}
+        shouldPlay={true}
+        progressUpdateIntervalMillis={1000}
+        onError={handleVideoError}
+        onLoadStart={handleLoadStart}
+        onLoad={handleLoad}
+        onPlaybackStatusUpdate={isAudio ? handlePlaybackStatusUpdate : undefined}
       />
-      {renderControls()}
-      {renderSpeedMenu()}
+      {isAudio && (
+        <View style={styles.customControls}>
+          <Text style={styles.timeText}>
+            {formatTime(position)} / {formatTime(duration)}
+          </Text>
+          <View style={styles.controlButtons}>
+            <TouchableOpacity onPress={seekBackward} style={styles.controlButton}>
+              <Feather name="rewind" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
+              <Feather name={isPlaying ? "pause" : "play"} size={32} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={seekForward} style={styles.controlButton}>
+              <Feather name="fast-forward" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggleVolume} style={styles.controlButton}>
+              <Feather name={volume > 0 ? "volume-2" : "volume-x"} size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={cyclePlaybackRate} style={styles.controlButton}>
+              <Text style={styles.speedText}>{playbackRate}x</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      {isLoadingMedia && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Loading media...</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -322,18 +229,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: wp(12),
     overflow: 'hidden',
-    position: 'relative',
-  },
-  videoTouchable: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1,
   },
   audioContainer: {
-    height: hp(120),
+    height: hp(200),
     backgroundColor: '#1a1a2e',
   },
   videoPlayer: {
@@ -342,151 +240,71 @@ const styles = StyleSheet.create({
   },
   audioPlayer: {
     width: '100%',
-    height: hp(120),
+    height: hp(200),
     backgroundColor: '#1a1a2e',
   },
-  fullscreenContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-  },
-  fullscreenVideo: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-  },
-  controlsContainer: {
+  audioPoster: {
     position: 'absolute',
     top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    resizeMode: 'cover',
+  },
+  noMediaContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: hp(12),
+  },
+  noMediaText: {
+    color: '#666',
+    fontSize: 16,
+    fontFamily: 'Geist-Medium',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 10,
+    fontFamily: 'Geist-Medium',
+  },
+  customControls: {
+    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    justifyContent: 'space-between',
-  },
-  topControls: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    padding: wp(12),
-    gap: wp(8),
-  },
-  centerPlayButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  centerReplayIcon: {
-    alignItems: 'center',
-    gap: hp(8),
-  },
-  replayText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Geist-SemiBold',
-  },
-  centerPlayIcon: {
-    width: wp(80),
-    height: wp(80),
-    borderRadius: wp(40),
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bottomControlsWrapper: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: wp(12),
-    paddingVertical: hp(8),
-  },
-  seekbarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: hp(6),
-    gap: wp(8),
-  },
-  seekbar: {
-    flex: 1,
-    height: hp(4),
-    justifyContent: 'center',
-  },
-  seekbarTrack: {
-    height: hp(3),
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: wp(2),
-    overflow: 'hidden',
-  },
-  seekbarProgress: {
-    height: hp(3),
-    backgroundColor: '#4F6BFF',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingVertical: hp(12),
+    paddingHorizontal: wp(16),
   },
   timeText: {
     color: '#fff',
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Geist-Medium',
-    minWidth: 40,
+    textAlign: 'center',
+    marginBottom: hp(8),
   },
-  bottomControls: {
+  controlButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: wp(24),
+    gap: wp(20),
   },
-  smallControlButton: {
+  controlButton: {
     padding: wp(8),
-  },
-  smallBufferingText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Geist-Bold',
-  },
-  iconButton: {
-    padding: wp(8),
-  },
-  speedButton: {
-    paddingHorizontal: wp(10),
-    paddingVertical: hp(4),
-    borderRadius: wp(12),
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: wp(24),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   speedText: {
     color: '#fff',
-    fontSize: 13,
-    fontFamily: 'Geist-SemiBold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  speedMenu: {
-    backgroundColor: '#fff',
-    borderRadius: wp(16),
-    padding: wp(16),
-    minWidth: wp(200),
-  },
-  speedMenuTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Geist-Bold',
-    color: '#0C154C',
-    marginBottom: hp(12),
-  },
-  speedOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: hp(12),
-    paddingHorizontal: wp(12),
-    borderRadius: wp(8),
-  },
-  speedOptionActive: {
-    backgroundColor: 'rgba(79,107,255,0.1)',
-  },
-  speedOptionText: {
-    fontSize: 15,
-    fontFamily: 'Geist-Medium',
-    color: '#38445D',
-  },
-  speedOptionTextActive: {
-    color: '#4F6BFF',
-    fontFamily: 'Geist-SemiBold',
+    textAlign: 'center',
   },
 });

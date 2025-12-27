@@ -1,6 +1,6 @@
 import { BackHeader } from '@/src/components'
 import { hp, wp } from '@/src/utils'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   FlatList,
   Image,
@@ -16,18 +16,24 @@ import { Feather } from '@expo/vector-icons'
 import { getColor } from '@/src/utils'
 import { useRouter } from 'expo-router'
 import { LiveStream } from '@/src/api/liveApi'
+import { Skeleton } from '@/src/components/Skeleton'
+import { useSermonStore } from '@/src/stores/sermonStore'
 
 export interface SermonItem {
   id: string;
   title: string;
   duration: string;
   timeAgo: string;
-  category: 'All' | 'Sunday Service' | 'Weekday Service';
-  image: string;
+  category: string; 
+  thumbnailUrl: string;
   videoUrl: string;
   audioUrl?: string;
-  thumbnailUrl?: string;
   description: string;
+  preacher?: string;
+  categoryId: string;
+  isLiked?: boolean;
+  likesCount?: number;
+  views?: number;
 }
 
 interface FilterItem {
@@ -41,85 +47,15 @@ interface SermonRow {
 
 type DataItem = FilterItem | SermonRow;
 
-const filters = ['All', 'Sunday Service', 'Weekday Service'] as const;
-
-export const SERMONS_DATA: SermonItem[] = [
-  {
-    id: '1',
-    title: 'Overtaking The Takers // Day 1',
-    duration: '1:02:34',
-    timeAgo: '2d ago',
-    category: 'Sunday Service',
-    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=60',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    description:
-      'This sermon guides you through trusting God regardless of the opposition. Discover how to wait with hope and run with endurance.',
-  },
-  {
-    id: '2',
-    title: 'Overtaking The Takers // Day 2',
-    duration: '1:04:12',
-    timeAgo: '2d ago',
-    category: 'Weekday Service',
-    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=600&q=60',
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-    description:
-      'Encounter a midweek booster that keeps your faith vibrant. Pastor Daniel unpacks keys for sustaining fire throughout the week.',
-  },
-  {
-    id: '3',
-    title: 'Overtaking The Takers // Day 3',
-    duration: '59:18',
-    timeAgo: '3d ago',
-    category: 'Sunday Service',
-    image: 'https://images.unsplash.com/photo-1507878866276-a947ef722fee?auto=format&fit=crop&w=600&q=60',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    description: 'Day 3 focuses on practical obedience. Learn how to align every area with the Word and see accelerated breakthroughs.',
-  },
-  {
-    id: '4',
-    title: 'Overtaking The Takers // Day 4',
-    duration: '1:05:47',
-    timeAgo: '3d ago',
-    category: 'Weekday Service',
-    image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=600&q=60',
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-    description:
-      'Continue the prophetic journey with impartations for divine speed. Testimonies and teachings that reposition you for success.',
-  },
-  {
-    id: '5',
-    title: 'Youth Revival Nights',
-    duration: '48:29',
-    timeAgo: '4d ago',
-    category: 'All',
-    image: 'https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2?auto=format&fit=crop&w=600&q=60',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    description:
-      'Youth Revival Nights capture the hunger of the next generation. Worship, word, and declarations that stir revival.',
-  },
-  {
-    id: '6',
-    title: 'Midweek Encounter',
-    duration: '55:06',
-    timeAgo: '5d ago',
-    category: 'Weekday Service',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=600&q=60',
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-    description:
-      'Midweek Encounter delivers fresh strength for your journey. Receive prophetic direction and practical counsel.',
-  },
-];
-
 interface SermonsProps {
   data: DataItem[];
   activeFilter: string;
   dropdownOpen: boolean;
-  searchQuery: string;
   refreshing: boolean;
   showStickyFilters: boolean;
   displayedData: SermonItem[];
   filteredData: SermonItem[];
+  filters?: string[]; // Dynamic filters from API
   onBack: () => void;
   onRefresh: () => Promise<void>;
   onFilterChange: (filter: string) => void;
@@ -130,17 +66,18 @@ interface SermonsProps {
   onFilterYChange?: (y: number) => void;
   liveStream?: LiveStream | null;
   hasLiveService?: boolean;
+  isLoading?: boolean;
 }
 
 export const Sermons = ({
   data,
   activeFilter,
   dropdownOpen,
-  searchQuery,
   refreshing,
   showStickyFilters,
   displayedData,
   filteredData,
+  filters = ['All', 'Sunday Service', 'Weekday Service'],
   onBack,
   onRefresh,
   onFilterChange,
@@ -151,8 +88,32 @@ export const Sermons = ({
   onFilterYChange,
   liveStream,
   hasLiveService = false,
+  isLoading = false,
 }: SermonsProps) => {
   const router = useRouter();
+  const [inputSearchQuery, setInputSearchQuery] = useState('');
+
+  const isSermonAvailableOffline = useSermonStore(state => state.isSermonAvailableOffline);
+
+  const skeletonData = Array.from({ length: 6 }, (_, i) => ({ id: i }));
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const renderSkeletonItem = ({ item }: { item: { id: number } }) => (
+    <View style={styles.rowGap}>
+      <View style={styles.skeletonCard}>
+        <Skeleton width="100%" height={hp(108)} borderRadius={wp(10)} />
+        <Skeleton height={hp(20)} style={{ marginHorizontal: wp(14), marginTop: hp(10) }} />
+        <Skeleton height={hp(15)} style={{ marginHorizontal: wp(14), marginTop: hp(6) }} />
+        <Skeleton height={hp(15)} style={{ marginHorizontal: wp(14), marginTop: hp(6) }} />
+      </View>
+      <View style={styles.skeletonCard}>
+        <Skeleton width="100%" height={hp(108)} borderRadius={wp(10)} />
+        <Skeleton height={hp(20)} style={{ marginHorizontal: wp(14), marginTop: hp(10) }} />
+        <Skeleton height={hp(15)} style={{ marginHorizontal: wp(14), marginTop: hp(6) }} />
+        <Skeleton height={hp(15)} style={{ marginHorizontal: wp(14), marginTop: hp(6) }} />
+      </View>
+    </View>
+  );
 
   const renderFilters = () => (
     <View style={styles.categoryRow}>
@@ -179,104 +140,153 @@ export const Sermons = ({
             placeholder="Search sermons"
             placeholderTextColor="rgba(22,33,57,0.45)"
             style={styles.searchField}
-            value={searchQuery}
-            onChangeText={onSearchChange}
+            value={inputSearchQuery}
+            onChangeText={setInputSearchQuery}
             returnKeyType="search"
           />
+          {inputSearchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                setInputSearchQuery('');
+                onSearchChange('');
+              }}
+              style={styles.closeIcon}
+              activeOpacity={0.7}
+            >
+              <Feather name="x" size={16} color="rgba(22,33,57,0.45)" />
+            </TouchableOpacity>
+          )}
         </View>
-        <TouchableOpacity style={styles.searchButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.searchButton} activeOpacity={0.8} onPress={() => onSearchChange(inputSearchQuery)}>
           <Feather name="search" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  const renderItem = ({ item }: { item: DataItem }) => {
-    if ('type' in item && item.type === 'filters') {
-      // Filters
-      return (
-        <View
-          style={styles.filtersContainer}
-          onLayout={(event) => onFilterYChange?.(event.nativeEvent.layout.y)}
-        >
-          {renderFilters()}
-          {dropdownOpen && (
-            <View style={styles.dropdown}>
-              {filters.map((filter) => {
-                const isActive = activeFilter === filter;
-                return (
-                  <TouchableOpacity
-                    key={filter}
-                    style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
-                    onPress={() => {
-                      onFilterChange(filter);
-                      onDropdownToggle();
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[styles.dropdownLabel, isActive && styles.dropdownLabelActive]}>{filter}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+  const SermonCard = ({ sermon }: { sermon: SermonItem }) => {
+    const [isOffline, setIsOffline] = useState(false);
+    
+    useEffect(() => {
+      const checkOffline = async () => {
+        const offline = await isSermonAvailableOffline(sermon.id);
+        setIsOffline(offline);
+      };
+      checkOffline();
+    }, [sermon.id]);
+    
+    return (
+      <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => router.push({ pathname: '(home)/sermon-detail', params: { id: sermon.id } })}>
+        <View style={styles.cardImageContainer}>
+          <Image source={sermon.thumbnailUrl ? { uri: sermon.thumbnailUrl } : require('@/src/assets/images/fallback.png')} style={styles.cardImage} />
+          {isOffline && (
+            <View style={styles.offlineIndicator}>
+              <Feather name="download" size={12} color="#fff" />
             </View>
           )}
-          {renderSearchBar()}
         </View>
-      );
-    } else {
-      // Sermon row
-      const row = item as SermonRow;
-      return (
-        <View style={row.right ? styles.rowGap : styles.rowGapSingle}>
-          <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => router.push(`/sermon-detail?id=${row.left.id}`)}>
-            <Image source={{ uri: row.left.image }} style={styles.cardImage} />
-            <Text style={styles.cardTitle} numberOfLines={2}>
-              {row.left.title}
-            </Text>
-            <View style={styles.cardMetaRow}>
-              <Text style={styles.cardMeta}>{row.left.duration}</Text>
-              <View style={styles.dot} />
-              <Text style={styles.cardMeta}>{row.left.timeAgo}</Text>
-            </View>
-          </TouchableOpacity>
-          {row.right && (
-            <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => router.push(`/sermon-detail?id=${row.right!.id}`)}>
-              <Image source={{ uri: row.right.image }} style={styles.cardImage} />
-              <Text style={styles.cardTitle} numberOfLines={2}>
-                {row.right.title}
-              </Text>
-              <View style={styles.cardMetaRow}>
-                <Text style={styles.cardMeta}>{row.right.duration}</Text>
-                <View style={styles.dot} />
-                <Text style={styles.cardMeta}>{row.right.timeAgo}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+        <Text style={styles.cardTitle} numberOfLines={2}>
+          {sermon.title}
+        </Text>
+        <Text style={styles.cardPreacher} numberOfLines={1}>
+          {sermon.preacher}
+        </Text>
+        <View style={styles.cardMetaRow}>
+          <Text style={styles.cardMeta}>{sermon.duration}</Text>
+          <View style={styles.dot} />
+          <Text style={styles.cardMeta}>{sermon.timeAgo}</Text>
         </View>
-      );
-    }
+      </TouchableOpacity>
+    );
+  };
+
+  const sermonData = data.filter(item => !('type' in item)) as SermonRow[];
+
+  const renderItem = ({ item }: { item: SermonRow }) => {
+    const row = item;
+    return (
+      <View style={row.right ? styles.rowGap : styles.rowGapSingle}>
+        <SermonCard sermon={row.left} />
+        {row.right && <SermonCard sermon={row.right} />}
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => index === 0 ? 'filters' : `row-${index}`}
-        numColumns={1}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        ListHeaderComponent={
-          <>
-            <BackHeader title="Sermons" onBackPress={onBack} />
+      {isLoading ? (
+        <>
+          <BackHeader title="Sermons" onBackPress={onBack} />
           <SermonsHero
             hasLiveService={hasLiveService}
             liveStream={liveStream}
             onActionPress={() => router.push('/live')}
             offlineMessage="No live sermon available"
           />
+          <View style={styles.filtersContainer}>
+            {renderFilters()}
+            {renderSearchBar()}
+          </View>
+          <FlatList
+            data={skeletonData}
+            renderItem={renderSkeletonItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        </>
+      ) : (
+        <>
+          <FlatList
+           data={sermonData}
+  renderItem={renderItem}
+  keyExtractor={(item, index) => `row-${index}`}
+  numColumns={1}
+  contentContainerStyle={styles.listContent}
+  showsVerticalScrollIndicator={false}
+  onScroll={onScroll}
+  scrollEventThrottle={16}
+  keyboardShouldPersistTaps="always"
+  keyboardDismissMode="on-drag"
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No sermons available</Text>
+            <Text style={styles.emptySubtext}>Check back later for new Sermons</Text>
+          </View>
+        }
+        ListHeaderComponent={
+          <>
+            <BackHeader title="Sermons" onBackPress={onBack} />
+            <SermonsHero
+              hasLiveService={hasLiveService}
+              liveStream={liveStream}
+              onActionPress={() => router.push('/live')}
+              offlineMessage="No live sermon available"
+            />
+            <View style={styles.filtersContainer} onLayout={(event) => onFilterYChange?.(event.nativeEvent.layout.y)}>
+              {renderFilters()}
+              {dropdownOpen && (
+                <View style={styles.dropdown}>
+                  {filters.map((filter) => {
+                    const isActive = activeFilter === filter;
+                    return (
+                      <TouchableOpacity
+                        key={filter}
+                        style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
+                        onPress={() => {
+                          onFilterChange(filter);
+                          onDropdownToggle();
+                        }}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={[styles.dropdownLabel, isActive && styles.dropdownLabelActive]}>{filter}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+              {renderSearchBar()}
+            </View>
           </>
         }
         ListFooterComponent={
@@ -301,31 +311,12 @@ export const Sermons = ({
         }
       />
       {showStickyFilters && (
-        <View style={styles.stickyFiltersContainer}>
-          {renderFilters()}
-          {dropdownOpen && (
-            <View style={styles.dropdown}>
-              {filters.map((filter) => {
-                const isActive = activeFilter === filter;
-                return (
-                  <TouchableOpacity
-                    key={filter}
-                    style={[styles.dropdownItem, isActive && styles.dropdownItemActive]}
-                    onPress={() => {
-                      onFilterChange(filter);
-                      onDropdownToggle();
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[styles.dropdownLabel, isActive && styles.dropdownLabelActive]}>{filter}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
+        <View style={styles.stickyFiltersContainer} pointerEvents="box-none">
           {renderSearchBar()}
         </View>
       )}
+      </>
+    )}
     </View>
   )
 }
@@ -430,14 +421,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist-Regular',
     color: '#151F36',
   },
+  closeIcon: {
+    marginLeft: wp(8),
+  },
   searchButton: {
     paddingHorizontal: wp(16),
     paddingVertical: hp(10),
     borderRadius: wp(18),
-    backgroundColor: '#4F6BFF',
+    backgroundColor: '#001891ff',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4F6BFF',
+    shadowColor: '#001891ff',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -480,9 +474,28 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 5,
   },
+  cardImageContainer: {
+    position: 'relative',
+  },
   cardImage: {
     width: '100%',
     height: hp(108),
+  },
+  offlineIndicator: {
+    position: 'absolute',
+    top: hp(8),
+    right: wp(8),
+    backgroundColor: '#4CAF50',
+    borderRadius: wp(12),
+    width: wp(24),
+    height: wp(24),
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   cardTitle: {
     paddingHorizontal: wp(14),
@@ -490,6 +503,13 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     fontFamily: 'Geist-SemiBold',
     color: '#1C2437',
+  },
+  cardPreacher: {
+    paddingHorizontal: wp(14),
+    marginTop: hp(4),
+    fontSize: 12,
+    fontFamily: 'Geist-Medium',
+    color: '#4F6BFF',
   },
   cardMetaRow: {
     flexDirection: 'row',
@@ -541,5 +561,36 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  skeletonCard: {
+    width: wp(180),
+    backgroundColor: '#fff',
+    borderRadius: wp(10),
+    paddingBottom: hp(12),
+    overflow: 'hidden',
+    shadowColor: '#0A1B44',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: hp(50),
+  },
+  emptyText: {
+    fontSize: 18,
+    fontFamily: 'Geist-Bold',
+    color: '#1C2437',
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: 'Geist-Regular',
+    color: 'rgba(28,36,55,0.6)',
+    textAlign: 'center',
+    marginTop: hp(8),
   },
 })

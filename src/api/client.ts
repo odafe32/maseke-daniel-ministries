@@ -10,7 +10,7 @@ const client: AxiosInstance = axios.create({
 
 client.interceptors.request.use(
   (config) => {
-    console.log('Request:', config);
+    // console.log('Request:', config);
     const token = useAuthStore.getState().token;
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
