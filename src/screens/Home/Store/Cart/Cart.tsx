@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 
@@ -42,6 +43,10 @@ interface CartUIProps {
   getTotalAmount: () => number;
   onBack: () => void;
   onCheckout: () => void;
+  onRefresh: () => void;
+  isLoading: boolean;
+  updatingItemId: string | null;
+  isCheckingOut: boolean;
 }
 
 export function CartUI({
@@ -52,12 +57,20 @@ export function CartUI({
   getTotalAmount,
   onBack,
   onCheckout,
+  onRefresh,
+  isLoading,
+  updatingItemId = null,
+  isCheckingOut = false,
 }: CartUIProps) {
 
   const renderCartItem = ({ item }: { item: CartItem }) => (
     <View style={styles.cartItemContainer}>
       {/* Product Image */}
-      <Image source={item.image} style={styles.productImage} />
+      {item.image ? (
+        <Image source={{ uri: item.image }} style={styles.productImage} />
+      ) : (
+        <View style={[styles.productImage, styles.placeholderImage]} />
+      )}
       
       {/* Product Details */}
       <View style={styles.productDetails}>
@@ -65,7 +78,7 @@ export function CartUI({
           {item.title}
         </ThemeText>
         <ThemeText variant="bodySmall" style={styles.productPrice}>
-          {"₦" + item.price.toFixed(2)}
+          {"₦" + item.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </ThemeText>
         
         {/* Quantity Controls */}
@@ -76,13 +89,17 @@ export function CartUI({
               item.quantity === 1 && styles.quantityButtonDisabled
             ]}
             onPress={() => decreaseQuantity(item.id)}
-            disabled={item.quantity === 1}
+            disabled={item.quantity === 1 || updatingItemId === item.id}
           >
-            <Feather 
-              name="minus" 
-              size={16} 
-              color={item.quantity === 1 ? COLORS.TEXT_LIGHT_GRAY : COLORS.TEXT_GRAY} 
-            />
+            {updatingItemId === item.id ? (
+              <ActivityIndicator size={16} color={COLORS.ACTIVITY_INDICATOR} />
+            ) : (
+              <Feather 
+                name="minus" 
+                size={16} 
+                color={item.quantity === 1 ? COLORS.TEXT_LIGHT_GRAY : COLORS.TEXT_GRAY} 
+              />
+            )}
           </TouchableOpacity>
           
           <ThemeText variant="body" style={styles.quantityText}>
@@ -92,16 +109,26 @@ export function CartUI({
           <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => increaseQuantity(item.id)}
+            disabled={updatingItemId === item.id}
           >
-            <Feather name="plus" size={16} color={COLORS.TEXT_GRAY} />
+            {updatingItemId === item.id ? (
+              <ActivityIndicator size={16} color={COLORS.ACTIVITY_INDICATOR} />
+            ) : (
+              <Feather name="plus" size={16} color={COLORS.TEXT_GRAY} />
+            )}
           </TouchableOpacity>
           
           {/* Delete Button */}
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => removeFromCart(item.id)}
+            disabled={updatingItemId === item.id}
           >
-            <Feather name="trash-2" size={16} color={COLORS.ACTIVITY_INDICATOR} />
+            {updatingItemId === item.id ? (
+              <ActivityIndicator size={16} color={COLORS.ACTIVITY_INDICATOR} />
+            ) : (
+              <Feather name="trash-2" size={16} color={COLORS.ACTIVITY_INDICATOR} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -121,23 +148,47 @@ export function CartUI({
         />
 
         {/* Cart Items */}
-        <FlatList
-          data={cartItems}
-          renderItem={renderCartItem}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyIconContainer}>
-                <Icon name="cart" size={48} color={COLORS.TEXT_LIGHT_GRAY} />
+        {isLoading ? (
+          // Skeleton Loader
+          <View>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((index) => (
+              <View key={index} style={styles.cartItemContainer}>
+                {/* Skeleton Image */}
+                <View style={[styles.productImage, styles.skeleton]} />
+                {/* Skeleton Details */}
+                <View style={styles.productDetails}>
+                  <View style={styles.skeletonTitle} />
+                  <View style={styles.skeletonPrice} />
+                  {/* Skeleton Quantity Controls */}
+                  <View style={styles.quantityContainer}>
+                    <View style={[styles.quantityButton, styles.skeleton]} />
+                    <ThemeText variant="body" style={[styles.quantityText, styles.skeletonText]}>--</ThemeText>
+                    <View style={[styles.quantityButton, styles.skeleton]} />
+                    <View style={[styles.deleteButton, styles.skeleton]} />
+                  </View>
+                </View>
               </View>
-              <ThemeText variant="body" style={styles.emptyText}>
-                Your cart is empty
-              </ThemeText>
-            </View>
-          }
-        />
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={cartItems}
+            renderItem={renderCartItem}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIconContainer}>
+                  <Icon name="cart" size={48} color={COLORS.TEXT_LIGHT_GRAY} />
+                </View>
+                <ThemeText variant="body" style={styles.emptyText}>
+                  Your cart is empty
+                </ThemeText>
+              </View>
+            }
+          />
+        )}
       </ScrollView>
 
       {/* Footer */}
@@ -148,17 +199,48 @@ export function CartUI({
             Total Amount
           </ThemeText>
           <ThemeText variant="h3" style={styles.totalAmount}>
-            {"₦" + getTotalAmount().toFixed(2)}
+            {"₦" + getTotalAmount().toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </ThemeText>
         </View>
 
-        {/* Checkout Button */}
-        <TouchableOpacity style={styles.checkoutButton} onPress={onCheckout}>
-          <ThemeText variant="h3" style={styles.checkoutText}>
-            Checkout
-          </ThemeText>
-          <Icon name="cart" size={20} color={COLORS.WHITE} />
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          {/* Refresh Button */}
+          <TouchableOpacity 
+            style={styles.refreshButton} 
+            onPress={onRefresh} 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size={20} color={COLORS.PRIMARY_BLUE} />
+            ) : (
+              <>
+                <Feather name="refresh-cw" size={20} color={COLORS.PRIMARY_BLUE} />
+                <ThemeText variant="h4" style={styles.refreshText}>
+                  Refresh
+                </ThemeText>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Checkout Button */}
+          <TouchableOpacity 
+            style={[styles.checkoutButton, styles.checkoutButtonExpanded]} 
+            onPress={onCheckout} 
+            disabled={isCheckingOut}
+          >
+            {isCheckingOut ? (
+              <ActivityIndicator size={20} color={COLORS.WHITE} />
+            ) : (
+              <>
+                <ThemeText variant="h3" style={styles.checkoutText}>
+                  Checkout
+                </ThemeText>
+                <Icon name="cart" size={20} color={COLORS.WHITE} />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </>
   );
@@ -183,6 +265,11 @@ const styles = StyleSheet.create({
     height: hp(80),
     marginRight: 12,
     width: wp(80),
+  },
+  placeholderImage: {
+    backgroundColor: COLORS.LIGHT_GRAY,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   productDetails: {
     flex: 1,
@@ -234,6 +321,28 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     width: wp(32),
   },
+  skeleton: {
+    backgroundColor: COLORS.LIGHT_GRAY,
+    borderRadius: 4,
+  },
+  skeletonTitle: {
+    backgroundColor: COLORS.LIGHT_GRAY,
+    borderRadius: 4,
+    height: 20,
+    marginBottom: 4,
+    width: '70%',
+  },
+  skeletonPrice: {
+    backgroundColor: COLORS.LIGHT_GRAY,
+    borderRadius: 4,
+    height: 16,
+    marginBottom: 8,
+    width: '40%',
+  },
+  skeletonText: {
+    color: COLORS.TEXT_LIGHT_GRAY,
+    opacity: 0.3,
+  },
   separator: {
     backgroundColor: COLORS.BORDER_GRAY,
     height: hp(1),
@@ -284,6 +393,30 @@ const styles = StyleSheet.create({
     color: COLORS.PRIMARY_BLUE,
     fontWeight: '600',
     fontFamily: 'Geist-Bold',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  refreshButton: {
+    alignItems: 'center',
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.PRIMARY_BLUE,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 16,
+    flex: 1,
+  },
+  refreshText: {
+    color: COLORS.PRIMARY_BLUE,
+    fontSize: fs(16),
+    fontWeight: '600',
+  },
+  checkoutButtonExpanded: {
+    flex: 2,
   },
   checkoutButton: {
     alignItems: 'center',

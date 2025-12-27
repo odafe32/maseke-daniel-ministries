@@ -378,10 +378,9 @@ export interface StoreProduct {
   title: string;
   price: number;
   beforePrice?: number | null;
-  image: any;
+  image: string | null;
   category: string;
   description: string;
-  inStock: boolean;
   stockCount: number;
   createdDate: string;
   updatedDate: string;
@@ -390,37 +389,61 @@ export interface StoreProduct {
 
 export interface CartItem {
   id: string;
-  productId: string;
   title: string;
   price: number;
-  image: any;
+  beforePrice?: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  createdDate: string;
+  updatedDate: string;
   quantity: number;
+  subtotal: number;
+  cartAddedDate: string;
 }
 
 export const cartItemsData: CartItem[] = [
   {
-    id: "1",
-    productId: "1",
+    id: "uuid-product-1",
     title: "King James Bible - Deluxe Edition",
     price: 25.99,
-    image: require("../assets/images/wishlist/image-1.jpg"),
+    beforePrice: 35.99,
+    image: "https://example.com/storage/products/image1.jpg",
+    category: "Bibles",
+    description: "Beautiful leather-bound King James Bible with gold edges and ribbon marker",
+    createdDate: "2024-01-15T18:00:00.000Z",
+    updatedDate: "2024-11-28T18:00:00.000Z",
     quantity: 2,
+    subtotal: 51.98,
+    cartAddedDate: "2024-11-28T18:30:00.000Z"
   },
   {
-    id: "2", 
-    productId: "4",
+    id: "uuid-product-2", 
     title: "Daily Devotional Journal",
     price: 9.99,
-    image: require("../assets/images/wishlist/image-2.jpg"),
+    beforePrice: null,
+    image: "https://example.com/storage/products/image2.jpg",
+    category: "Journals",
+    description: "365-day devotional journal with scripture verses and reflection space",
+    createdDate: "2024-01-25T17:00:00.000Z",
+    updatedDate: "2024-11-22T17:00:00.000Z",
     quantity: 1,
+    subtotal: 9.99,
+    cartAddedDate: "2024-11-22T18:15:00.000Z"
   },
   {
-    id: "3",
-    productId: "7", 
+    id: "uuid-product-3",
     title: "Children's Bible Stories",
     price: 14.99,
-    image: require("../assets/images/wishlist/image-3.jpg"),
+    beforePrice: 19.99,
+    image: "https://example.com/storage/products/image3.jpg",
+    category: "Children",
+    description: "Beautifully illustrated bible stories for children of all ages",
+    createdDate: "2024-03-20T18:00:00.000Z",
+    updatedDate: "2024-11-26T18:00:00.000Z",
     quantity: 3,
+    subtotal: 44.97,
+    cartAddedDate: "2024-11-26T18:30:00.000Z"
   },
 ];
 
@@ -433,7 +456,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Bibles",
     description: "Beautiful leather-bound King James Bible with gold edges and ribbon marker",
-    inStock: true,
     stockCount: 45,
     createdDate: "2024-01-15",
     updatedDate: "2024-11-28",
@@ -447,7 +469,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Bibles",
     description: "Complete Holy Scriptures with detailed commentary and study notes",
-    inStock: true,
     stockCount: 32,
     createdDate: "2024-02-20",
     updatedDate: "2024-11-25",
@@ -461,7 +482,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Study Guides",
     description: "Comprehensive study guide for the New Testament with questions and answers",
-    inStock: true,
     stockCount: 67,
     createdDate: "2024-03-10",
     updatedDate: "2024-11-20",
@@ -475,7 +495,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Journals",
     description: "365-day devotional journal with scripture verses and reflection space",
-    inStock: true,
     stockCount: 89,
     createdDate: "2024-01-25",
     updatedDate: "2024-11-22",
@@ -489,7 +508,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Prayer Books",
     description: "Collection of powerful prayers for different occasions and needs",
-    inStock: true,
     stockCount: 28,
     createdDate: "2024-04-05",
     updatedDate: "2024-11-18",
@@ -503,7 +521,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Reference",
     description: "Detailed bible maps and historical atlas for better understanding",
-    inStock: true,
     stockCount: 15,
     createdDate: "2024-02-15",
     updatedDate: "2024-11-15",
@@ -517,7 +534,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Children",
     description: "Beautifully illustrated bible stories for children of all ages",
-    inStock: true,
     stockCount: 94,
     createdDate: "2024-03-20",
     updatedDate: "2024-11-26",
@@ -531,7 +547,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Music",
     description: "Collection of uplifting worship songs and hymns",
-    inStock: true,
     stockCount: 56,
     createdDate: "2024-05-12",
     updatedDate: "2024-11-19",
@@ -545,7 +560,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Accessories",
     description: "Handcrafted leather bible cover with zipper and pen holder",
-    inStock: true,
     stockCount: 38,
     createdDate: "2024-06-08",
     updatedDate: "2024-11-21",
@@ -559,7 +573,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Study Guides",
     description: "Comprehensive theology textbook for students and scholars",
-    inStock: true,
     stockCount: 12,
     createdDate: "2024-04-18",
     updatedDate: "2024-11-17",
@@ -573,7 +586,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Christian Living",
     description: "Practical guide to applying biblical principles in daily life",
-    inStock: true,
     stockCount: 73,
     createdDate: "2024-03-15",
     updatedDate: "2024-11-23",
@@ -587,7 +599,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Digital",
     description: "Advanced bible study software with multiple translations and tools",
-    inStock: true,
     stockCount: 8,
     createdDate: "2024-07-22",
     updatedDate: "2024-11-16",
@@ -601,7 +612,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Inspiration",
     description: "Inspiring stories of missionaries and their work around the world",
-    inStock: true,
     stockCount: 41,
     createdDate: "2024-05-30",
     updatedDate: "2024-11-14",
@@ -615,7 +625,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Reference",
     description: "Comprehensive history of the Christian church from ancient times",
-    inStock: true,
     stockCount: 19,
     createdDate: "2024-04-12",
     updatedDate: "2024-11-13",
@@ -629,7 +638,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Gift Items",
     description: "Set of 50 beautifully designed bible promise cards for encouragement",
-    inStock: true,
     stockCount: 156,
     createdDate: "2024-08-14",
     updatedDate: "2024-11-27",
@@ -643,7 +651,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Christian Living",
     description: "Biblical principles for building strong marriages and families",
-    inStock: true,
     stockCount: 52,
     createdDate: "2024-06-25",
     updatedDate: "2024-11-24",
@@ -657,7 +664,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Ministry",
     description: "Complete handbook for youth ministry leaders and volunteers",
-    inStock: true,
     stockCount: 24,
     createdDate: "2024-09-10",
     updatedDate: "2024-11-20",
@@ -671,7 +677,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Study Guides",
     description: "In-depth study of biblical prophecy and end times",
-    inStock: true,
     stockCount: 33,
     createdDate: "2024-07-08",
     updatedDate: "2024-11-12",
@@ -685,7 +690,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Fiction",
     description: "Inspirational Christian fiction novel with powerful message",
-    inStock: true,
     stockCount: 87,
     createdDate: "2024-10-05",
     updatedDate: "2024-11-25",
@@ -699,7 +703,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Discipleship",
     description: "Complete manual for training new disciples and church leaders",
-    inStock: true,
     stockCount: 21,
     createdDate: "2024-08-20",
     updatedDate: "2024-11-18",
@@ -713,7 +716,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Reference",
     description: "Comprehensive bible dictionary with detailed explanations",
-    inStock: true,
     stockCount: 16,
     createdDate: "2024-05-18",
     updatedDate: "2024-11-19",
@@ -727,7 +729,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Worship",
     description: "Complete guide for worship leaders and music ministers",
-    inStock: true,
     stockCount: 35,
     createdDate: "2024-09-28",
     updatedDate: "2024-11-21",
@@ -741,7 +742,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Christian Living",
     description: "Biblical principles for effective Christian parenting",
-    inStock: true,
     stockCount: 64,
     createdDate: "2024-07-15",
     updatedDate: "2024-11-22",
@@ -755,7 +755,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Reference",
     description: "Complete bible concordance for easy scripture finding",
-    inStock: true,
     stockCount: 29,
     createdDate: "2024-06-30",
     updatedDate: "2024-11-17",
@@ -769,7 +768,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Spiritual Growth",
     description: "Understanding spiritual warfare and standing firm in faith",
-    inStock: true,
     stockCount: 48,
     createdDate: "2024-08-05",
     updatedDate: "2024-11-26",

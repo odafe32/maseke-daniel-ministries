@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import {
   StyleSheet,
   View,
@@ -9,8 +9,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
-  Animated,
-  Dimensions
+  ImageSourcePropType,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
@@ -43,14 +42,17 @@ const COLORS = {
 interface StoreUIProps {
   onBack: () => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  setSearchQuery: (value: string) => void;
+  handleSearchPress: () => void;
   currentPage: number;
-  setCurrentPage: (page: number) => void;
+  handlePageChange: (page: number) => Promise<void>;
   filterValue: string;
   showFilterDropdown: boolean;
   setShowFilterDropdown: (show: boolean) => void;
-  loadingProducts: Set<string>;
-  isInitialLoading: boolean;
+  isLoading: boolean;
+  loadingWishlists: Array<string>;
+  loadingCart: Array<string>;
+  onRefresh: () => void;
   filterOptions: Array<{ label: string; value: string }>;
   paginatedProducts: StoreProduct[];
   totalPages: number;
@@ -68,8 +70,8 @@ interface StoreUIProps {
   addToCart: () => void;
   currentSlide: number;
   setCurrentSlide: (slide: number) => void;
-  carouselRef: any;
-  carouselData: Array<{ id: number; image: any; text: string }>;
+  carouselRef: React.RefObject<ScrollView | null>;
+  carouselData: Array<{ id: number; image: ImageSourcePropType; text: string }>;
   goToSlide: (index: number) => void;
   actualCarouselWidth: number;
 }
@@ -78,13 +80,16 @@ export function StoreUI({
   onBack,
   searchQuery,
   setSearchQuery,
+  handleSearchPress,
   currentPage,
-  setCurrentPage,
+  handlePageChange,
   filterValue,
   showFilterDropdown,
   setShowFilterDropdown,
-  loadingProducts,
-  isInitialLoading,
+  isLoading,
+  loadingWishlists = [],
+  loadingCart = [],
+  onRefresh,
   filterOptions,
   paginatedProducts,
   totalPages,
@@ -107,23 +112,9 @@ export function StoreUI({
   goToSlide,
   actualCarouselWidth,
 }: StoreUIProps) {
-
+  console.log("isLoading: ",isLoading);
+  console.log("selectedProduct: ",selectedProduct);
   const renderProductItem = ({ item }: { item: StoreProduct }) => {
-    // Show skeleton loader only during initial loading
-    if (isInitialLoading) {
-      return (
-        <View style={styles.itemContainer}>
-          <View style={styles.imageContainer}>
-            <View style={styles.skeletonImage} />
-            <View style={styles.skeletonHeartIcon} />
-          </View>
-          <View style={styles.itemContent}>
-            <View style={styles.skeletonTitleBar} />
-            <View style={styles.skeletonPriceBar} />
-          </View>
-        </View>
-      );
-    }
 
     return (
       <TouchableOpacity 
@@ -132,15 +123,19 @@ export function StoreUI({
         onPress={() => openProductModal(item)}
       >
         <View style={styles.imageContainer}>
-          <Image source={item.image} style={styles.itemImage} />
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.itemImage} />
+          ) : (
+            <View style={[styles.itemImage, styles.placeholderImage]} />
+          )}
 
           {/* Heart icon on top right */}
           <TouchableOpacity
             style={styles.heartIcon}
             onPress={() => toggleWishlist(item.id)}
-            disabled={loadingProducts.has(item.id)}
+            disabled={loadingWishlists.includes(item.id)}
           >
-            {loadingProducts.has(item.id) ? (
+            {loadingWishlists.includes(item.id) ? (
               <ActivityIndicator size={16} color={COLORS.ACTIVITY_INDICATOR} />
             ) : (
               <Icon
@@ -159,12 +154,12 @@ export function StoreUI({
           
           <View style={styles.priceContainer}>
             <ThemeText variant="bodySmall" style={styles.currentPrice}>
-              ₦{item.price.toFixed(2)}
+              ₦{item.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </ThemeText>
             
             {item.beforePrice && (
               <ThemeText variant="bodySmall" style={styles.beforePrice}>
-                ₦{item.beforePrice.toFixed(2)}
+                ₦{item.beforePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </ThemeText>
             )}
           </View>
@@ -181,7 +176,7 @@ export function StoreUI({
         styles.paginationNumberButton,
         isActive ? styles.paginationButtonActive : {}
       ]}
-      onPress={() => setCurrentPage(pageNumber)}
+      onPress={() => handlePageChange(pageNumber)}
     >
       <ThemeText
         variant="bodySmall"
@@ -264,9 +259,6 @@ export function StoreUI({
       {/* Search and Filter Section */}
       <View style={styles.searchFilterContainer}>
         <View style={styles.searchField}>
-          <View style={styles.searchIconContainer}>
-            <Icon name="search" size={18} color={COLORS.TEXT_GRAY} />
-          </View>
           <TextInput
             style={styles.searchInput}
             placeholder={"Search here"}
@@ -274,6 +266,14 @@ export function StoreUI({
             onChangeText={setSearchQuery}
             placeholderTextColor={COLORS.TEXT_GRAY}
           />
+          <TouchableOpacity 
+            style={styles.searchIconButton}
+            onPress={handleSearchPress}
+            activeOpacity={0.7}
+            disabled={isLoading}
+          >
+            <Icon name="search" size={18} color={COLORS.TEXT_GRAY} />
+          </TouchableOpacity>
         </View>
         
         <TouchableOpacity 
@@ -320,35 +320,67 @@ export function StoreUI({
         </View>
       )}
 
+      {/* Refresh Button */}
+      <View style={styles.refreshContainer}>
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={onRefresh}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size={16} color={COLORS.PRIMARY_BLUE} />
+          ) : (
+            <Feather name="refresh-cw" size={16} color={COLORS.PRIMARY_BLUE} />
+          )}
+          <ThemeText variant="bodySmall" style={styles.refreshText}>
+            Refresh
+          </ThemeText>
+        </TouchableOpacity>
+      </View>
+
       {/* Trending Section */}
       <View style={styles.trendingContainer}>
         <ThemeText variant="h4" style={styles.trendingText}>
           Trending
         </ThemeText>
-        <TouchableOpacity style={styles.viewAllButton}>
-          <ThemeText variant="bodySmall" style={styles.viewAllText}>
-            View all
-          </ThemeText>
-        </TouchableOpacity>
       </View>
 
       {/* Products Grid */}
-      <FlatList
-        data={paginatedProducts}
-        renderItem={renderProductItem}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <ThemeText variant="body" style={styles.emptyText}>
-              No products found
-            </ThemeText>
-          </View>
-        }
-      />
+      {isLoading ? (
+        // Skeleton grid when loading
+        <View style={[styles.row, styles.skeletonGrid]}>
+          {Array.from({ length: 6 }, (_, index) => (
+            <View key={index} style={styles.itemContainer}>
+              <View style={styles.imageContainer}>
+                <View style={styles.skeletonImage} />
+                <View style={styles.skeletonHeartIcon} />
+              </View>
+              <View style={styles.itemContent}>
+                <View style={styles.skeletonTitleBar} />
+                <View style={styles.skeletonPriceBar} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : (
+        // Actual products when not loading
+        <FlatList
+          data={paginatedProducts}
+          renderItem={renderProductItem}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <ThemeText variant="body" style={styles.emptyText}>
+                No products found
+              </ThemeText>
+            </View>
+          }
+        />
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -359,7 +391,7 @@ export function StoreUI({
               styles.paginationNavButton,
               currentPage === 1 && styles.paginationButtonDisabled
             ]}
-            onPress={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            onPress={() => handlePageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
           >
             <Feather 
@@ -381,7 +413,7 @@ export function StoreUI({
               styles.paginationNavButton,
               currentPage === totalPages && styles.paginationButtonDisabled
             ]}
-            onPress={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            onPress={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
           >
             <Feather 
@@ -413,11 +445,11 @@ export function StoreUI({
         <View style={styles.modalContent}>
           {/* Product Image Section with Floating Header */}
           <View style={styles.productImageSection}>
-            <Image 
-              source={selectedProduct?.image} 
-              style={styles.productImage}
-            />
-            
+            {selectedProduct?.image ? (
+              <Image source={{ uri: selectedProduct?.image }} style={styles.productImage} />
+            ) : (
+              <View style={[styles.itemImage, styles.placeholderImage]} />
+            )}
             {/* Floating Header */}
             <View style={styles.floatingHeader}>
               <TouchableOpacity 
@@ -452,11 +484,11 @@ export function StoreUI({
             {/* Price */}
             <View style={styles.priceSection}>
               <ThemeText variant="h2" style={styles.modalCurrentPrice}>
-                ₦{selectedProduct?.price.toFixed(2)}
+                ₦{selectedProduct?.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </ThemeText>
               {selectedProduct?.beforePrice && (
                 <ThemeText variant="body" style={styles.modalBeforePrice}>
-                  ₦{selectedProduct.beforePrice.toFixed(2)}
+                  ₦{selectedProduct.beforePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </ThemeText>
               )}
             </View>
@@ -504,11 +536,18 @@ export function StoreUI({
               style={styles.addToCartButton}
               onPress={addToCart}
               activeOpacity={0.8}
+              disabled={selectedProduct ? loadingCart.includes(selectedProduct.id) : false}
             >
-              <ThemeText variant="h3" style={styles.addToCartText}>
-                Add to Cart
-              </ThemeText>
-              <Icon name="cart" size={20} color={COLORS.WHITE} />
+              {selectedProduct && loadingCart.includes(selectedProduct.id) ? (
+                <ActivityIndicator size={20} color={COLORS.WHITE} />
+              ) : (
+                <>
+                  <ThemeText variant="h3" style={styles.addToCartText}>
+                    Add to Cart
+                  </ThemeText>
+                  <Icon name="cart" size={20} color={COLORS.WHITE} />
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -523,7 +562,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: "space-between",
+  },
+  skeletonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: "space-between",
+    gap:12,
   },
   separator: {
     height: hp(12),
@@ -602,8 +649,8 @@ const styles = StyleSheet.create({
     height: hp(50),
   },
   searchField: {
-    flex: 1,
     flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
     backgroundColor: COLORS.WHITE,
     borderRightWidth: 1,
@@ -611,11 +658,16 @@ const styles = StyleSheet.create({
     flexWrap: "nowrap",
     height: "100%",
   },
-  searchIconContainer: {
+  searchIconButton: {
     alignItems: "center",
     display: "flex",
     justifyContent: "center",
-    width: wp(50),
+    width: wp(40),
+    height: wp(40),
+    borderRadius: 11,
+    borderWidth:1,
+    borderColor: "#d1d1d1",
+    marginRight:5,
   },
   searchInput: {
     flex: 1,
@@ -625,6 +677,7 @@ const styles = StyleSheet.create({
     height: "100%",
     padding: 0,
     fontFamily: "Geist-Medium",
+    paddingLeft: 12,
   },
   filterButton: {
     height: hp(100),
@@ -693,13 +746,6 @@ const styles = StyleSheet.create({
   trendingText: {
     color: COLORS.TEXT_DARK,
   },
-  viewAllButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  viewAllText: {
-    color: COLORS.PRIMARY_BLUE,
-  },
 
   // Product Cards
   itemContainer: {
@@ -720,6 +766,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.LIGHT_GRAY,
     height: "100%",
     width: "100%",
+  },
+  placeholderImage: {
+    backgroundColor: COLORS.LIGHT_GRAY,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   // Skeleton styles for product items
   skeletonImage: {
@@ -1037,5 +1088,25 @@ const styles = StyleSheet.create({
     color: COLORS.WHITE,
     fontFamily: 'Geist-Medium',
     fontSize: fs(20),
+  },
+
+  // Refresh Button
+  refreshContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER_GRAY,
+  },
+  refreshText: {
+    color: COLORS.PRIMARY_BLUE,
   },
 });
