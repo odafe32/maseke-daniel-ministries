@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Keyboard,
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,6 +76,30 @@ export const Live = ({ onBack, liveStream }: LiveProps) => {
   // Get live stream data and refetch function
   const { data: currentLiveStream, refetch: refetchLiveStream } = useLiveStatus();
   const activeLiveStream = liveStream || currentLiveStream;
+
+  // Handle keyboard appearance to scroll to input
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        // Optional: scroll back to a comfortable position
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
 
   const handleMenuPress = (item: LiveComment, buttonRef: View | null | undefined) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (buttonRef) {
@@ -327,7 +352,11 @@ const renderChatMessage = ({ item }: { item: LiveComment }) => {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 20}
+    >
       <BackHeader title="Live Stream" onBackPress={onBack} />
 
       <View style={styles.videoWrapper}>
@@ -369,7 +398,17 @@ const renderChatMessage = ({ item }: { item: LiveComment }) => {
 
         <View style={styles.inputRow}>
           <View style={styles.inputContainer}>
-            <TextInput style={styles.input} placeholder="Type a message..." value={message} onChangeText={setMessage} />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Type a message..." 
+              value={message} 
+              onChangeText={setMessage}
+              onFocus={() => {
+                setTimeout(() => {
+                  flatListRef.current?.scrollToEnd({ animated: true });
+                }, 300);
+              }}
+            />
             <TouchableOpacity onPress={handleSendMessage} disabled={!message.trim() || isPostingComment} style={[styles.sendButton, !message.trim() && styles.sendDisabled]}>
               {isPostingComment ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
             </TouchableOpacity>

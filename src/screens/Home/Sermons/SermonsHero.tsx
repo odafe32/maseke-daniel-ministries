@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { hp, wp } from '@/src/utils';
 import { images } from '@/src/constants/data';
 import { LiveStream } from '@/src/api/liveApi';
+import { HomeImageSection } from '../HomeImageSection';
+import { useAdsStore } from '../../../stores/adsStore';
 
 const HERO_IMAGE = images.HeroSection;
 
@@ -27,9 +29,23 @@ export const SermonsHero = ({
   onActionPress,
   liveStream,
 }: SermonsHeroProps) => {
+  const { ads, loading: adsLoading } = useAdsStore();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   const displayTitle = liveStream?.title || title;
   const displayDescription = liveStream?.description || description;
   const displayMeta = liveStream ? `Live • ${liveStream.started_at ? new Date(liveStream.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}` : meta;
+
+  // Carousel logic for offline state
+  useEffect(() => {
+    if (hasLiveService) return;
+
+    const carouselInterval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % 2); // Toggle between 0 and 1
+    }, 10000); 
+
+    return () => clearInterval(carouselInterval);
+  }, [hasLiveService]);
   return (
     <ImageBackground source={HERO_IMAGE} style={styles.hero} imageStyle={styles.heroImage}>
       <View style={styles.overlay}>
@@ -50,10 +66,23 @@ export const SermonsHero = ({
             <Text style={styles.description}>{displayDescription}</Text>
           </View>
         ) : (
-          <View style={styles.fallbackBanner}>
-            <View style={styles.dotMuted} />
-            <Text style={styles.fallbackText}>{offlineMessage}</Text>
-          </View>
+          <>
+            {/* Show ads carousel when currentSlide is 0, otherwise show hero image */}
+            {currentSlide === 0 && (
+              <View style={styles.adsContainer}>
+                <HomeImageSection
+                  imageUris={ads.map(ad => ad.image)}
+                  durations={ads.map(ad => ad.display_duration * 1000)}
+                  loading={adsLoading}
+                />
+              </View>
+            )}
+            {/* Always show the offline message at bottom */}
+            <View style={styles.fallbackBanner}>
+              <View style={styles.dotMuted} />
+              <Text style={styles.fallbackText}>{offlineMessage}</Text>
+            </View>
+          </>
         )}
       </View>
     </ImageBackground>
@@ -75,6 +104,14 @@ const styles = StyleSheet.create({
   
     justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+
+  adsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   contentCard: {
 
