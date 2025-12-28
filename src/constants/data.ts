@@ -208,168 +208,355 @@ export const wishListData = [
   },
 ];
 
-export type OrderStatus = 'completed' | 'cancelled' | 'processing' | 'available for pickup';
-
+export type OrderStatus = 
+  | 'pending'
+  | 'paid'
+  | 'processing'
+  | 'shipped'
+  | 'ready_for_pickup'
+  | 'completed'
+  | 'cancelled'
+  | 'refunded';
+  
 export interface OrderItem {
   id: string;
-  title: string;
-  price: number;
+  product: {
+    id: string;
+    title: string;
+    price: number;
+    image: string | null;
+  } | null;
   quantity: number;
-  image: any;
+  amount: number;
+  subtotal: number;
+}
+
+export interface OrderPayment {
+  id: string;
+  status: string;
+  amount: number;
+  method: string;
+  reference: string | null;
+}
+
+export interface OrderPickup {
+  id: string;
+  pickup_code: string | null;
+  pickup_status: string | null;
+}
+
+export interface OrderShipping {
+  id: string;
+  status: string | null;
+  tracking_number: string | null;
+  carrier: string | null;
 }
 
 export interface Order {
   id: string;
-  orderNumber: string;
-  date: string;
   status: OrderStatus;
+  deliveryType: string;
   totalAmount: number;
+  itemsCount: number;
   items: OrderItem[];
+  payment: OrderPayment | null;
+  pickup: OrderPickup | null;
+  shipping: OrderShipping | null;
+  createdDate: string;
+  updatedDate: string;
 }
 
 export const ordersData: Order[] = [
   {
     id: "1",
-    orderNumber: "ORD31121",
-    date: "2024-11-28",
     status: "available for pickup",
+    deliveryType: "pickup",
     totalAmount: 120.00,
+    itemsCount: 10,
     items: [
       {
         id: "1",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "1",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "2",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "2",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "3",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "3",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "4",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "4",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "5",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "5",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "6",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "6",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "7",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "7",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "8",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "8",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "9",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "9",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "10",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "10",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
-    ]
+    ],
+    payment: {
+      id: "pay1",
+      status: "completed",
+      amount: 120.00,
+      method: "card",
+      reference: "REF123456",
+    },
+    pickup: {
+      id: "pickup1",
+      pickup_code: "PICK123",
+      pickup_status: "available",
+    },
+    shipping: null,
+    createdDate: "2024-11-28T10:00:00.000Z",
+    updatedDate: "2024-11-28T10:00:00.000Z",
   },
   {
     id: "2", 
-    orderNumber: "ORD31122",
-    date: "2024-11-27",
     status: "processing",
+    deliveryType: "shipping",
     totalAmount: 85.00,
+    itemsCount: 1,
     items: [
       {
         id: "2",
-        title: "Holy Scriptures",
-        price: 85.00,
+        product: {
+          id: "2",
+          title: "Holy Scriptures",
+          price: 85.00,
+          image: require("../assets/images/wishlist/image-4.jpg"),
+        },
         quantity: 1,
-        image: require("../assets/images/wishlist/image-4.jpg"),
+        amount: 85.00,
+        subtotal: 85.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay2",
+      status: "completed",
+      amount: 85.00,
+      method: "card",
+      reference: "REF123457",
+    },
+    pickup: null,
+    shipping: {
+      id: "ship1",
+      status: "in_transit",
+      tracking_number: "TRACK123456",
+      carrier: "DHL",
+    },
+    createdDate: "2024-11-27T10:00:00.000Z",
+    updatedDate: "2024-11-27T10:00:00.000Z",
   },
   {
     id: "3",
-    orderNumber: "ORD31123", 
-    date: "2024-11-26",
     status: "completed",
+    deliveryType: "shipping",
     totalAmount: 150.00,
+    itemsCount: 2,
     items: [
       {
         id: "3",
-        title: "King James Bible Gray",
-        price: 75.00,
+        product: {
+          id: "3",
+          title: "King James Bible Gray",
+          price: 75.00,
+          image: require("../assets/images/wishlist/image-2.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-2.jpg"),
+        amount: 75.00,
+        subtotal: 150.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay3",
+      status: "completed",
+      amount: 150.00,
+      method: "card",
+      reference: "REF123458",
+    },
+    pickup: null,
+    shipping: {
+      id: "ship2",
+      status: "delivered",
+      tracking_number: "TRACK123457",
+      carrier: "FedEx",
+    },
+    createdDate: "2024-11-26T10:00:00.000Z",
+    updatedDate: "2024-11-26T10:00:00.000Z",
   },
   {
     id: "4",
-    orderNumber: "ORD31124",
-    date: "2024-11-25", 
     status: "cancelled",
+    deliveryType: "pickup",
     totalAmount: 45.00,
+    itemsCount: 1,
     items: [
       {
         id: "4",
-        title: "Study Guide",
-        price: 45.00,
+        product: {
+          id: "4",
+          title: "Study Guide",
+          price: 45.00,
+          image: require("../assets/images/wishlist/image-3.jpg"),
+        },
         quantity: 1,
-        image: require("../assets/images/wishlist/image-3.jpg"),
+        amount: 45.00,
+        subtotal: 45.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay4",
+      status: "refunded",
+      amount: 45.00,
+      method: "card",
+      reference: "REF123459",
+    },
+    pickup: {
+      id: "pickup2",
+      pickup_code: "PICK124",
+      pickup_status: "cancelled",
+    },
+    shipping: null,
+    createdDate: "2024-11-25T10:00:00.000Z",
+    updatedDate: "2024-11-25T10:00:00.000Z",
   },
   {
     id: "5",
-    orderNumber: "ORD31125",
-    date: "2024-11-24",
     status: "processing",
+    deliveryType: "shipping",
     totalAmount: 200.00,
+    itemsCount: 2,
     items: [
       {
         id: "5",
-        title: "Complete Bible Set",
-        price: 100.00,
+        product: {
+          id: "5",
+          title: "Complete Bible Set",
+          price: 100.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 100.00,
+        subtotal: 200.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay5",
+      status: "completed",
+      amount: 200.00,
+      method: "card",
+      reference: "REF123460",
+    },
+    pickup: null,
+    shipping: {
+      id: "ship3",
+      status: "processing",
+      tracking_number: "TRACK123458",
+      carrier: "UPS",
+    },
+    createdDate: "2024-11-24T10:00:00.000Z",
+    updatedDate: "2024-11-24T10:00:00.000Z",
   }
 ];
 

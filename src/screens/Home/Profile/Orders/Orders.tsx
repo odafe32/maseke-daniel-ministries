@@ -8,28 +8,36 @@ import {
   Image,
   Modal,
   Animated,
+  ActivityIndicator,
+  RefreshControl, // add this
+  ImageSourcePropType, // add this
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText } from "@/src/components";
-import { Order, OrderStatus } from "@/src/constants/data";
 import { fs, hp, wp } from "@/src/utils";
+import { Order, OrderStatus, OrderItem } from "@/src/constants/data";
 
 interface OrdersProps {
   onBack: () => void;
   ordersData: Order[];
   filteredOrders: Order[];
   loading: boolean;
-  activeFilter: 'all' | OrderStatus;
+  activeFilter: 'all' | 'ongoing' | 'past';
   modalVisible: boolean;
   selectedOrder: Order | null;
   slideAnim: Animated.Value;
   fadeAnim: Animated.Value;
-  onFilterChange: (filter: 'all' | OrderStatus) => void;
+  onFilterChange: (filter: 'all' | 'ongoing' | 'past') => void;
   onOrderPress: (order: Order) => void;
   onCloseModal: () => void;
   formatDate: (dateString: string) => string;
   getDisplayDate: (order: Order) => string;
+  getOrderNumber: (order: Order) => string;
+  getProductImage: (item: OrderItem) => ImageSourcePropType;
+  getProductTitle: (item: OrderItem) => string;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export function Orders({
@@ -47,11 +55,16 @@ export function Orders({
   onCloseModal,
   formatDate,
   getDisplayDate,
+  getOrderNumber,
+  getProductImage,
+  getProductTitle,
+  isRefreshing = false,
+  onRefresh,
 }: OrdersProps) {
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-      case 'available for pickup':
+      case 'ready_for_pickup':
         return '#FFECBA'; // yellow
       case 'processing':
         return '#E1E1E1'; // gray
@@ -59,23 +72,35 @@ export function Orders({
         return '#FFC7C3'; // pink
       case 'completed':
         return '#C4E6D3'; // green
+      case 'paid':
+        return '#C4E6D3'; // green (same as completed)
+      case 'shipped':
+        return '#C4E6D3'; // green (same as completed)
+      case 'pending':
+        return '#E1E1E1'; // gray (same as processing)
+      case 'refunded':
+        return '#FFC7C3'; // pink (same as cancelled)
       default:
-        return '#E5E7EB';
+        return '#E5E7EB'; // light gray for any other status
     }
   };
 
   const getStatusTextColor = (status: OrderStatus) => {
     switch (status) {
-      case 'available for pickup':
-        return '#8B7500';
+      case 'ready_for_pickup':
+        return '#8B7500'; // dark yellow
       case 'processing':
-        return '#434343';
+      case 'pending':
+        return '#434343'; // dark gray
       case 'cancelled':
-        return '#6B1F1A';
+      case 'refunded':
+        return '#6B1F1A'; // dark red
       case 'completed':
-        return '#235F3E';
+      case 'paid':
+      case 'shipped':
+        return '#235F3E'; // dark green
       default:
-        return '#666';
+        return '#666'; // medium gray
     }
   };
 
@@ -87,7 +112,7 @@ export function Orders({
     >
       {/* Product Image */}
       <Image 
-        source={item.items[0]?.image} 
+        source={getProductImage(item.items?.[0] || {})} 
         style={styles.orderImage}
         resizeMode="cover"
       />
@@ -95,11 +120,11 @@ export function Orders({
       {/* Order Details */}
       <View style={styles.orderDetails}>
         <View style={styles.orderHeader}>
-          <ThemeText variant="body" style={styles.orderNumber}>
-            Order#{item.orderNumber}
+          <ThemeText variant="body" style={styles.orderNumber} numberOfLines={1}>
+            #{item.id}
           </ThemeText>
           <ThemeText variant="body" style={styles.orderPrice}>
-            ₦{item.totalAmount.toFixed(2)}
+            ₦{item.totalAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </ThemeText>
         </View>
         
@@ -143,7 +168,7 @@ export function Orders({
     </View>
   );
 
-  const FilterButton = ({ filter, label }: { filter: 'all' | OrderStatus; label: string }) => (
+  const FilterButton = ({ filter, label }: { filter: 'all' | 'ongoing' | 'past'; label: string }) => (
     <TouchableOpacity
       style={[
         styles.filterButton,
@@ -164,22 +189,22 @@ export function Orders({
     </TouchableOpacity>
   );
 
-  const renderOrderItem = ({ item }: { item: any }) => (
+  const renderOrderItem = ({ item }: { item: OrderItem }) => (
     <View style={styles.modalOrderItem}>
       <Image 
-        source={item.image} 
+        source={getProductImage(item)} 
         style={styles.modalItemImage}
         resizeMode="cover"
       />
       <View style={styles.modalItemDetails}>
         <ThemeText variant="body" style={styles.modalItemTitle}>
-          {item.title}
+           {getProductTitle(item)}
         </ThemeText>
         <ThemeText variant="caption" style={styles.modalItemPrice}>
-          ₦{item.price.toFixed(2)}
-        </ThemeText>
-        <ThemeText variant="caption" style={styles.modalItemQuantity}>
-          Qty: {item.quantity}
+          {(() => {
+            const price = (item?.product?.price ?? item?.amount ?? 0);
+            return `₦${Number(price).toFixed(2)}`;
+          })()}
         </ThemeText>
       </View>
     </View>
@@ -190,14 +215,39 @@ export function Orders({
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={onRefresh ? (
+          <RefreshControl
+            refreshing={!!isRefreshing}
+            onRefresh={onRefresh}
+            tintColor="#0C154C"
+            colors={["#0C154C"]}
+          />
+        ) : undefined}
       >
         <BackHeader title="My Orders" onBackPress={onBack} />
 
         <View style={styles.filterContainer}>
-          <FilterButton filter="all" label="All" />
-          <FilterButton filter="processing" label="Ongoing Orders" />
-          <FilterButton filter="completed" label="Past Orders" />
+          <View style={styles.filterRow}>
+            <FilterButton filter="all" label="All" />
+            <FilterButton filter="ongoing" label="Ongoing Orders" />
+            <FilterButton filter="past" label="Past Orders" />
+          </View>
+          
+          {onRefresh && (
+            <TouchableOpacity
+              onPress={onRefresh}
+              activeOpacity={0.7}
+              style={styles.refreshButton}
+            >
+              {isRefreshing ? (
+                <ActivityIndicator size="small" color="#0C154C" />
+              ) : (
+                <Feather name="refresh-ccw" size={16} color="#0C154C" />
+              )}
+            </TouchableOpacity>
+          )}
         </View>
+
 
         {loading ? (
           <View style={styles.skeletonContainer}>
@@ -265,7 +315,7 @@ export function Orders({
                   Order Details
                 </ThemeText>
                 <ThemeText variant="caption" style={styles.modalOrderNumber}>
-                  #{selectedOrder?.orderNumber}
+                  {selectedOrder ? getOrderNumber(selectedOrder) : ''}
                 </ThemeText>
               </View>
             </View>
@@ -349,9 +399,23 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   filterContainer: {
-    flexDirection: 'row',
     gap: 8,
     marginBottom: 8,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  refreshButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#0C154C',
+    borderWidth: 1,
+    alignSelf: 'flex-start',
   },
   filterButton: {
     paddingHorizontal: 16,
@@ -401,6 +465,7 @@ const styles = StyleSheet.create({
     color: '#0B0A0D',
     fontFamily: 'Geist-Medium',
     fontSize: fs(16),
+    maxWidth: '70%',
   },
   orderPrice: {
     color: '#0C154C',
@@ -555,11 +620,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist-Medium',
     fontSize: fs(12),
     marginBottom: 2,
-  },
-  modalItemQuantity: {
-    color: '#666',
-    fontFamily: 'Geist-Medium',
-    fontSize: fs(12),
   },
   modalItemSeparator: {
     height: 1,

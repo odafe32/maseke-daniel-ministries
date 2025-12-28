@@ -5,6 +5,7 @@ import { orderPaymentApi } from '@/src/api/orderPaymentApi';
 import { paymentStore } from '@/src/stores/store/paymentStore';
 import { cartStore } from '@/src/stores/store/cartStore';
 import { storeStore } from '@/src/stores/store/storeStore';
+import { orderStore } from '@/src/stores/orderStore';
 import { PickupStation } from '@/src/constants/data';
 import { usePaystack } from 'react-native-paystack-webview';
 import { showSuccessToast , showErrorToast } from "@/src/utils/toast";
@@ -242,9 +243,10 @@ export const usePayment = () => {
     await paymentStore.getState().clearCache();
     await cartStore.getState().clearCartCache();
     await storeStore.getState().clearCache();
+    await orderStore.getState().clearOrdersCache();
     router.dismissAll();
     router.push('/(home)/home');
-    router.push('/(home)/store');
+    router.push('/(home)/orders');
   }
 
   const handlePaymentCancel = async () => {
@@ -252,6 +254,7 @@ export const usePayment = () => {
     await paymentStore.getState().clearCache();
     await cartStore.getState().clearCartCache();
     await storeStore.getState().clearCache();
+    await orderStore.getState().clearOrdersCache();
     router.dismissAll();
     router.push('/(home)/home');
     router.push('/(home)/store');
