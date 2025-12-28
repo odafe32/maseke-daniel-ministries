@@ -3,6 +3,7 @@ import { productApi } from '../../api/productApi';
 import { wishlistApi } from '../../api/wishlistApi';
 import { cartApi } from '../../api/cartApi';
 import { storeStore } from '../../stores/store';
+import { cartStore } from '../../stores/store/cartStore';
 import { StoreProduct } from '../../constants/data';
 
 interface ProductFilters {
@@ -204,6 +205,9 @@ export const useStore = () => {
 
     try {
       await cartApi.addToCart(productId, quantity);
+
+      // Clear cart cache to ensure fresh data
+      await cartStore.getState().clearCartCache();
 
       // Refresh cart count after adding item
       await fetchCartCount();

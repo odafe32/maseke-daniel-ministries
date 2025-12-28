@@ -199,6 +199,12 @@ export const useCart = () => {
     cartStore.getState().clearError();
   };
 
+  // Clear cache and fetch fresh data
+  const clearCacheAndRefresh = async () => {
+    await cartStore.getState().clearCartCache();
+    await fetchCart();
+  };
+
   return {
     // Data
     cartItems: getCartItems(),
@@ -219,5 +225,6 @@ export const useCart = () => {
     removeFromCart,
     getTotalAmount,
     clearError,
+    clearCacheAndRefresh,
   };
 };

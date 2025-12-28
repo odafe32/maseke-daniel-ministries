@@ -41,6 +41,7 @@ interface PaymentUIProps {
   onPayNow: () => void;
   isProcessing: boolean;
   isLoadingStations?: boolean;
+  isLoadingCartTotal?: boolean;
 }
 
 export function PaymentUI({
@@ -52,6 +53,7 @@ export function PaymentUI({
   onPayNow,
   isProcessing,
   isLoadingStations = false,
+  isLoadingCartTotal = false,
 }: PaymentUIProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const selected = pickupStations.find((s) => s.id === selectedPickupStationId) || null;
@@ -166,9 +168,15 @@ export function PaymentUI({
           <ThemeText variant="h4" style={styles.totalText}>
             Total Amount
           </ThemeText>
-          <ThemeText variant="h3" style={styles.totalCartAmount}>
-            {"₦" + totalCartAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </ThemeText>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            {isLoadingCartTotal ? (
+              <ActivityIndicator size="small" color={COLORS.PRIMARY_BLUE} style={{marginRight: 8}} />
+            ) : (
+              <ThemeText variant="h3" style={styles.totalCartAmount}>
+                {"₦" + totalCartAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </ThemeText>
+            )}
+          </View>
         </View>
 
         {/* Pay Now Button */}

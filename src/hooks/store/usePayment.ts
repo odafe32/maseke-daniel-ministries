@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { pickupStationApi } from '@/src/api/PickupStationApi';
 import { cartApi } from '@/src/api/cartApi';
 import { orderPaymentApi } from '@/src/api/orderPaymentApi';
 import { paymentStore } from '@/src/stores/store/paymentStore';
+import { cartStore } from '@/src/stores/store/cartStore';
+import { storeStore } from '@/src/stores/store/storeStore';
 import { PickupStation } from '@/src/constants/data';
 import { usePaystack } from 'react-native-paystack-webview';
 import { showSuccessToast , showErrorToast } from "@/src/utils/toast";
@@ -21,10 +23,12 @@ export const usePayment = () => {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [cartTotal, setCartTotal] = useState<number>(0);
+  const [isLoadingCartTotal, setIsLoadingCartTotal] = useState(false);
   const [selectedPickupStationId, setSelectedPickupStationId] = useState<string | null>(
     paymentStore.getState().selectedPickupStationId
   );
-  const [paymentDetails, setPaymentDetails] = useState({
+  const paymentDetails = useRef({
     reference: '',
     amount: 0,
     email: '',
@@ -50,11 +54,12 @@ export const usePayment = () => {
 
   const fetchCartTotal = useCallback(async () => {
     try {
+      setIsLoadingCartTotal(true);
       setError(null);
       const response = await cartApi.getAllCart();
       if (response.data?.success) {
         const total = Number(response.data.cart_total ?? 0);
-        paymentStore.getState().setCartTotal(total);
+        setCartTotal(total);
         return total;
       }
       throw new Error(response.data?.message || 'Failed to load cart');
@@ -63,6 +68,8 @@ export const usePayment = () => {
       const message = apiErr?.response?.data?.message || apiErr?.response?.data?.error || 'Failed to load cart';
       setError(new Error(message));
       throw err;
+    } finally {
+      setIsLoadingCartTotal(false);
     }
   }, []);
 
@@ -78,7 +85,6 @@ export const usePayment = () => {
 
       const state = paymentStore.getState();
       const needsStations = (state.pickupStations?.length ?? 0) === 0;
-      const needsCartTotal = typeof state.cartTotal !== 'number' || state.cartTotal <= 0;
 
       try {
         setLoading(true);
@@ -86,9 +92,8 @@ export const usePayment = () => {
         if (needsStations) {
           await fetchPickupStations();
         }
-        if (needsCartTotal) {
-          await fetchCartTotal();
-        }
+        // Always fetch cart total on mount
+        await fetchCartTotal();
       } finally {
         setLoading(false);
       }
@@ -111,11 +116,11 @@ export const usePayment = () => {
         const { authorization_url, access_code, reference, amount, email } = response.data.data;
         console.log('makePayment: Payment initialized successfully', { authorization_url, access_code, reference, amount, email });
         
-        setPaymentDetails({
+        paymentDetails.current = {
           reference,
           amount,
           email,
-        });
+        };
         
         console.log('makePayment: Initializing Paystack checkout');
         await initializePaystack(access_code, reference, amount, email);
@@ -139,7 +144,7 @@ export const usePayment = () => {
     console.log('initializePaystack: Starting Paystack checkout', { access_code, reference, amount, email });
     popup.checkout({
       email: email,
-      amount: Number(amount) * 100, // Paystack expects amount in kobo (cents)
+      amount: Number(amount), // Paystack expects amount in kobo (cents)
       reference: reference, // Unique transaction reference
       // currency: "NGN",
       metadata: {
@@ -172,9 +177,9 @@ export const usePayment = () => {
       setIsProcessing(true);
       setError(null);
       
-      console.log('handlePaystackSuccess: Verifying payment with reference:', paymentDetails.reference);
+      console.log('handlePaystackSuccess: Verifying payment with reference:', paymentDetails.current.reference);
       const response = await orderPaymentApi.verifyPayment(
-        paymentDetails.reference,
+        paymentDetails.current.reference,
         selectedPickupStationId || undefined
       );
       console.log('handlePaystackSuccess: Verification response:', response.data);
@@ -235,12 +240,21 @@ export const usePayment = () => {
   const handlePaymentSuccess = async () => {
     showSuccessToast('Payment completed successfully!');
     await paymentStore.getState().clearCache();
+    await cartStore.getState().clearCartCache();
+    await storeStore.getState().clearCache();
+    router.dismissAll();
+    router.push('/(home)/home');
     router.push('/(home)/store');
   }
 
   const handlePaymentCancel = async () => {
     showErrorToast('Payment was cancelled');
     await paymentStore.getState().clearCache();
+    await cartStore.getState().clearCartCache();
+    await storeStore.getState().clearCache();
+    router.dismissAll();
+    router.push('/(home)/home');
+    router.push('/(home)/store');
     router.push('/(home)/cart');
   }
 
@@ -248,8 +262,9 @@ export const usePayment = () => {
     // Data
     isProcessing,
     pickupStations: paymentStore.getState().pickupStations,
-    cartTotal: paymentStore.getState().cartTotal,
+    cartTotal,
     selectedPickupStationId: selectedPickupStationId,
+    isLoadingCartTotal,
 
     // UI
     loading,

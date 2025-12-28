@@ -6,7 +6,6 @@ const PAYMENT_CACHE_KEY = '@payment_cache_v1';
 
 interface PaymentCacheShape {
   pickupStations: PickupStation[];
-  cartTotal: number;
   selectedPickupStationId: string | null;
   timestamp: number;
 }
@@ -14,7 +13,6 @@ interface PaymentCacheShape {
 interface PaymentState {
   // Data
   pickupStations: PickupStation[];
-  cartTotal: number;
   selectedPickupStationId: string | null;
 
   // UI/Error
@@ -23,7 +21,6 @@ interface PaymentState {
 
   // Actions
   setPickupStations: (stations: PickupStation[]) => void;
-  setCartTotal: (total: number) => void;
   setSelectedPickupStationId: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -37,7 +34,6 @@ interface PaymentState {
 export const paymentStore = create<PaymentState>((set, get) => ({
   // Initial
   pickupStations: [],
-  cartTotal: 0,
   selectedPickupStationId: null,
   isLoading: false,
   error: null,
@@ -45,10 +41,6 @@ export const paymentStore = create<PaymentState>((set, get) => ({
   setPickupStations: (stations: PickupStation[]) => {
     set({ pickupStations: stations });
     get().saveCache().catch((e) => console.error('paymentStore: save stations failed', e));
-  },
-  setCartTotal: (total: number) => {
-    set({ cartTotal: total });
-    get().saveCache().catch((e) => console.error('paymentStore: save cart total failed', e));
   },
   setSelectedPickupStationId: (id: string | null) => {
     set({ selectedPickupStationId: id });
@@ -64,7 +56,6 @@ export const paymentStore = create<PaymentState>((set, get) => ({
         const parsed = JSON.parse(raw) as PaymentCacheShape;
         set({
           pickupStations: parsed.pickupStations || [],
-          cartTotal: typeof parsed.cartTotal === 'number' ? parsed.cartTotal : 0,
           selectedPickupStationId: parsed.selectedPickupStationId ?? null,
         });
       }
@@ -75,10 +66,9 @@ export const paymentStore = create<PaymentState>((set, get) => ({
 
   saveCache: async () => {
     try {
-      const { pickupStations, cartTotal, selectedPickupStationId } = get();
+      const { pickupStations, selectedPickupStationId } = get();
       const payload: PaymentCacheShape = {
         pickupStations,
-        cartTotal,
         selectedPickupStationId,
         timestamp: Date.now(),
       };
@@ -91,7 +81,7 @@ export const paymentStore = create<PaymentState>((set, get) => ({
   clearCache: async () => {
     try {
       await AsyncStorage.removeItem(PAYMENT_CACHE_KEY);
-      set({ pickupStations: [], cartTotal: 0, selectedPickupStationId: null });
+      set({ pickupStations: [], selectedPickupStationId: null });
     } catch (e) {
       console.error('paymentStore: clear cache failed', e);
     }
