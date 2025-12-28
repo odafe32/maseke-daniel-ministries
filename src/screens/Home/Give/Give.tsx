@@ -22,7 +22,6 @@ interface GiveProps {
   amountError: string;
   isLoading: boolean;
   showPaystack: boolean;
-  onPayment: () => void;
 }
 
 export function Give({
@@ -37,7 +36,6 @@ export function Give({
   amountError,
   isLoading,
   showPaystack,
-  onPayment,
 }: GiveProps) {
 
   return (
@@ -73,7 +71,7 @@ export function Give({
             
             <View style={styles.formField}>
               <ThemeText variant="body" style={styles.label}>
-                Enter Amount
+                Enter Amount (₦)
               </ThemeText>
               <TextInput
                 style={[styles.input, amountError && styles.inputError]}
@@ -97,7 +95,7 @@ export function Give({
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[styles.continueButton, isLoading && styles.continueButtonDisabled]}
-          onPress={onPayment}
+          onPress={onSubmit}
           disabled={isLoading}
           activeOpacity={isLoading ? 1 : 0.8}
         >

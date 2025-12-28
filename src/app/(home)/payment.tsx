@@ -5,6 +5,7 @@ import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWr
 import { usePayment } from "@/src/hooks/store/usePayment";
 import { showInfoToast } from "@/src/utils/toast";
 import { PaystackProvider } from 'react-native-paystack-webview';
+import Constants from 'expo-constants';
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function PaymentPage() {
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <PaystackProvider
-        publicKey="pk_test_c37160decf98d151a7ef957d11c7567374e6ba62"
+        publicKey={Constants.expoConfig?.extra?.paystackPublicKey}
       >
         <PaymentPageContent onBack={handleBack} />
       </PaystackProvider>
