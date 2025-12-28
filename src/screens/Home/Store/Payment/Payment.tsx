@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { pickupData } from "@/src/constants/data";
+import { PickupStation } from "@/src/constants/data";
 import { fs } from "@/src/utils";
 
 // Color constants to avoid color literals
@@ -33,18 +33,28 @@ const COLORS = {
 };
 
 interface PaymentUIProps {
-  totalAmount: number;
+  pickupStations: PickupStation[];
+  selectedPickupStationId: string | null;
+  onSelectPickupStation: (id: string) => void;
+  totalCartAmount: number;
   onBack: () => void;
   onPayNow: () => void;
   isProcessing: boolean;
+  isLoadingStations?: boolean;
 }
 
 export function PaymentUI({
-  totalAmount,
+  pickupStations,
+  selectedPickupStationId,
+  onSelectPickupStation,
+  totalCartAmount,
   onBack,
   onPayNow,
   isProcessing,
+  isLoadingStations = false,
 }: PaymentUIProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const selected = pickupStations.find((s) => s.id === selectedPickupStationId) || null;
 
   return (
     <>
@@ -69,24 +79,64 @@ export function PaymentUI({
                 Pick Up
               </ThemeText>
             </View>
-            
-            <View style={styles.cardRow}>
-              <ThemeText variant="body" style={styles.cardText}>
-                {pickupData.minister}
-              </ThemeText>
-            </View>
-            
-            <View style={styles.cardRow}>
-              <ThemeText variant="body" style={styles.cardText}>
-                {pickupData.church}
-              </ThemeText>
-            </View>
-            
-            <View style={styles.cardRow}>
-              <ThemeText variant="body" style={styles.cardText}>
-                {pickupData.phone}
-              </ThemeText>
-            </View>
+
+            {/* Dropdown selector */}
+            <TouchableOpacity
+              style={styles.selectBox}
+              onPress={() => setDropdownOpen((v) => !v)}
+              disabled={isLoadingStations}
+            >
+              {isLoadingStations ? (
+                <ActivityIndicator size="small" color={COLORS.PRIMARY_BLUE} />
+              ) : (
+                  !selected ? (
+                    <ThemeText variant="body" style={styles.cardText}>
+                      Select pickup station
+                    </ThemeText>
+                  ) : (
+                    <>
+                      <ThemeText variant="body" style={styles.cardText}>
+                        Location: {selected.title}
+                      </ThemeText>
+                      <ThemeText variant="body" style={styles.cardText}>
+                        Address: {selected.address}
+                      </ThemeText>
+                      <ThemeText variant="body" style={styles.cardText}>
+                        Name: {selected.name}
+                      </ThemeText>
+                      <ThemeText variant="body" style={styles.cardText}>
+                        Phone: {selected.contact_phone}
+                      </ThemeText>
+                    </>
+                  )
+              )}
+              <Icon name={'chevronDown'} size={18} color={COLORS.TEXT_GRAY} />
+            </TouchableOpacity>
+
+            {dropdownOpen && (
+              <View style={styles.dropdown}>
+                {pickupStations.map((station) => (
+                  <TouchableOpacity
+                    key={station.id}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      onSelectPickupStation(station.id);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    <ThemeText variant="body" style={styles.dropdownTitle}>{station.title}</ThemeText>
+                    <ThemeText variant="bodySmall" style={styles.dropdownSubtitle}>{station.address}</ThemeText>
+                    <ThemeText variant="bodySmall" style={styles.dropdownSubtitle}>{station.name}</ThemeText>
+                    <ThemeText variant="bodySmall" style={styles.dropdownMeta}>{station.contact_phone}</ThemeText>
+                  </TouchableOpacity>
+                ))}
+                {pickupStations.length === 0 && !isLoadingStations && (
+                  <View style={styles.dropdownEmpty}> 
+                    <ThemeText variant="bodySmall" style={styles.dropdownMeta}>No pickup stations found</ThemeText>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
 
           {/* Payment Method Card */}
@@ -116,8 +166,8 @@ export function PaymentUI({
           <ThemeText variant="h4" style={styles.totalText}>
             Total Amount
           </ThemeText>
-          <ThemeText variant="h3" style={styles.totalAmount}>
-            {"₦" + totalAmount.toFixed(2)}
+          <ThemeText variant="h3" style={styles.totalCartAmount}>
+            {"₦" + totalCartAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </ThemeText>
         </View>
 
@@ -171,9 +221,49 @@ const styles = StyleSheet.create({
   },
   cardText: {
     color: COLORS.TEXT_GRAY,
-    fontFamily: 'Geist-Medium',
+    fontFamily: 'Geist',
     fontSize: fs(16),
     flex: 1,
+    width: "100%",
+  },
+  selectBox: {
+    alignItems: 'center',
+    backgroundColor: COLORS.WHITE,
+    borderColor: COLORS.BORDER_GRAY,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'column',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  dropdown: {
+    backgroundColor: COLORS.WHITE,
+    borderColor: COLORS.BORDER_GRAY,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.BORDER_GRAY,
+  },
+  dropdownTitle: {
+    color: COLORS.TEXT_DARK,
+    fontFamily: 'Geist-Medium',
+  },
+  dropdownSubtitle: {
+    color: COLORS.TEXT_GRAY,
+  },
+  dropdownMeta: {
+    color: COLORS.TEXT_LIGHT_GRAY,
+  },
+  dropdownEmpty: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   paystackContainer: {
     flexDirection: 'row',
@@ -209,7 +299,7 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_DARK,
     fontFamily: 'Geist-Medium',
   },
-  totalAmount: {
+  totalCartAmount: {
     color: COLORS.PRIMARY_BLUE,
     fontWeight: '600',
     fontFamily: 'Geist-Bold',

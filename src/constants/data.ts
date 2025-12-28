@@ -373,6 +373,17 @@ export const ordersData: Order[] = [
   }
 ];
 
+export interface PickupStation {
+  id: string;
+  title: string;
+  name: string;
+  address: string;
+  contact_phone: string;
+  open_hours: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface StoreProduct {
   id: string;
   title: string;
@@ -770,19 +781,7 @@ export const storeProducts: StoreProduct[] = [
     description: "Understanding spiritual warfare and standing firm in faith",
     stockCount: 48,
     createdDate: "2024-08-05",
-    updatedDate: "2024-11-26",
-    isInWishlist: true
-  }
+    updatedDate: "2024-11-11",
+    isInWishlist: false
+  },
 ];
-
-export interface PickupDetails {
-  minister: string;
-  church: string;
-  phone: string;
-}
-
-export const pickupData: PickupDetails = {
-  minister: "Minister Eli",
-  church: "The Grace Dimension Church Jos",
-  phone: "(760) 895-234 98 111 1111"
-};
