@@ -98,14 +98,18 @@ export const usePayment = () => {
   }, [fetchCartTotal, fetchPickupStations]);
 
   const makePayment = async () => {
+    console.log('makePayment: Starting payment initialization');
     try {
       setIsProcessing(true);
       setError(null);
       
+      console.log('makePayment: Calling initializePayment API');
       const response = await orderPaymentApi.initializePayment();
+      console.log('makePayment: API response:', response.data);
       
       if (response.data?.status === 'success') {
         const { authorization_url, access_code, reference, amount, email } = response.data.data;
+        console.log('makePayment: Payment initialized successfully', { authorization_url, access_code, reference, amount, email });
         
         setPaymentDetails({
           reference,
@@ -113,21 +117,26 @@ export const usePayment = () => {
           email,
         });
         
+        console.log('makePayment: Initializing Paystack checkout');
         await initializePaystack(access_code, reference, amount, email);
       } else {
+        console.log('makePayment: Payment initialization failed', response.data);
         throw new Error(response.data?.message || 'Failed to initialize payment');
       }
     } catch (err: unknown) {
       const apiErr = err as ApiError;
       const message = apiErr?.response?.data?.message || apiErr?.response?.data?.error || 'Failed to initialize payment';
+      console.log('makePayment: Error occurred:', message, err);
       setError(new Error(message));
       throw err;
     } finally {
       setIsProcessing(false);
+      console.log('makePayment: Process completed');
     }
   };
 
   const initializePaystack = async (access_code:string, reference: string, amount:number, email:string) => {
+    console.log('initializePaystack: Starting Paystack checkout', { access_code, reference, amount, email });
     popup.checkout({
       email: email,
       amount: Number(amount) * 100, // Paystack expects amount in kobo (cents)
@@ -143,26 +152,32 @@ export const usePayment = () => {
         ],
       },
       onSuccess: () => {
+        console.log('initializePaystack: Paystack payment successful');
         handlePaystackSuccess();
       },
       onCancel: () => {
+        console.log('initializePaystack: Paystack payment cancelled');
         handlePaystackCancel(reference);
       },
       onError: () => {
+        console.log('initializePaystack: Paystack payment error');
         handlePaystackCancel(reference);
       },
     });
   };
 
   const handlePaystackSuccess = async () => {
+    console.log('handlePaystackSuccess: Starting payment verification');
     try {
       setIsProcessing(true);
       setError(null);
       
+      console.log('handlePaystackSuccess: Verifying payment with reference:', paymentDetails.reference);
       const response = await orderPaymentApi.verifyPayment(
         paymentDetails.reference,
         selectedPickupStationId || undefined
       );
+      console.log('handlePaystackSuccess: Verification response:', response.data);
       
       if (response.data?.status === 'success') {
         const { order_id, payment_id, status, amount, is_pickup, pickup_code } = response.data.data;
@@ -170,24 +185,30 @@ export const usePayment = () => {
         console.log('Payment verified successfully', { order_id, payment_id, status, amount, is_pickup, pickup_code });
         handlePaymentSuccess();
       } else {
+        console.log('handlePaystackSuccess: Verification failed', response.data);
         throw new Error(response.data?.message || 'Payment verification failed');
       }
     } catch (err: unknown) {
       const apiErr = err as ApiError;
       const message = apiErr?.response?.data?.message || apiErr?.response?.data?.error || 'Payment verification failed';
+      console.log('handlePaystackSuccess: Error occurred:', message, err);
       setError(new Error(message));
       throw err;
     } finally {
       setIsProcessing(false);
+      console.log('handlePaystackSuccess: Process completed');
     }
   };
 
   const handlePaystackCancel = async (reference: string) => {
+    console.log('handlePaystackCancel: Starting payment cancellation for reference:', reference);
     try {
       setIsProcessing(true);
       setError(null);
       
+      console.log('handlePaystackCancel: Calling cancelPayment API');
       const response = await orderPaymentApi.cancelPayment(reference);
+      console.log('handlePaystackCancel: Cancellation response:', response.data);
       
       if (response.data?.status === 'success') {
         const { order_id, payment_id, status } = response.data.data;
@@ -196,15 +217,18 @@ export const usePayment = () => {
         handlePaymentCancel();
         console.log('Payment cancelled successfully', { order_id, payment_id, status });
       } else {
+        console.log('handlePaystackCancel: Cancellation failed', response.data);
         throw new Error(response.data?.message || 'Failed to cancel payment');
       }
     } catch (err: unknown) {
       const apiErr = err as ApiError;
       const message = apiErr?.response?.data?.message || apiErr?.response?.data?.error || 'Failed to cancel payment';
+      console.log('handlePaystackCancel: Error occurred:', message, err);
       setError(new Error(message));
       console.error('Payment cancellation error:', message);
     } finally {
       setIsProcessing(false);
+      console.log('handlePaystackCancel: Process completed');
     }
   }
 
