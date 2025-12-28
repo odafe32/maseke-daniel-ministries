@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   StyleSheet,
   View,
@@ -7,81 +7,25 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
-import { showSuccessToast } from "@/src/utils/toast";
 import { fs, hp, wp } from "@/src/utils";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuthStore } from '@/src/stores/authStore';
 
-interface SettingItem {
-  id: string;
-  title: string;
-  description: string;
-  value: boolean;
+interface SettingsProps {
+  onBack: () => void;
+  notifications: boolean;
+  sermonAlerts: boolean;
+  devotionalReminders: boolean;
+  stayLoggedIn: boolean;
+  onToggle: (id: string, value: boolean) => Promise<void>;
 }
 
-export function Settings({ onBack, settingsData: initialSettingsData }: { 
-  onBack: () => void; 
-  settingsData: SettingItem[];
-}) {
-  const [settings, setSettings] = useState<SettingItem[]>(initialSettingsData);
-  const { setStayLoggedIn, logout } = useAuthStore();
-
-  // Load stay-logged-in preference on component mount
-  useEffect(() => {
-    const loadStayLoggedInPreference = async () => {
-      try {
-        const stayLoggedInStr = await AsyncStorage.getItem('stayLoggedIn');
-        const stayLoggedIn = stayLoggedInStr ? JSON.parse(stayLoggedInStr) : true;
-        
-        setSettings(prev => 
-          prev.map(setting => 
-            setting.id === 'stay-logged-in' ? { ...setting, value: stayLoggedIn } : setting
-          )
-        );
-      } catch (error) {
-        console.error('Failed to load stay logged in preference:', error);
-      }
-    };
-    
-    loadStayLoggedInPreference();
-  }, []);
-
-  const handleToggleChange = async (id: string, value: boolean) => {
-    console.log(`Toggle changed: ${id} = ${value}`);
-    
-    const setting = settings.find(s => s.id === id);
-    const statusText = value ? 'enabled' : 'disabled';
-    
-    setSettings(prev => 
-      prev.map(s => 
-        s.id === id ? { ...s, value } : s
-      )
-    );
-
-    // Special handling for stay-logged-in setting
-    if (id === 'stay-logged-in') {
-      try {
-        await AsyncStorage.setItem('stayLoggedIn', JSON.stringify(value));
-        setStayLoggedIn(value);
-        
-        // If turning off stay logged in, clear stored auth
-        if (!value) {
-          await logout();
-        }
-        
-        showSuccessToast('Setting Updated', `${setting?.title} ${statusText}`, { position: 'top', visibilityTime: 2000 });
-      } catch (error) {
-        console.error('Failed to save stay logged in preference:', error);
-        showSuccessToast('Error', 'Failed to update setting', { position: 'top', visibilityTime: 2000 });
-      }
-    } else {
-      // Show toast for other settings
-      const message = `${setting?.title} ${statusText}`;
-      console.log(message);
-      showSuccessToast('Setting Updated', message, { position: 'top', visibilityTime: 2000 });
-    }
-  };
-
+export function Settings({ 
+  onBack,
+  notifications,
+  sermonAlerts,
+  devotionalReminders,
+  stayLoggedIn,
+  onToggle
+}: SettingsProps) {
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -90,25 +34,81 @@ export function Settings({ onBack, settingsData: initialSettingsData }: {
       <BackHeader title="My Settings" onBackPress={onBack}/>
 
       <View style={styles.content}>
-        {settings.map((setting) => (
-          <View key={setting.id} style={styles.card}>
-            <View style={styles.textContainer}>
-              <ThemeText variant="bodyBold" style={styles.title}>
-                {setting.title}
-              </ThemeText>
-              <ThemeText variant="body" style={styles.description}>
-                {setting.description}
-              </ThemeText>
-            </View>
-            <Switch
-              value={setting.value}
-              onValueChange={(value) => handleToggleChange(setting.id, value)}
-              trackColor={{ false: '#767577', true: '#3B4897' }}
-              thumbColor={setting.value ? '#ffffff' : '#f4f3f4'}
-              ios_backgroundColor="#3e3e3e"
-            />
+        {/* Notifications Setting */}
+        <View style={styles.card}>
+          <View style={styles.textContainer}>
+            <ThemeText variant="bodyBold" style={styles.title}>
+              Notifications
+            </ThemeText>
+            <ThemeText variant="body" style={styles.description}>
+              Enable or disable app notifications
+            </ThemeText>
           </View>
-        ))}
+          <Switch
+            value={notifications}
+            onValueChange={(value) => onToggle('notifications', value)}
+            trackColor={{ false: '#767577', true: '#3B4897' }}
+            thumbColor={notifications ? '#ffffff' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+          />
+        </View>
+
+        {/* Sermon Alerts Setting */}
+        <View style={styles.card}>
+          <View style={styles.textContainer}>
+            <ThemeText variant="bodyBold" style={styles.title}>
+              Sermon Alerts
+            </ThemeText>
+            <ThemeText variant="body" style={styles.description}>
+              Receive alerts when a live sermon starts
+            </ThemeText>
+          </View>
+          <Switch
+            value={sermonAlerts}
+            onValueChange={(value) => onToggle('sermon-alerts', value)}
+            trackColor={{ false: '#767577', true: '#3B4897' }}
+            thumbColor={sermonAlerts ? '#ffffff' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+          />
+        </View>
+
+        {/* Devotional Reminders Setting */}
+        <View style={styles.card}>
+          <View style={styles.textContainer}>
+            <ThemeText variant="bodyBold" style={styles.title}>
+              Daily Devotional reminders
+            </ThemeText>
+            <ThemeText variant="body" style={styles.description}>
+              Get reminders to read the devotional
+            </ThemeText>
+          </View>
+          <Switch
+            value={devotionalReminders}
+            onValueChange={(value) => onToggle('devotional-reminders', value)}
+            trackColor={{ false: '#767577', true: '#3B4897' }}
+            thumbColor={devotionalReminders ? '#ffffff' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+          />
+        </View>
+
+        {/* Stay Logged In Setting */}
+        <View style={styles.card}>
+          <View style={styles.textContainer}>
+            <ThemeText variant="bodyBold" style={styles.title}>
+              Stay Logged In
+            </ThemeText>
+            <ThemeText variant="body" style={styles.description}>
+              Keep your account signed in on this device.
+            </ThemeText>
+          </View>
+          <Switch
+            value={stayLoggedIn}
+            onValueChange={(value) => onToggle('stay-logged-in', value)}
+            trackColor={{ false: '#767577', true: '#3B4897' }}
+            thumbColor={stayLoggedIn ? '#ffffff' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+          />
+        </View>
       </View>
     </ScrollView>
   );

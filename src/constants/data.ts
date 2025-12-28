@@ -98,33 +98,6 @@ export const profileActions = [
   { id: "logout", label: "Logout", icon: "log-out", link: undefined },
 ];
 
-export const settingsData = [
-  {
-    id: 'notifications',
-    title: 'Notifications',
-    description: 'Enable or disable app notifications',
-    value: true,
-  },
-  {
-    id: 'sermon-alerts',
-    title: 'Sermon Alerts',
-    description: 'Receive alerts when a live sermon starts',
-    value: true,
-  },
-  {
-    id: 'devotional-reminders',
-    title: 'Daily Devotional reminders',
-    description: 'Get reminders to read the devotional',
-    value: true,
-  },
-  {
-    id: 'stay-logged-in',
-    title: 'Stay Logged In',
-    description: 'Keep your account signed in on this device.',
-    value: true,
-  },
-];
-
 export type NoteType = 'devotional' | 'bible';
 
 export interface SavedNote {
