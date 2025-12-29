@@ -27,8 +27,20 @@ export interface DevotionalEntry {
   video_url?: string | null;
   like_count: number;
   liked: boolean;
+  bookmarked: boolean;
   total_days?: number;
   viewed?: boolean;
+}
+
+export interface BookmarkStatus {
+  bookmarked: boolean;
+  message?: string;
+}
+
+export interface DevotionalBookmark {
+  id: number;
+  bookmarked_at: string;
+  entry: DevotionalEntry;
 }
 
 export interface DevotionalDetail extends Omit<DevotionalSummary, 'entries_count'> {
@@ -71,10 +83,21 @@ export const devotionApi = {
 
   /** Fetch today's devotional entry (server falls back to latest when today is missing) */
   async getTodayEntry(): Promise<DevotionalEntry | null> {
-    const response = await client.get<ApiResponse<DevotionalEntry | null>>('/mobile/devotionals/today');
-    return response.data.data;
+    try {
+      const response = await client.get<ApiResponse<DevotionalEntry | null>>('/mobile/devotionals/today');
+      
+      // Backend now returns 200 with null data when no entry exists
+      if (!response.data.data) {
+        console.log('No devotional entry available for today');
+        return null;
+      }
+      
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error fetching today\'s devotional:', error);
+      throw error;
+    }
   },
-
   /** Fetch the entry for a devotional by day number */
   async getEntryByDay(devotionalId: number | string, dayNumber: number): Promise<DevotionalEntry> {
     const response = await client.get<ApiResponse<DevotionalEntry>>(
@@ -110,6 +133,21 @@ export const devotionApi = {
   /** Mark a devotional entry as viewed */
   async markViewed(entryId: number | string): Promise<any> {
     const response = await client.post<ApiResponse<any>>(`/mobile/devotionals/entries/${entryId}/mark-viewed`);
+    return response.data.data;
+  },
+
+  /** Toggle bookmark for a devotional entry */
+  async toggleBookmark(entryId: number | string): Promise<BookmarkStatus> {
+    const response = await client.post<ApiResponse<BookmarkStatus>>(
+      `/mobile/devotionals/entries/${entryId}/bookmark`
+    );
+    // Extract the data from the nested response structure
+    return response.data.data;
+  },
+
+  /** Get all bookmarked devotionals */
+  async getBookmarks(): Promise<DevotionalBookmark[]> {
+    const response = await client.get<ApiResponse<DevotionalBookmark[]>>('/mobile/devotionals/bookmarks');
     return response.data.data;
   },
 };

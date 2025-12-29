@@ -8,6 +8,8 @@ import {
   LikeStatus,
   SubmitResponsePayload,
   DevotionalReflection,
+  BookmarkStatus,
+  DevotionalBookmark,
 } from '../api/devotionApi';
 
 export const useDevotionalList = () => {
@@ -73,10 +75,21 @@ export const useDevotionalEntry = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
   const mergeLikeStatus = useCallback((status: LikeStatus) => {
-    setEntry((prev) => (prev ? { ...prev, liked: status.liked, like_count: status.like_count } : prev));
+    setEntry((prev) => {
+      if (!prev) return null;
+      return { ...prev, liked: status.liked, like_count: status.like_count };
+    });
+  }, []);
+
+  const mergeBookmarkStatus = useCallback((status: BookmarkStatus) => {
+    setEntry((prev) => {
+      if (!prev) return null;
+      return { ...prev, bookmarked: status.bookmarked };
+    });
   }, []);
 
   const loadTodayEntry = useCallback(async () => {
@@ -84,8 +97,23 @@ export const useDevotionalEntry = () => {
     setError(null);
     try {
       const data = await devotionApi.getTodayEntry();
-      setEntry(data);
-      return data;
+      
+      if (!data) {
+        setEntry(null);
+        return null;
+      }
+      
+      // Ensure all required fields have default values
+      const entryWithDefaults: DevotionalEntry = {
+        ...data,
+        bookmarked: data.bookmarked ?? false,
+        liked: data.liked ?? false,
+        like_count: data.like_count ?? 0,
+        viewed: data.viewed ?? false,
+      };
+      
+      setEntry(entryWithDefaults);
+      return entryWithDefaults;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to load today's devotional";
       setError(message);
@@ -94,7 +122,8 @@ export const useDevotionalEntry = () => {
         text1: 'Error',
         text2: message,
       });
-      throw err;
+      setEntry(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -105,8 +134,23 @@ export const useDevotionalEntry = () => {
     setError(null);
     try {
       const data = await devotionApi.getEntryByDay(devotionalId, dayNumber);
-      setEntry(data);
-      return data;
+      
+      if (!data) {
+        setEntry(null);
+        return null;
+      }
+      
+      // Ensure all required fields have default values
+      const entryWithDefaults: DevotionalEntry = {
+        ...data,
+        bookmarked: data.bookmarked ?? false,
+        liked: data.liked ?? false,
+        like_count: data.like_count ?? 0,
+        viewed: data.viewed ?? false,
+      };
+      
+      setEntry(entryWithDefaults);
+      return entryWithDefaults;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to load entry';
       setError(message);
@@ -115,14 +159,15 @@ export const useDevotionalEntry = () => {
         text1: 'Error',
         text2: message,
       });
-      throw err;
+      setEntry(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const refreshLikeStatus = useCallback(async () => {
-    if (!entry) return;
+    if (!entry) return null;
     try {
       const status = await devotionApi.getLikeStatus(entry.id);
       mergeLikeStatus(status);
@@ -135,13 +180,17 @@ export const useDevotionalEntry = () => {
         text1: 'Error',
         text2: message,
       });
-      throw err;
+      return null;
     }
   }, [entry, mergeLikeStatus]);
 
   const toggleLike = useCallback(
     async (like?: boolean) => {
-      if (!entry) return;
+      if (!entry) {
+        console.warn('Cannot toggle like: No entry loaded');
+        return null;
+      }
+      
       setIsLiking(true);
       try {
         const status = await devotionApi.toggleLike(entry.id, like);
@@ -155,7 +204,7 @@ export const useDevotionalEntry = () => {
           text1: 'Error',
           text2: message,
         });
-        throw err;
+        return null;
       } finally {
         setIsLiking(false);
       }
@@ -163,9 +212,58 @@ export const useDevotionalEntry = () => {
     [entry, mergeLikeStatus]
   );
 
+  const toggleBookmark = useCallback(
+    async () => {
+      if (!entry) {
+        console.warn('Cannot toggle bookmark: No entry loaded');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'No devotional entry loaded',
+        });
+        return null;
+      }
+      
+      setIsBookmarking(true);
+      try {
+        const status = await devotionApi.toggleBookmark(entry.id);
+        mergeBookmarkStatus(status);
+        
+        // Show success toast
+        Toast.show({
+          type: status.bookmarked ? 'success' : 'info',
+          text1: status.bookmarked ? 'Bookmarked' : 'Bookmark Removed',
+          text2: status.bookmarked ? 'Devotional saved to your bookmarks' : 'Devotional removed from bookmarks',
+        });
+        
+        return status;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unable to update bookmark';
+        setError(message);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: message,
+        });
+        return null;
+      } finally {
+        setIsBookmarking(false);
+      }
+    },
+    [entry, mergeBookmarkStatus]
+  );
+
   const submitResponse = useCallback(
-    async (payload: SubmitResponsePayload): Promise<DevotionalReflection> => {
-      if (!entry) throw new Error('No devotional entry selected');
+    async (payload: SubmitResponsePayload): Promise<DevotionalReflection | null> => {
+      if (!entry) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'No devotional entry selected',
+        });
+        return null;
+      }
+      
       setIsSubmittingResponse(true);
       try {
         const response = await devotionApi.submitResponse(entry.id, payload);
@@ -183,7 +281,7 @@ export const useDevotionalEntry = () => {
           text1: 'Error',
           text2: message,
         });
-        throw err;
+        return null;
       } finally {
         setIsSubmittingResponse(false);
       }
@@ -196,11 +294,42 @@ export const useDevotionalEntry = () => {
     isLoading,
     error,
     isLiking,
+    isBookmarking,
     isSubmittingResponse,
     loadTodayEntry,
     loadEntryByDay,
     refreshLikeStatus,
     toggleLike,
+    toggleBookmark,
     submitResponse,
   };
+};
+
+export const useDevotionalBookmarks = () => {
+  const [bookmarks, setBookmarks] = useState<DevotionalBookmark[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadBookmarks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await devotionApi.getBookmarks();
+      setBookmarks(data);
+      return data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to load bookmarks';
+      setError(message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: message,
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { bookmarks, isLoading, error, loadBookmarks };
 };

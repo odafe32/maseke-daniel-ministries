@@ -16,19 +16,21 @@ export const useSystemPopup = (isAuthenticated: boolean) => {
     try {
       setIsLoading(true);
       const response = await getActivePopup();
-      console.log('response:', response);
 
       if (response.data) {
         setPopup(response.data);
         setIsVisible(true);
-      }
-    } catch (error: any) {
-      // 404 means no active popup or user has already viewed it
-      if (error.response?.status === 404) {
+      } else {
         setPopup(null);
         setIsVisible(false);
       }
-      console.log('Popup fetch info:', error.response?.data?.message || error.message);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setPopup(null);
+        setIsVisible(false);
+      } else {
+        console.error('Error fetching popup:', error.response?.data?.message || error.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -36,16 +38,13 @@ export const useSystemPopup = (isAuthenticated: boolean) => {
 
   const handleClose = async () => {
     try {
-      // Mark popup as viewed in the backend
       await markPopupAsViewed();
 
-      // Close the modal
       setIsVisible(false);
       setPopup(null);
     } catch (error: any) {
       console.error('Error marking popup as viewed:', error);
 
-      // Even if marking as viewed fails, still close the modal
       setIsVisible(false);
       setPopup(null);
     }
