@@ -4,11 +4,11 @@ import {
   TouchableOpacity, 
   Text, 
   StyleSheet, 
-  ActivityIndicator,
   Image,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus, Audio } from 'expo-av';
 import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { SCREEN_WIDTH } from '../../../utils/config';
@@ -18,94 +18,139 @@ const VIDEO_HEIGHT = SCREEN_WIDTH * (9 / 16);
 interface VideoIntroProps {
   onBeginDevotional: () => void;
   videoUri?: string;
+  offlinePath?: string | null;
+  onBack: () => void;
 }
 
 export function VideoIntro({ 
   onBeginDevotional, 
   videoUri = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  offlinePath = null,
+  onBack,
 }: VideoIntroProps) {
   const videoRef = useRef<Video>(null);
+  const playbackAttempted = useRef(false);
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoaded, setIsLoaded] = useState(false); 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false); 
-  const [showButton, setShowButton] = useState(false); 
+  const mediaSource = offlinePath || videoUri;
+  
+  console.log('🎥 VideoIntro initialized with:', {
+    videoUri: videoUri?.substring(0, 50) + '...',
+    offlinePath: offlinePath,
+    mediaSource: mediaSource?.substring(0, 50) + '...',
+  });
+  
+  const [showButton, setShowButton] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [audioReady, setAudioReady] = useState(false);
   
   useEffect(() => {
-    const currentVideoRef = videoRef.current;
-    return () => {
-      // SAFETY FIX: Catch error if unloading before video finished loading
-      if (currentVideoRef) {
-        currentVideoRef.unloadAsync().catch(() => {
-          /* Ignore error on unmount */
+    console.log('🔧 VideoIntro mounted with source:', mediaSource?.substring(0, 50));
+    
+    // Request audio focus and prepare video
+    const prepareAudio = async () => {
+      try {
+        // Set audio mode to allow video playback
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
         });
+        
+        console.log('✅ Audio mode configured');
+        setAudioReady(true);
+        
+        // Wait a bit for audio system to stabilize
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setIsVideoReady(true);
+      } catch (error) {
+        console.log('⚠️ Audio setup error (non-critical):', error);
+        // Still show video even if audio setup fails
+        setAudioReady(true);
+        setTimeout(() => {
+          setIsVideoReady(true);
+        }, 500);
       }
     };
-  }, []);
+    
+    prepareAudio();
+    
+    return () => {
+      console.log('🧹 VideoIntro unmounting, cleaning up video');
+      playbackAttempted.current = false;
+      if (videoRef.current) {
+        videoRef.current.pauseAsync()
+          .then(() => videoRef.current?.unloadAsync())
+          .catch(() => {
+            console.log('⚠️ Error during video cleanup (expected on unmount)');
+          });
+      }
+    };
+  }, [mediaSource]);
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) {
-      setIsLoaded(false);
-      if (status.error) console.error(`Playback Error: ${status.error}`);
-    } else {
-      const loadedStatus = status as AVPlaybackStatusSuccess;
-      setIsLoaded(true);
-      setIsPlaying(loadedStatus.isPlaying);
-      setIsMuted(loadedStatus.isMuted);
-      setIsLoading(loadedStatus.isBuffering);
-      if (loadedStatus.positionMillis >= 10000 && !showButton) setShowButton(true);
-    }
-  };
-
-  const handlePlayPause = async () => {
-    if (!videoRef.current || !isLoaded) return;
-    try {
-      if (isPlaying) {
-        await videoRef.current.pauseAsync();
-      } else {
-        await videoRef.current.playAsync();
+    if (status.isLoaded) {
+      const position = status.positionMillis / 1000;
+      
+      // Show button after 7 seconds
+      if (position >= 7 && !showButton) {
+        console.log('✅ Showing Begin button after 7 seconds');
+        setShowButton(true);
       }
-    } catch (e) {
-      console.log("Operation failed because video is not ready");
+    } else if (status.error) {
+      console.log('❌ Video error:', status.error);
     }
   };
 
-  const handleBackward = async () => {
-    if (!videoRef.current || !isLoaded) return;
-    try {
-      const status = await videoRef.current.getStatusAsync() as AVPlaybackStatusSuccess;
-      const currentPosition = status.positionMillis;
-      const newPosition = Math.max(0, currentPosition - 10000); 
-      await videoRef.current.setPositionAsync(newPosition);
-    } catch (e) {
-      console.log("Seek backward failed");
-    }
-  };
-
-  const handleForward = async () => {
-    if (!videoRef.current || !isLoaded) return;
-    try {
-      const status = await videoRef.current.getStatusAsync() as AVPlaybackStatusSuccess;
-      const currentPosition = status.positionMillis;
-      const duration = status.durationMillis || 0;
-      const newPosition = Math.min(duration, currentPosition + 10000); // 10 seconds forward
-      await videoRef.current.setPositionAsync(newPosition);
-    } catch (e) {
-      console.log("Seek forward failed");
+  const handleVideoLoad = async () => {
+    console.log('✅ Video loaded successfully');
+    setIsVideoLoading(false);
+    
+    // Only attempt playback once, and only if audio is ready
+    if (!playbackAttempted.current && audioReady && videoRef.current) {
+      playbackAttempted.current = true;
+      
+      // Wait a bit more to ensure audio focus is stable
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      try {
+        console.log('🎬 Attempting to start playback...');
+        await videoRef.current.playAsync();
+        console.log('✅ Playback started successfully');
+      } catch (error) {
+        console.log('⚠️ Could not start playback:', error);
+        // If playback fails, try again with native controls
+        // The user can manually press play
+      }
     }
   };
 
   const handleBegin = async () => {
-    // SAFETY FIX: Only attempt to pause if the video is actually loaded
-    if (videoRef.current && isLoaded) {
+    console.log('🎬 Begin button pressed');
+    if (videoRef.current) {
       try {
         await videoRef.current.pauseAsync();
+        await videoRef.current.unloadAsync();
       } catch (e) {
-        // Silently fail and proceed
+        console.log('⚠️ Failed to pause video:', e);
       }
     }
     onBeginDevotional();
+  };
+
+  const handleBack = async () => {
+    console.log('⬅️ Back button pressed');
+    if (videoRef.current) {
+      try {
+        await videoRef.current.pauseAsync();
+        await videoRef.current.unloadAsync();
+      } catch (e) {
+        console.log('⚠️ Failed to pause video:', e);
+      }
+    }
+    onBack();
   };
 
   return (
@@ -114,56 +159,60 @@ export function VideoIntro({
       
       {/* Video Section */}
       <View style={styles.videoSection}>
-        <Video
-          ref={videoRef}
-          source={{ uri: videoUri }}
-          style={styles.video}
-          resizeMode={ResizeMode.CONTAIN} 
-          useNativeControls={false}
-          shouldPlay={true}
-          isLooping
-          isMuted={isMuted}
-          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-        />
-
-        {/* Logo (Top Right) */}
-        <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../../assets/logo.png')} 
-            style={styles.logo} 
-            resizeMode="contain" 
+        {isVideoReady && (
+          <Video
+            ref={videoRef}
+            source={{ uri: mediaSource }}
+            style={styles.video}
+            resizeMode={ResizeMode.CONTAIN}
+            useNativeControls={true}
+            shouldPlay={false}
+            isLooping={false}
+            volume={1.0}
+            isMuted={false}
+            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+            onLoad={handleVideoLoad}
+            onLoadStart={() => {
+              console.log('⏳ Video loading started...');
+              setIsVideoLoading(true);
+            }}
+            onError={(error) => {
+              console.log('❌ Video error:', error);
+              setIsVideoLoading(false);
+            }}
+            onReadyForDisplay={() => {
+              console.log('✅ Video ready for display');
+            }}
           />
-        </View>
-
-        {/* Close Button (Top Left) */}
-        {showButton && (
-          <View style={styles.closeContainer}>
-            <TouchableOpacity onPress={handleBegin}>
-              <Feather name="x" size={30} color="white" />
-            </TouchableOpacity>
+        )}
+        
+        {/* Loading spinner for video */}
+        {isVideoLoading && (
+          <View style={styles.videoLoadingOverlay}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.videoLoadingText}>Loading video...</Text>
           </View>
         )}
+      </View>
 
-        {isLoading && (
-          <View style={styles.loadingCenter}>
-            <ActivityIndicator size="large" color="#fff" />
-          </View>
-        )}
+      {/* Logo (Top Right) */}
+      <View style={styles.logoContainer} pointerEvents="none">
+        <Image 
+          source={require('../../../assets/logo.png')} 
+          style={styles.logo} 
+          resizeMode="contain" 
+        />
+      </View>
 
-        <View style={styles.controlsContainer}>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleBackward}>
-            <Feather name="skip-back" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.playPauseBtn} onPress={handlePlayPause}>
-            <Feather name={isPlaying ? "pause" : "play"} size={40} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleForward}>
-            <Feather name="skip-forward" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.muteBtn} onPress={() => setIsMuted(!isMuted)}>
-            <Feather name={isMuted ? "volume-x" : "volume-2"} size={24} color="white" />
-          </TouchableOpacity>
-        </View>
+      {/* Back Button (Top Left) */}
+      <View style={styles.backContainer}>
+        <TouchableOpacity 
+          onPress={handleBack}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.backButton}
+        >
+          <Feather name="x" size={30} color="white" />
+        </TouchableOpacity>
       </View>
 
       {/* BEGIN BUTTON */}
@@ -197,26 +246,40 @@ const styles = StyleSheet.create({
   video: {
     width: SCREEN_WIDTH,
     height: VIDEO_HEIGHT,
+    backgroundColor: '#000',
+  },
+  videoLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  videoLoadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginTop: 12,
+    fontFamily: 'DMSans-Medium',
   },
   logoContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
     right: 25,
+    zIndex: 10,
   },
   logo: {
     width: 60,
     height: 60,
   },
-  closeContainer: {
+  backContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
     left: 25,
+    zIndex: 10,
   },
-  loadingCenter: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  backButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
+    padding: 5,
   },
   footerSection: {
     position: 'absolute',
@@ -227,6 +290,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   finalButton: {
     backgroundColor: '#FFFFFF',
@@ -244,30 +308,6 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 20,
     fontWeight: '800',
-    textTransform: 'uppercase',
     letterSpacing: 1.5,
-  },
-  controlsContainer: {
-    marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playPauseBtn: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  controlBtn: {
-    padding: 15,
-    marginHorizontal: 10,
-  },
-  muteBtn: {
-    padding: 15,
-    marginHorizontal: 10,
   },
 });

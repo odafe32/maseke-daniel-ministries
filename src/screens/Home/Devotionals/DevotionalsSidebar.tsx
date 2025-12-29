@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // Removed useMemo
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -7,40 +7,31 @@ import {
   StyleSheet,
   ScrollView,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemeText } from "@/src/components";
 import { wp } from "@/src/utils";
+import { useDevotionalList, useDevotionalDetail } from "@/src/hooks/useDevotionals";
 
 export type DevotionalMonth = {
   id: string;
   name: string;
   days: number;
+  devotionalId?: number;
+  entries_count?: number;
+  start_date?: string;
 };
 
 interface DevotionalsSidebarProps {
   visible: boolean;
   onClose: () => void;
-  onSelectDay: (payload: { month: DevotionalMonth; day: number }) => void;
+  onSelectDay: (payload: { month: DevotionalMonth; day: number; devotionalId?: number }) => void;
   surfaceColor?: string;
   textColor?: string;
   accentColor?: string;
+  onOpenNotes?: () => void;
 }
-
-const MONTHS: DevotionalMonth[] = [
-  { id: "1", name: "January", days: 31 },
-  { id: "2", name: "February", days: 28 },
-  { id: "3", name: "March", days: 31 },
-  { id: "4", name: "April", days: 30 },
-  { id: "5", name: "May", days: 31 },
-  { id: "6", name: "June", days: 30 },
-  { id: "7", name: "July", days: 31 },
-  { id: "8", name: "August", days: 31 },
-  { id: "9", name: "September", days: 30 },
-  { id: "10", name: "October", days: 31 },
-  { id: "11", name: "November", days: 30 },
-  { id: "12", name: "December", days: 31 },
-];
 
 export function DevotionalsSidebar({
   visible,
@@ -49,40 +40,122 @@ export function DevotionalsSidebar({
   surfaceColor = "#fff",
   textColor = "#000",
   accentColor = "#EE8F5C",
+  onOpenNotes,
 }: DevotionalsSidebarProps) {
   const [selectedMonth, setSelectedMonth] = useState<DevotionalMonth | null>(null);
+  const { devotionals, isLoading, loadDevotionals } = useDevotionalList();
+  const { entries, isLoading: isLoadingEntries, loadDevotional } = useDevotionalDetail();
+
+  useEffect(() => {
+    if (visible && devotionals.length === 0) {
+      loadDevotionals().catch(console.error);
+    }
+  }, [visible, devotionals.length, loadDevotionals]);
+
+  useEffect(() => {
+    if (selectedMonth?.devotionalId) {
+      loadDevotional(selectedMonth.devotionalId).catch(console.error);
+    }
+  }, [selectedMonth?.devotionalId, loadDevotional]);
 
   const handleBack = () => setSelectedMonth(null);
 
   const renderList = () => {
-    if (!selectedMonth) {
-      return MONTHS.map((month) => (
-        <SidebarRow
-          key={month.id}
-          label={month.name}
-          onPress={() => setSelectedMonth(month)}
-          textColor={textColor}
-          accentColor={accentColor}
-        />
-      ));
+    // Loading devotionals list
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={accentColor} />
+          <Text style={[styles.loadingText, { color: textColor }]}>Loading devotionals...</Text>
+        </View>
+      );
     }
 
-    const days = Array.from({ length: selectedMonth.days }, (_, i) => i + 1);
+    // Showing devotionals list
+    if (!selectedMonth) {
+      return devotionals.map((dev) => {
+        const monthData: DevotionalMonth = {
+          id: dev.id.toString(),
+          name: dev.title,
+          days: dev.duration_days || dev.entries_count || 30,
+          devotionalId: dev.id,
+          entries_count: dev.entries_count,
+          start_date: dev.start_date,
+        };
+        return (
+          <SidebarRow
+            key={dev.id}
+            label={dev.title}
+            subtitle={dev.description}
+            onPress={() => setSelectedMonth(monthData)}
+            textColor={textColor}
+            accentColor={accentColor}
+          />
+        );
+      });
+    }
+
+    // Loading days for selected devotional
+    if (isLoadingEntries) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={accentColor} />
+          <Text style={[styles.loadingText, { color: textColor }]}>Loading days...</Text>
+        </View>
+      );
+    }
+
+    // Showing days grid
+    const days = entries.length > 0
+      ? entries.map((e) => e.day_number)
+      : Array.from({ length: selectedMonth.days }, (_, i) => i + 1);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return (
       <View style={styles.daysGrid}>
-        {days.map((day) => (
-          <TouchableOpacity
-            key={day}
-            style={[styles.dayCircle, { borderColor: `${accentColor}40` }]}
-            onPress={() => {
-              onSelectDay({ month: selectedMonth, day });
-              onClose();
-              setSelectedMonth(null);
-            }}
-          >
-            <Text style={{ color: textColor, fontWeight: "600" }}>{day}</Text>
-          </TouchableOpacity>
-        ))}
+        {days.map((day) => {
+          // Calculate the date for this day
+          const dayDate = selectedMonth.start_date
+            ? new Date(selectedMonth.start_date)
+            : new Date();
+          dayDate.setDate(dayDate.getDate() + (day - 1));
+          dayDate.setHours(0, 0, 0, 0);
+
+          const isFuture = dayDate > today;
+
+          return (
+            <TouchableOpacity
+              key={day}
+              style={[
+                styles.dayCircle,
+                { borderColor: `${accentColor}40` },
+                isFuture ? { opacity: 0.5 } : {},
+              ]}
+              onPress={() => {
+                if (isFuture) return; // Prevent selecting future days
+                onSelectDay({
+                  month: selectedMonth,
+                  day,
+                  devotionalId: selectedMonth.devotionalId,
+                });
+                onClose();
+                setSelectedMonth(null);
+              }}
+              disabled={isFuture}
+            >
+              <Text
+                style={{
+                  color: isFuture ? `${textColor}40` : textColor,
+                  fontWeight: "600",
+                }}
+              >
+                {day}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   };
@@ -105,7 +178,7 @@ export function DevotionalsSidebar({
             )}
 
             <ThemeText variant="h3" style={[styles.headerTitle, { color: textColor }]}>
-              {selectedMonth ? selectedMonth.name : "Months"}
+              {selectedMonth ? selectedMonth.name : "Devotionals"}
             </ThemeText>
 
             <TouchableOpacity onPress={onClose} style={styles.iconButton}>
@@ -114,23 +187,47 @@ export function DevotionalsSidebar({
           </View>
 
           <ScrollView contentContainerStyle={styles.list}>{renderList()}</ScrollView>
+
+          {onOpenNotes && (
+            <TouchableOpacity
+              onPress={() => {
+                onOpenNotes();
+                onClose();
+              }}
+              style={[styles.notesRow, { borderTopColor: `${textColor}10` }]}
+              activeOpacity={0.8}
+            >
+              <View style={styles.notesLeft}>
+                <Feather name="bookmark" size={18} color={textColor} />
+                <Text style={[styles.notesLabel, { color: textColor }]}>Notes</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={textColor} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
   );
 }
 
-// Fixed 'any' in SidebarRow
 interface SidebarRowProps {
   label: string;
+  subtitle?: string;
   onPress: () => void;
   textColor: string;
   accentColor: string;
 }
 
-const SidebarRow = ({ label, onPress, textColor, accentColor }: SidebarRowProps) => (
+const SidebarRow = ({ label, subtitle, onPress, textColor, accentColor }: SidebarRowProps) => (
   <TouchableOpacity style={styles.row} onPress={onPress}>
-    <Text style={[styles.rowLabel, { color: textColor }]}>{label}</Text>
+    <View style={styles.rowContent}>
+      <Text style={[styles.rowLabel, { color: textColor }]}>{label}</Text>
+      {subtitle && (
+        <Text style={[styles.rowSubtitle, { color: `${textColor}80` }]} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      )}
+    </View>
     <Feather name="chevron-right" size={18} color={accentColor} />
   </TouchableOpacity>
 );
@@ -152,8 +249,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
+  rowContent: {
+    flex: 1,
+    marginRight: 12,
+  },
   rowLabel: { fontSize: 16, fontWeight: "500" },
-  daysGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
+  rowSubtitle: { fontSize: 13, marginTop: 4 },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+  },
+  daysGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-start", paddingHorizontal: 8 },
   dayCircle: {
     width: 50,
     height: 50,
@@ -161,5 +272,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  notesRow: {
+    marginTop: 12,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  notesLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  notesLabel: {
+    fontSize: 16,
+    fontWeight: "500",
   },
 });

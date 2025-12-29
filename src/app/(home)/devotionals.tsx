@@ -1,104 +1,338 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useEffect, useCallback } from "react";
+import { View, ActivityIndicator, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Devotionals, DevotionalTheme } from "@/src/screens/Home/Devotionals/Devotionals";
-import { DevotionalMonth } from "@/src/screens/Home/Devotionals/DevotionalsSidebar";
+import { DevotionalMonth, DevotionalsSidebar } from "@/src/screens/Home/Devotionals/DevotionalsSidebar";
 import { VideoIntro } from "@/src/screens/Home/Devotionals/VideoIntro";
+import { CompletionPage } from "@/src/screens/Home/Devotionals/CompletionPage";
+import { useDevotionalEntry } from "@/src/hooks/useDevotionals";
+import { useDevotionalsStore } from "@/src/stores/devotionalsStore";
+import { devotionApi } from "@/src/api/devotionApi";
+
+// Clean and format devotional content - preserve text, remove decorations
+const cleanDevotionalContent = (html: string): string => {
+  if (!html) return '';
+  
+  let text = html;
+  
+  // First, handle HTML tags
+  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/div>/gi, '\n');
+  text = text.replace(/<\/li>/gi, '\n');
+  text = text.replace(/<\/h[1-6]>/gi, '\n\n');
+  text = text.replace(/<[^>]+>/g, '');
+  
+  // Decode HTML entities
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&apos;/g, "'");
+  text = text.replace(/&ldquo;/g, '"');
+  text = text.replace(/&rdquo;/g, '"');
+  text = text.replace(/&lsquo;/g, "'");
+  text = text.replace(/&rsquo;/g, "'");
+  text = text.replace(/&mdash;/g, ' ');
+  text = text.replace(/&ndash;/g, ' ');
+  
+  // Replace decorative dash sequences (2 or more) with space
+  text = text.replace(/[—–\-]{2,}/g, ' ');
+  
+  // Replace box drawing characters
+  text = text.replace(/[━─═]/g, ' ');
+  
+  // Remove bullet points used as decorators (• TEXT •)
+  text = text.replace(/•\s*([A-Z]+)\s*•/g, '$1:');
+  
+  // Remove standalone bullets at start of line
+  text = text.replace(/^\s*•\s*/gm, '');
+  
+  // Clean up multiple spaces
+  text = text.replace(/[ \t]+/g, ' ');
+  
+  // Clean up multiple newlines (max 2)
+  text = text.replace(/\n{3,}/g, '\n\n');
+  
+  // Trim each line
+  text = text.split('\n').map(line => line.trim()).join('\n');
+  
+  // Remove empty lines at start/end
+  text = text.replace(/^\n+/, '').replace(/\n+$/, '');
+  
+  return text.trim();
+};
 
 export default function DevotionalsPage() {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [selectedThemeId, setSelectedThemeId] = useState("classic");
-  const [fontSize, setFontSize] = useState(18);
-  const [currentMonth, setCurrentMonth] = useState<DevotionalMonth | null>(null);
-  const [currentDayNumber, setCurrentDayNumber] = useState(1);
-  const [showVideoIntro, setShowVideoIntro] = useState(false);
-  const [pendingMonth, setPendingMonth] = useState<DevotionalMonth | null>(null);
-  const [pendingDayNumber, setPendingDayNumber] = useState(1);
+  const {
+    sidebarVisible,
+    setSidebarVisible,
+    settingsVisible,
+    setSettingsVisible,
+    selectedThemeId,
+    setSelectedThemeId,
+    fontSize,
+    setFontSize,
+    currentMonth,
+    setCurrentMonth,
+    currentDayNumber,
+    setCurrentDayNumber,
+    showVideoIntro,
+    setShowVideoIntro,
+    pendingVideoUrl,
+    setPendingVideoUrl,
+    videoKey,
+    incrementVideoKey,
+    isLoadingEntry,
+    setIsLoadingEntry,
+    currentDevotionalId,
+    setCurrentDevotionalId,
+    isNavigating,
+    setIsNavigating,
+    showCompletion,
+    setShowCompletion,
+    themeOptions,
+  } = useDevotionalsStore();
 
-  const themeOptions: DevotionalTheme[] = [
-    { 
-      id: "classic", 
-      backgroundColor: "#FFFFFF", 
-      textColor: "#0C154C", 
-      panelBackground: "#FFFFFF", 
-      panelTextColor: "#0C154C", 
-      accentColor: "#FFFFFF", 
-      sidebarBackground: "#FFFFFF", 
-      sidebarTextColor: "#0C154C" 
-    },
-    { 
-      id: "sepia", 
-      backgroundColor: "#F5EBE0", 
-      textColor: "#523015", 
-      panelBackground: "#F9E8D4", 
-      panelTextColor: "#523015", 
-      accentColor: "#B47733", 
-      sidebarBackground: "#F2DBC1", 
-      sidebarTextColor: "#523015",
-      headerButtonBackground: "#FFFFFF", 
-      headerButtonBorderColor: "#F5EBE0"
-    },
-    { 
-      id: "mist", 
-      backgroundColor: "#EDF2F6", 
-      textColor: "#081C2B", 
-      panelBackground: "#FFFFFF", 
-      panelTextColor: "#081C2B", 
-      accentColor: "#2E5E86", 
-      sidebarBackground: "#E0E7EF", 
-      sidebarTextColor: "#081C2B",
-      headerButtonBackground: "#FFFFFF", 
-      headerButtonBorderColor: "#FFFFFF"
-    },
-    { 
-      id: "midnight", 
-      backgroundColor: "#050505", 
-      textColor: "#F4F4F8", 
-      panelBackground: "#111111", 
-      panelTextColor: "#F4F4F8", 
-      accentColor: "#000000", 
-      sidebarBackground: "#050505", 
-      sidebarTextColor: "#F4F4F8" 
-    },
-  ];
+  const { entry, isLoading, loadTodayEntry, loadEntryByDay } = useDevotionalEntry();
 
-  const dummyContent = useMemo(() => ({
-    title: currentMonth ? `Reflections for ${currentMonth.name} Day ${currentDayNumber}` : "Welcome to Devotionals",
-    body: `Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.\n\nToday's devotion focuses on the power of surrender. When we stop trying to control every outcome, we leave space for God's miracles to unfold in our lives.`
-  }), [currentMonth, currentDayNumber]);
+  const selectedTheme = useMemo(
+    () => themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0],
+    [selectedThemeId, themeOptions]
+  );
 
-  const handleBeginDevotional = () => {
-    setCurrentMonth(pendingMonth);
-    setCurrentDayNumber(pendingDayNumber);
+  // Load today's entry on mount
+  useEffect(() => {
+    const initLoad = async () => {
+      try {
+        const todayEntry = await loadTodayEntry();
+        if (todayEntry?.devotional_id) {
+          setCurrentDevotionalId(todayEntry.devotional_id);
+        }
+        if (todayEntry?.day_number) {
+          setCurrentDayNumber(todayEntry.day_number);
+        }
+
+        // Check if video needs to be shown
+        const videoUrl = todayEntry?.video_url ?? null;
+        const hasBeenViewed = todayEntry?.viewed ?? false;
+        
+        if (videoUrl && !hasBeenViewed) {
+          setPendingVideoUrl(videoUrl);
+          incrementVideoKey();
+          setShowVideoIntro(true);
+        } else {
+          setIsLoadingEntry(false);
+        }
+      } catch (error) {
+        console.error('Failed to load today entry:', error);
+        setIsLoadingEntry(false);
+      }
+    };
+    initLoad();
+  }, [loadTodayEntry]);
+
+  const content = useMemo(() => {
+    if (!entry) {
+      return {
+        title: "Welcome to Devotionals",
+        body: "Loading today's devotional...",
+      };
+    }
+    
+    // Clean the content
+    const cleanedContent = cleanDevotionalContent(entry.content);
+    
+    return {
+      title: entry.title,
+      body: cleanedContent,
+      dateLabel: entry.date || undefined,
+    };
+  }, [entry]);
+
+  // Navigate to a specific day and show video if available
+  const navigateToDay = useCallback(async (devotionalId: number, dayNumber: number) => {
+    setIsNavigating(true);
     setShowVideoIntro(false);
+    setIsLoadingEntry(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 150));
+    setPendingVideoUrl(null);
+    
+    try {
+      const fetchedEntry = await loadEntryByDay(devotionalId, dayNumber);
+      setCurrentDayNumber(dayNumber);
+      
+      const videoUrl = fetchedEntry?.video_url ?? null;
+      const hasBeenViewed = fetchedEntry?.viewed ?? false;
+      
+      if (videoUrl && !hasBeenViewed) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        setPendingVideoUrl(videoUrl);
+        incrementVideoKey();
+        setShowVideoIntro(true);
+      } else {
+        setIsLoadingEntry(false);
+      }
+      
+      return fetchedEntry;
+    } catch (error) {
+      console.error('Failed to load entry:', error);
+      setIsLoadingEntry(false);
+      return null;
+    } finally {
+      setIsNavigating(false);
+    }
+  }, [loadEntryByDay]);
+
+  // Handle day selection from sidebar
+  const handleDaySelected = async (payload: { month: DevotionalMonth; day: number; devotionalId?: number }) => {
+    setSidebarVisible(false);
+    
+    const devotionalId = payload.devotionalId || currentDevotionalId;
+    if (!devotionalId) {
+      console.error('No devotional ID available');
+      return;
+    }
+    
+    setCurrentMonth(payload.month);
+    if (payload.devotionalId) {
+      setCurrentDevotionalId(payload.devotionalId);
+    }
+    
+    await navigateToDay(devotionalId, payload.day);
   };
 
+  const handleBeginDevotional = () => {
+    setShowVideoIntro(false);
+    setPendingVideoUrl(null);
+    setIsLoadingEntry(false);
+    if (entry?.id) {
+      devotionApi.markViewed(entry.id).catch(console.error);
+    }
+  };
+
+  const handleVideoBack = () => {
+    setShowVideoIntro(false);
+    setPendingVideoUrl(null);
+    setIsLoadingEntry(false);
+  };
+
+  // Handle prev page
+  const handlePrevPage = useCallback(async () => {
+    if (currentDayNumber <= 1 || isNavigating) return;
+    
+    const devotionalId = entry?.devotional_id || currentDevotionalId;
+    if (!devotionalId) return;
+    
+    const newDay = currentDayNumber - 1;
+    await navigateToDay(devotionalId, newDay);
+  }, [currentDayNumber, entry?.devotional_id, currentDevotionalId, navigateToDay, isNavigating]);
+
+  // Handle next page
+  const handleNextPage = useCallback(async () => {
+    if (isNavigating) return;
+    
+    const devotionalId = entry?.devotional_id || currentDevotionalId;
+    if (!devotionalId) return;
+    
+    const totalDays = entry?.total_days || currentMonth?.entries_count || 31;
+    if (currentDayNumber >= totalDays) {
+      setShowCompletion(true);
+      return;
+    }
+    
+    const newDay = currentDayNumber + 1;
+    await navigateToDay(devotionalId, newDay);
+  }, [currentDayNumber, entry?.devotional_id, entry?.total_days, currentMonth?.entries_count, currentDevotionalId, navigateToDay, isNavigating]);
+
+  if (showCompletion) {
+    return <CompletionPage onBack={() => setShowCompletion(false)} />;
+  }
+
+  if ((isLoading || isLoadingEntry || isNavigating) && !entry && !showVideoIntro) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: selectedTheme.backgroundColor }]}>
+        <ActivityIndicator size="large" color={selectedTheme.textColor} />
+        <Text style={[styles.loadingText, { color: selectedTheme.textColor }]}>
+          Loading devotional...
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <React.Fragment>
-      <Devotionals
-        sidebarVisible={sidebarVisible}
+    <>
+      {!isLoadingEntry && !showVideoIntro && (
+       <Devotionals
         onOpenSidebar={() => setSidebarVisible(true)}
-        onCloseSidebar={() => setSidebarVisible(false)}
-        onDaySelected={(payload) => {
-          setPendingMonth(payload.month);
-          setPendingDayNumber(payload.day);
-          setShowVideoIntro(true);
-        }}
         settingsVisible={settingsVisible}
         onToggleSettings={() => setSettingsVisible(!settingsVisible)}
-        onShowSettings={() => setSettingsVisible(true)}  
-        onHideSettings={() => setSettingsVisible(false)} 
+        onShowSettings={() => setSettingsVisible(true)}
+        onHideSettings={() => setSettingsVisible(false)}
         themeOptions={themeOptions}
-        content={dummyContent}
+        content={content}
         currentMonth={currentMonth}
-        currentDayNumber={currentDayNumber}
+        currentDayNumber={entry?.day_number || currentDayNumber}
         selectedThemeId={selectedThemeId}
         onSelectTheme={(id) => setSelectedThemeId(id)}
         fontSize={fontSize}
-        onFontSizeChange={(delta) => setFontSize(f => Math.max(12, Math.min(30, f + delta)))}
-        onPrevPage={() => setCurrentDayNumber(d => Math.max(1, d - 1))}
-        onNextPage={() => setCurrentDayNumber(d => d + 1)}
+        onFontSizeChange={(delta) => setFontSize(Math.max(12, Math.min(30, fontSize + delta)))}
+        onPrevPage={handlePrevPage}
+        onNextPage={handleNextPage}
+        devotionalEntryId={entry?.id}
+        totalDays={entry?.total_days || currentMonth?.entries_count || 31}
+        isNavigating={isNavigating}
       />
-      {showVideoIntro && <VideoIntro onBeginDevotional={handleBeginDevotional}  />}
-    </React.Fragment>
+      )}
+
+      <DevotionalsSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        onSelectDay={handleDaySelected}
+        surfaceColor={selectedTheme.sidebarBackground}
+        textColor={selectedTheme.sidebarTextColor}
+        accentColor={selectedTheme.accentColor}
+      />
+
+        {/* Loading Overlay - shows when navigating/loading */}
+      {(isLoading || isLoadingEntry || isNavigating) && !showVideoIntro && (
+        <View style={[styles.loadingOverlay, { backgroundColor: selectedTheme.backgroundColor }]}>
+          <ActivityIndicator size="large" color={selectedTheme.textColor} />
+          <Text style={[styles.loadingText, { color: selectedTheme.textColor }]}>
+            Loading devotional...
+          </Text>
+        </View>
+      )}
+
+       {showVideoIntro && (
+        <VideoIntro 
+          key={`video-${videoKey}-${pendingVideoUrl}`}
+          onBeginDevotional={handleBeginDevotional} 
+          videoUri={pendingVideoUrl || undefined}
+          onBack={handleVideoBack}
+        />
+      )}
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: 'DMSans-Medium',
+  },
+});

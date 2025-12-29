@@ -6,14 +6,18 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Pressable,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router"; // Added for back button
-import { DevotionalsSidebar, DevotionalMonth } from "./DevotionalsSidebar";
+import { useRouter } from "expo-router";
+import { DevotionalMonth } from "./DevotionalsSidebar";
+import { ResponseModal } from "./ResponseModal";
+import { useDevotionalEntry } from "@/src/hooks/useDevotionals";
 
 export interface DevotionalTheme {
   id: string;
@@ -26,20 +30,18 @@ export interface DevotionalTheme {
   sidebarTextColor: string;
   headerButtonBackground?: string;
   headerButtonBorderColor?: string;
+  headerButtonBorderWidth?: number;
 }
 
 interface DevotionalsProps {
-  sidebarVisible: boolean;
   onOpenSidebar: () => void;
-  onCloseSidebar: () => void;
-  onDaySelected: (payload: { month: DevotionalMonth; day: number }) => void;
   content: { title: string; body: string; dateLabel?: string };
   currentMonth: DevotionalMonth | null;
   currentDayNumber: number;
   settingsVisible: boolean;
   onToggleSettings: () => void;
-  onShowSettings: () => void; // Added
-  onHideSettings: () => void; // Added
+  onShowSettings: () => void;
+  onHideSettings: () => void;
   themeOptions: DevotionalTheme[];
   selectedThemeId: string;
   onSelectTheme: (id: string) => void;
@@ -47,6 +49,9 @@ interface DevotionalsProps {
   onFontSizeChange: (delta: number) => void;
   onPrevPage: () => void;
   onNextPage: () => void;
+  devotionalEntryId?: number;
+  totalDays?: number;
+  isNavigating?: boolean; 
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -56,6 +61,15 @@ const hexToRgba = (hex: string, alpha: number) => {
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const isHexWhite = (hex?: string) => {
+  if (!hex) return false;
+  const sanitized = hex.replace("#", "").toLowerCase();
+  if (sanitized.length === 3) {
+    return sanitized.split("").every((char) => char === "f");
+  }
+  return sanitized === "ffffff";
 };
 
 const isHexDark = (hex?: string) => {
@@ -69,226 +83,725 @@ const isHexDark = (hex?: string) => {
   return luminance < 0.5;
 };
 
+const getContrastRatio = (color1: string, color2: string) => {
+  const getLuminance = (hex: string) => {
+    const sanitized = hex.replace("#", "");
+    const bigint = parseInt(sanitized, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    const rsRGB = r / 255;
+    const gsRGB = g / 255;
+    const bsRGB = b / 255;
+    const rLinear = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+    const gLinear = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+    const bLinear = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+    return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+  };
+
+  const lum1 = getLuminance(color1);
+  const lum2 = getLuminance(color2);
+  const brightest = Math.max(lum1, lum2);
+  const darkest = Math.min(lum1, lum2);
+  return (brightest + 0.05) / (darkest + 0.05);
+};
+
+const formatDateLabel = (dateString?: string): string => {
+  if (!dateString) return "Devotional";
+  
+  try {
+    let date: Date;
+    
+    if (dateString.match(/^[A-Za-z]+\s+\d+/)) {
+      return dateString;
+    }
+    
+    if (dateString.includes('-')) {
+      date = new Date(dateString + 'T00:00:00');
+    } else if (dateString.includes('/')) {
+      date = new Date(dateString);
+    } else {
+      return dateString; 
+    }
+    
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+    
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const dayName = days[date.getDay()];
+    const dayNum = date.getDate();
+    const monthName = months[date.getMonth()];
+    
+    // Add ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
+    const getOrdinal = (n: number): string => {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    
+    return `${dayName} ${getOrdinal(dayNum)} ${monthName}`;
+  } catch {
+    return dateString || "Devotional";
+  }
+};
+
 export function Devotionals({
-  sidebarVisible, onOpenSidebar, onCloseSidebar, onDaySelected, content,
-  currentMonth, currentDayNumber, settingsVisible, onToggleSettings,
-  onShowSettings, onHideSettings, themeOptions, selectedThemeId, 
-  onSelectTheme, fontSize, onFontSizeChange, onPrevPage, onNextPage
+  onOpenSidebar,
+  content,
+  currentMonth,
+  currentDayNumber,
+  settingsVisible,
+  onToggleSettings,
+  onShowSettings,
+  onHideSettings,
+  themeOptions,
+  selectedThemeId,
+  onSelectTheme,
+  fontSize,
+  onFontSizeChange,
+  onPrevPage,
+  onNextPage,
+  devotionalEntryId,
+  totalDays = 31,
+  isNavigating = false, 
 }: DevotionalsProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const selectedTheme = themeOptions.find((t) => t.id === selectedThemeId) ?? themeOptions[0];
-  const [selectedLines, setSelectedLines] = useState<number[]>([]);
-  
-  // Animation and Scroll Refs (Exact Bible Logic)
-  const settingsProgress = useRef(new Animated.Value(settingsVisible ? 1 : 0)).current;
-  const lastScrollOffset = useRef(0);
+  const [selectedParagraphs, setSelectedParagraphs] = useState<number[]>([]);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [panelHeight, setPanelHeight] = useState(0);
+
+  const { entry, toggleLike, isLiking, submitResponse, isSubmittingResponse } = useDevotionalEntry();
+
+  const headerScale = useRef(new Animated.Value(1)).current;
+  const settingsPanelProgress = useRef(new Animated.Value(settingsVisible ? 1 : 0)).current;
+  const isUserScrolling = useRef(false); 
   const scrollToggleLock = useRef(false);
+  const scrollResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollOffset = useRef(0);
   const SCROLL_DIRECTION_THRESHOLD = 12;
 
-  useEffect(() => {
-    Animated.spring(settingsProgress, {
-      toValue: settingsVisible ? 1 : 0,
-      useNativeDriver: true,
-      damping: 16,
-      stiffness: 180,
-    }).start();
-  }, [settingsVisible, settingsProgress]);
+  const readingBodyLineHeight = Math.max(26, fontSize * 1.6);
 
-  const lines = useMemo(() => {
-    return content.body.split(/\n+/).filter(Boolean).map((text, id) => ({ id, text }));
-  }, [content.body]);
+const headerTitle = useMemo(() => {
+  return formatDateLabel(content.dateLabel);
+}, [content.dateLabel]);
 
-  const toggleLineSelection = (id: number) => {
-    setSelectedLines(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
+  const statusBarBackground = selectedTheme?.backgroundColor ?? "#fff";
+  const statusBarStyle = isHexDark(statusBarBackground) ? "light" : "dark";
+  const isDarkPanel = isHexDark(selectedTheme?.panelBackground);
+  const dividerColor = "#cccccc";
+  const controlBorderColor = isDarkPanel
+    ? "rgba(255, 255, 255, 0.45)"
+    : "rgba(12, 21, 76, 0.24)";
+  const panelShadowColor = isDarkPanel
+    ? "rgba(0, 0, 0, 0.9)"
+    : hexToRgba(selectedTheme?.textColor ?? "#0C154C", 0.35);
+  const panelShadowOpacity = isDarkPanel ? 0.95 : 1;
+  const panelShadowRadius = isDarkPanel ? 32 : 24;
+  const panelShadowOffset = isDarkPanel ? { width: 0, height: -12 } : { width: 0, height: -8 };
+  const panelElevation = isDarkPanel ? 36 : 24;
+
+  const fallbackHeaderBackground = accentIsWhite
+    ? "transparent"
+    : hexToRgba(selectedTheme?.accentColor ?? "#0C154C", 0.08);
+  const fallbackHeaderBorderColor = accentIsWhite
+    ? "transparent"
+    : selectedTheme?.accentColor ?? "#0C154C";
+  const fallbackHeaderBorderWidth = accentIsWhite ? 0 : 1;
+
+  const headerButtonBackground =
+    selectedTheme?.headerButtonBackground || fallbackHeaderBackground;
+  const headerButtonBorderColor =
+    selectedTheme?.headerButtonBorderColor || fallbackHeaderBorderColor;
+  const headerButtonBorderWidth =
+    selectedTheme?.headerButtonBorderWidth ?? fallbackHeaderBorderWidth;
+
+  const isSelectionMode = selectedParagraphs.length > 0;
+
+  const resolvedAccentForIcon = useMemo(() => {
+    const accent = selectedTheme?.accentColor;
+    const background = selectedTheme?.backgroundColor;
+    const themeId = selectedTheme?.id;
+
+    if (themeId === "sepia" || themeId === "mist" || themeId === "dusk") {
+      return "#000000";
+    }
+
+    if (!accent) return selectedTheme?.textColor ?? "#0C154C";
+
+    if (isHexWhite(accent)) {
+      return isHexDark(background) ? "#FFFFFF" : "#0C154C";
+    }
+
+    if (isHexDark(accent)) {
+      return "#FFFFFF";
+    }
+
+    const contrastRatio = getContrastRatio(accent, background || "#FFFFFF");
+    if (contrastRatio < 4.5) {
+      return isHexDark(background) ? "#FFFFFF" : "#0C154C";
+    }
+
+    return accent;
+  }, [selectedTheme]);
+
+  const selectionIconColor = useMemo(() => {
+    if (!isSelectionMode) {
+      return selectedTheme?.textColor ?? "#FFFFFF";
+    }
+    return resolvedAccentForIcon;
+  }, [isSelectionMode, resolvedAccentForIcon, selectedTheme]);
+
+  const paragraphs = useMemo(() => {
+    if (!content?.body) return [];
+    
+    const byLine = content.body
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    
+    const segments = byLine.length > 1 ? byLine : content.body.split(/(?<=[.!?])\s+/);
+    
+    return segments
+      .map((segment) => segment.trim())
+      .filter(Boolean)
+      .map((text, index) => ({ id: index + 1, text }));
+  }, [content?.body]);
+
+  const toggleParagraphSelection = (id: number) => {
+    setSelectedParagraphs((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
-  const isSelectionMode = selectedLines.length > 0;
-  const isDark = isHexDark(selectedTheme.backgroundColor);
-  const controlBorderColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(12,21,76,0.1)";
+  useEffect(() => {
+    Animated.spring(settingsPanelProgress, {
+      toValue: settingsVisible ? 1 : 0,
+      damping: 16,
+      stiffness: 180,
+      mass: 0.8,
+      useNativeDriver: true,
+    }).start();
+  }, [settingsVisible, settingsPanelProgress]);
 
-  // Scroll logic for hiding/showing menu
+  useEffect(() => {
+    return () => {
+      if (scrollResetTimeout.current) {
+        clearTimeout(scrollResetTimeout.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (entry) {
+      setIsLiked(entry.liked);
+      setLikeCount(entry.like_count);
+    }
+  }, [entry]);
+
+  const hiddenOffset = panelHeight ? panelHeight + insets.bottom + 32 : 320;
+  const panelAnimatedStyle = {
+    transform: [
+      {
+        translateY: settingsPanelProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [hiddenOffset, 0],
+        }),
+      },
+    ],
+    opacity: settingsPanelProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    }),
+  } as const;
+
+  const resetScrollFlag = () => {
+    if (scrollResetTimeout.current) {
+      clearTimeout(scrollResetTimeout.current);
+    }
+    scrollResetTimeout.current = setTimeout(() => {
+      isUserScrolling.current = false;
+      scrollToggleLock.current = false;
+    }, 140);
+  };
+
+  const handleScrollBeginDrag = () => {
+    isUserScrolling.current = true;
+    if (scrollResetTimeout.current) {
+      clearTimeout(scrollResetTimeout.current);
+      scrollResetTimeout.current = null;
+    }
+  };
+
+  const handleScrollEndDrag = () => resetScrollFlag();
+  const handleMomentumScrollBegin = () => {
+    isUserScrolling.current = true;
+    if (scrollResetTimeout.current) {
+      clearTimeout(scrollResetTimeout.current);
+      scrollResetTimeout.current = null;
+    }
+  };
+  const handleMomentumScrollEnd = () => resetScrollFlag();
+
+  const handleContentTouchEnd = () => {
+    if (!isUserScrolling.current && !scrollToggleLock.current) {
+      onToggleSettings();
+      scrollToggleLock.current = true;
+      resetScrollFlag();
+    }
+  };
+
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
     const diff = currentOffset - lastScrollOffset.current;
 
     if (Math.abs(diff) >= SCROLL_DIRECTION_THRESHOLD) {
       if (diff > 0 && settingsVisible) {
-        onHideSettings(); // Hide when scrolling down
+        onHideSettings();
       } else if (diff < 0 && !settingsVisible) {
-        onShowSettings(); // Show when scrolling up
+        onShowSettings();
       }
     }
     lastScrollOffset.current = Math.max(0, currentOffset);
   };
 
-  const handleContentTouchEnd = () => {
-    if (!scrollToggleLock.current) {
-      onToggleSettings();
+  const handleBack = () => {
+    Animated.spring(headerScale, {
+      toValue: 0.92,
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.spring(headerScale, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+      if (router.canGoBack()) {
+        router.back();
+      }
+    });
+  };
+
+  const handleLikeToggle = async () => {
+    if (!entry || isLiking) return;
+    try {
+      const result = await toggleLike(!isLiked);
+      if (result) {
+        setIsLiked(result.liked);
+        setLikeCount(result.like_count);
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
     }
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: selectedTheme.backgroundColor }]}>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      
-      {/* HEADER: Back on Left, Menu on Right */}
-      <View style={[styles.headerRow, { marginTop: insets.top }]}>
-        <TouchableOpacity 
-           onPress={() => router.back()}
-           style={[styles.headerButton, { backgroundColor: hexToRgba(selectedTheme.accentColor, 0.08), borderColor: selectedTheme.accentColor }]}
-        >
-          <Feather name="chevron-left" size={20} color={selectedTheme.textColor} />
-        </TouchableOpacity>
+  const handleNextPage = () => setShowResponseModal(true);
 
-        <Text style={[styles.headerTitle, { color: selectedTheme.textColor }]}>
-          {currentMonth ? `${currentMonth.name} ${currentDayNumber}` : (content.dateLabel || "Devotional")}
+  const handleSave = async (heart: string, takeaway: string) => {
+    if (!entry) {
+      setShowResponseModal(false);
+      onNextPage();
+      return;
+    }
+    if (heart.trim() || takeaway.trim()) {
+      try {
+        await submitResponse({ heart_response: heart, takeaway_response: takeaway });
+      } catch (error) {
+        console.error('Failed to submit response:', error);
+      }
+    }
+    setShowResponseModal(false);
+    onNextPage();
+  };
+
+  const handleSkip = () => {
+    setShowResponseModal(false);
+    onNextPage();
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: statusBarBackground }]}>
+      <StatusBar backgroundColor={statusBarBackground} style={statusBarStyle} animated />
+         {/* HEADER */}
+      <View style={styles.headerRow}>
+        <Animated.View style={{ transform: [{ scale: headerScale }] }}>
+          <Pressable
+            onPress={handleBack}
+            style={[
+              styles.headerButton,
+              {
+                borderColor: headerButtonBorderColor,
+                borderWidth: headerButtonBorderWidth,
+                backgroundColor: headerButtonBackground,
+              },
+            ]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Feather name="chevron-left" size={20} color={selectedTheme?.textColor} />
+          </Pressable>
+        </Animated.View>
+
+        <Text style={[styles.headerTitle, { color: selectedTheme?.textColor }]}>
+          {headerTitle}
         </Text>
 
-        <TouchableOpacity 
-           onPress={isSelectionMode ? () => setSelectedLines([]) : onOpenSidebar}
-           style={[styles.headerButton, { backgroundColor: hexToRgba(selectedTheme.accentColor, 0.08), borderColor: selectedTheme.accentColor }]}
-        >
-          {/* Change icon based on selection mode */}
-          <Feather 
-            name={isSelectionMode ? "bookmark" : "menu"} 
-            size={20} 
-            color={isSelectionMode ? "#F2B705" : selectedTheme.textColor} 
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            onPress={handleLikeToggle}
+            disabled={isLiking}
+            style={[
+              styles.headerButton,
+              {
+                borderColor: headerButtonBorderColor,
+                borderWidth: headerButtonBorderWidth,
+                backgroundColor: headerButtonBackground,
+              },
+            ]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            {isLiking ? (
+              <ActivityIndicator size="small" color={selectedTheme?.textColor} />
+            ) : (
+              <Feather name="heart" size={20} color={isLiked ? "#FF4444" : selectedTheme?.textColor} />
+            )}
+          </Pressable>
+
+          <Pressable
+            onPress={isSelectionMode ? () => setSelectedParagraphs([]) : onOpenSidebar}
+            style={[
+              styles.headerButton,
+              {
+                borderColor: headerButtonBorderColor,
+                borderWidth: headerButtonBorderWidth,
+                backgroundColor: headerButtonBackground,
+              },
+            ]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Feather
+              name={isSelectionMode ? "bookmark" : "menu"}
+              size={20}
+              color={selectionIconColor}
+            />
+          </Pressable>
+        </View>
       </View>
 
-      {/* READING AREA */}
-      <ScrollView 
-        contentContainerStyle={styles.readingContent} 
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        onTouchEnd={handleContentTouchEnd}
-      >
-        <Text style={[styles.readingTitle, { color: selectedTheme.textColor, fontSize: fontSize + 4 }]}>
-          {content.title}
-        </Text>
-        
-        {lines.map((line) => (
-          <TouchableOpacity 
-            key={line.id} 
-            activeOpacity={0.9} 
-            onPress={() => toggleLineSelection(line.id)}
-            style={styles.lineWrapper}
+      {/* CONTENT - Always show, no conditional loading */}
+      <View style={styles.contentWrapper}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.readingContent}
+          onTouchEnd={handleContentTouchEnd}
+          onScrollBeginDrag={handleScrollBeginDrag}
+          onScrollEndDrag={handleScrollEndDrag}
+          onMomentumScrollBegin={handleMomentumScrollBegin}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          <Text
+            style={[
+              styles.readingTitle,
+              { color: selectedTheme?.textColor, fontSize: fontSize + 4 },
+            ]}
           >
-            <Text style={[
-              styles.readingBody, 
-              { 
-                color: selectedTheme.textColor, 
-                fontSize, 
-                lineHeight: fontSize * 1.6,
-                textDecorationLine: selectedLines.includes(line.id) ? "underline" : "none",
-                textDecorationColor: selectedTheme.accentColor
-              }
-            ]}>
-              {line.text}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* SETTINGS PANEL (Color Palette & Controls) */}
-      <Animated.View style={[
-        styles.settingsPanel, 
-        { 
-          backgroundColor: selectedTheme.panelBackground,
-          paddingBottom: insets.bottom + 20,
-          transform: [{ 
-            translateY: settingsProgress.interpolate({ 
-              inputRange: [0, 1], 
-              outputRange: [400, 0] // Hides off screen
-            }) 
-          }],
-          opacity: settingsProgress,
-          shadowColor: isDark ? "#000" : selectedTheme.textColor,
-        }
-      ]}>
-        {/* Color Palette */}
-        <View style={styles.swatchRow}>
-          {themeOptions.map((t) => (
-            <TouchableOpacity 
-              key={t.id} 
-              onPress={() => onSelectTheme(t.id)}
+            {content.title}
+          </Text>
+          
+          {paragraphs.length > 0 ? (
+            <View style={styles.versesContainer}>
+              {paragraphs.map((paragraph) => {
+                const isSelected = selectedParagraphs.includes(paragraph.id);
+                return (
+                  <TouchableOpacity
+                    key={paragraph.id}
+                    activeOpacity={0.9}
+                    onPress={() => toggleParagraphSelection(paragraph.id)}
+                    style={styles.verseLine}
+                  >
+                    <Text
+                      style={[
+                        styles.verseText,
+                        {
+                          color: selectedTheme?.textColor,
+                          fontSize,
+                          lineHeight: readingBodyLineHeight,
+                          textDecorationLine: isSelected ? "underline" : "none",
+                          textDecorationColor: selectedTheme?.accentColor ?? selectedTheme?.textColor,
+                        },
+                      ]}
+                    >
+                      {paragraph.text}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <Text
               style={[
-                styles.swatch, 
-                { 
-                  backgroundColor: t.backgroundColor, 
-                  borderColor: selectedThemeId === t.id ? (isDark ? "#1F5BFF" : selectedTheme.accentColor) : "transparent" 
-                }
-              ]} 
+                styles.readingBody,
+                { color: selectedTheme?.textColor, fontSize, lineHeight: readingBodyLineHeight },
+              ]}
             >
-               {selectedThemeId === t.id && <View style={styles.swatchInner} />}
-            </TouchableOpacity>
-          ))}
+              {content.body}
+            </Text>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* SETTINGS PANEL - keep as is */}
+      <Animated.View
+        pointerEvents={settingsVisible ? "auto" : "none"}
+        style={[
+          styles.settingsPanel,
+          {
+            backgroundColor: selectedTheme?.panelBackground,
+            paddingBottom: 16 + insets.bottom,
+            shadowColor: panelShadowColor,
+            shadowOpacity: panelShadowOpacity,
+            shadowRadius: panelShadowRadius,
+            shadowOffset: panelShadowOffset,
+            elevation: panelElevation,
+          },
+          panelAnimatedStyle,
+        ]}
+        onLayout={(event) => {
+          const height = event.nativeEvent.layout.height;
+          if (height !== panelHeight) {
+            setPanelHeight(height);
+          }
+        }}
+      >
+        <View style={styles.swatchRow}>
+          {themeOptions.map((theme) => {
+            const isSelected = theme.id === selectedThemeId;
+            const swatchBorderColor = isSelected
+              ? theme.id === "midnight"
+                ? "#1F5BFF"
+                : isHexWhite(theme.backgroundColor)
+                  ? selectedTheme?.textColor ?? "#0C154C"
+                  : selectedTheme?.accentColor
+              : "transparent";
+            return (
+              <TouchableOpacity
+                key={theme.id}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: theme.backgroundColor, borderColor: swatchBorderColor },
+                ]}
+                onPress={() => onSelectTheme(theme.id)}
+                activeOpacity={0.8}
+              >
+                {isSelected && <View style={styles.swatchInner} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        <View style={styles.divider} />
+        <View style={styles.dividerContainer}>
+          <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
+        </View>
 
-        {/* Font and Page Controls */}
         <View style={styles.panelActions}>
-          <TouchableOpacity onPress={() => onFontSizeChange(-1)} style={[styles.fontBtn, { borderColor: controlBorderColor }]}>
-            <Text style={[styles.btnText, { color: selectedTheme.panelTextColor }]}>A-</Text>
+          <TouchableOpacity
+            onPress={() => onFontSizeChange(-1)}
+            style={[styles.fontControlButton, { borderColor: controlBorderColor }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.fontControlLabel, { color: selectedTheme?.panelTextColor }]}>
+              A-
+            </Text>
           </TouchableOpacity>
 
           <View style={[styles.pageControl, { borderColor: controlBorderColor }]}>
-            <TouchableOpacity onPress={onPrevPage} disabled={currentDayNumber === 1}>
-              <Feather name="chevron-left" size={18} color={selectedTheme.panelTextColor} />
-            </TouchableOpacity>
-            
-            <Text style={[styles.pageLabel, { color: selectedTheme.panelTextColor }]}>
-                Day {currentDayNumber}
+            <Pressable
+              onPress={onPrevPage}
+              style={[styles.pageButton, { borderColor: controlBorderColor }]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              disabled={currentDayNumber === 1 || isNavigating}
+            >
+              {isNavigating ? (
+                <ActivityIndicator size="small" color={selectedTheme?.panelTextColor} />
+              ) : (
+                <Feather name="chevron-left" size={16} color={selectedTheme?.panelTextColor} />
+              )}
+            </Pressable>
+
+            <Text style={[styles.pageLabel, { color: selectedTheme?.panelTextColor }]}>
+              {isNavigating ? 'Loading...' : `Day ${currentDayNumber}/${totalDays}`}
             </Text>
 
-            <TouchableOpacity onPress={onNextPage}>
-              <Feather name="chevron-right" size={18} color={selectedTheme.panelTextColor} />
-            </TouchableOpacity>
+            <Pressable
+              onPress={handleNextPage}
+              style={[styles.pageButton, { borderColor: controlBorderColor }]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              disabled={isNavigating}
+            >
+              {isNavigating ? (
+                <ActivityIndicator size="small" color={selectedTheme?.panelTextColor} />
+              ) : (
+                <Feather name="chevron-right" size={16} color={selectedTheme?.panelTextColor} />
+              )}
+            </Pressable>
           </View>
 
-          <TouchableOpacity onPress={() => onFontSizeChange(1)} style={[styles.fontBtn, { borderColor: controlBorderColor }]}>
-            <Text style={[styles.btnText, { color: selectedTheme.panelTextColor }]}>A+</Text>
+          <TouchableOpacity
+            onPress={() => onFontSizeChange(1)}
+            style={[styles.fontControlButton, { borderColor: controlBorderColor }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.fontControlLabel, { color: selectedTheme?.panelTextColor }]}>
+              A+
+            </Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
 
-      <DevotionalsSidebar 
-        visible={sidebarVisible} 
-        onClose={onCloseSidebar} 
-        onSelectDay={onDaySelected}
-        surfaceColor={selectedTheme.sidebarBackground}
-        textColor={selectedTheme.sidebarTextColor}
-        accentColor={selectedTheme.accentColor}
-      />
+    <ResponseModal
+      visible={showResponseModal}
+      onSave={handleSave}
+      onSkip={handleSkip}
+      theme={selectedTheme}
+      isSubmitting={isSubmittingResponse}
+      dateLabel={content.dateLabel}
+    />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 10, height: 60 },
-  headerButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "bold", fontFamily: "DMSans-Bold" },
-  readingContent: { paddingBottom: 160, paddingTop: 20 },
-  readingTitle: { fontWeight: "bold", marginBottom: 20, fontFamily: "Geist-SemiBold" },
-  lineWrapper: { marginBottom: 15 },
-  readingBody: { fontFamily: "DMSans-Regular" },
-  settingsPanel: { 
-    position: "absolute", bottom: 0, left: 0, right: 0, 
-    padding: 20, borderTopLeftRadius: 25, borderTopRightRadius: 25, 
-    elevation: 24, shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: -8 } 
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
   },
-  swatchRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15 },
-  swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  swatchInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-  divider: { height: 1, backgroundColor: 'rgba(12,21,76,0.08)', marginBottom: 15 },
-  panelActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  fontBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
-  btnText: { fontFamily: "DMSans-Bold", fontSize: 16 },
-  pageControl: { flexDirection: "row", alignItems: "center", gap: 15, borderWidth: 1, paddingVertical: 6, paddingHorizontal: 15, borderRadius: 12 },
-  pageLabel: { fontFamily: "DMSans-Medium", fontSize: 14 },
+  contentWrapper: {
+    flex: 1,
+  },
+  readingContent: {
+    paddingBottom: 140,
+    gap: 16,
+  },
+  readingTitle: {
+    fontFamily: "Geist-SemiBold",
+    fontSize: 18,
+  },
+  readingBody: {
+    lineHeight: 26,
+    fontFamily: "DMSans-Regular",
+  },
+  versesContainer: {
+    gap: 15,
+  },
+  verseLine: {
+    marginBottom: 0,
+  },
+  verseText: {
+    fontFamily: "DMSans-Regular",
+  },
+  settingsPanel: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: -20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    gap: 18,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 24,
+  },
+  swatchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  swatch: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  swatchInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#fff",
+  },
+  dividerContainer: {
+    position: "relative",
+    height: 10,
+    justifyContent: "flex-end",
+  },
+  dividerLine: {
+    height: 2,
+    width: "100%",
+  },
+  panelActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  fontControlButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(12, 21, 76, 0.24)",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  fontControlLabel: {
+    fontFamily: "DMSans-Bold",
+    fontSize: 16,
+  },
+  pageControl: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    gap: 12,
+  },
+  pageButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 2,
+  },
+  pageLabel: {
+    fontFamily: "DMSans-Medium",
+    fontSize: 14,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 16,
+    marginBottom: 24,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontFamily: "DMSans-Bold",
+    fontSize: 18,
+  },
 });
