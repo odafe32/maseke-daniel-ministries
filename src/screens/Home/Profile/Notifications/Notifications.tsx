@@ -74,37 +74,6 @@ const Notifications = () => {
           <Text style={styles.notificationTime}>{item.time}</Text>
         </View>
       </View>
-<<<<<<< HEAD
-
-      <View style={styles.content}>
-        <View style={styles.cardHeader}>
-          <ThemeText variant="h5" style={item.read ? styles.title : [styles.title, styles.unreadTitle]}>
-            {item.title}
-          </ThemeText>
-          {!item.read && <View style={styles.unreadDot} />}
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.cardHeader}>
-            <ThemeText variant="h5" style={item.read ? styles.title : [styles.title, styles.unreadTitle]}>
-              {item.title}
-            </ThemeText>
-            {!item.read && <View style={styles.unreadDot} />}
-          </View>
-
-          <ThemeText variant="body" color={colors.muted} style={styles.message}>
-            {item.message}
-          </ThemeText>
-
-          <ThemeText variant="caption" color={colors.muted} style={styles.timestamp}>
-            {item.date} at {item.time}
-          </ThemeText>
-        </View>
-
-        <Feather name="chevron-right" size={20} color="#5E596E" />
-      </View>
-    </Animated.View>
-=======
       <TouchableOpacity
         onPress={() => handleDeleteNotification(item.id)}
         style={styles.deleteButton}
@@ -112,76 +81,14 @@ const Notifications = () => {
         <Trash2 size={20} color="#EF4444" />
       </TouchableOpacity>
     </TouchableOpacity>
->>>>>>> 7d0c8bc579f7e99a2a1b2627bdaab0d8de0046be
   );
 
-<<<<<<< HEAD
-export function Notifications({
-  onBack,
-  notifications,
-  onNotificationPress,
-  onRefresh,
-  refreshing,
-  onClearAll,
-}: {
-  onBack?: () => void;
-  notifications: NotificationItem[];
-  onNotificationPress: (id: string) => void;
-  onRefresh?: () => void;
-  refreshing?: boolean;
-  onClearAll?: () => void;
-}) {
-  // Animation values
-  const headerAnim = useRef(new Animated.Value(0)).current;
-  const titleAnim = useRef(new Animated.Value(0)).current;
-  const emptyStateAnim = useRef(new Animated.Value(0)).current;
-
-  // Trigger animations on mount
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(headerAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.spring(titleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        delay: 100,
-        useNativeDriver: true,
-      }),
-      Animated.spring(emptyStateAnim, {
-        toValue: 1,
-        tension: 40,
-        friction: 6,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [headerAnim, titleAnim, emptyStateAnim]);
-
-  const handleNotificationPress = (id: string) => {
-    onNotificationPress(id);
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const renderHeader = () => (
-    <View style={styles.container}>
-      {/* Animated Header */}
-      <Animated.View
-        style={{
-          opacity: headerAnim,
-=======
   const EmptyState = () => (
     <Animated.View
       style={[
         styles.emptyState,
         {
           opacity: emptyStateAnim,
->>>>>>> 7d0c8bc579f7e99a2a1b2627bdaab0d8de0046be
           transform: [
             {
               translateY: emptyStateAnim.interpolate({
@@ -196,7 +103,7 @@ export function Notifications({
       <Bell size={64} color="#9CA3AF" />
       <Text style={styles.emptyTitle}>No Notifications</Text>
       <Text style={styles.emptyMessage}>
-        You're all caught up! Check back later for updates.
+        You`re all caught up! Check back later for updates.
       </Text>
     </Animated.View>
   );
