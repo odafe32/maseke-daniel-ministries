@@ -11,6 +11,9 @@ export default function StorePage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
 
+  // Pull to refresh state
+  const [refreshing, setRefreshing] = useState(false);
+
   // Use the real store hook for products
   const {
     products: storeProducts,
@@ -232,6 +235,13 @@ export default function StorePage() {
     }
   };
 
+  // Handle pull to refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  };
+
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <StoreUI
@@ -247,7 +257,8 @@ export default function StorePage() {
         isLoading={isLoading}
         loadingWishlists={loadingWishlists}
         loadingCart={loadingCart}
-        onRefresh={refresh}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         filterOptions={filterOptions}
         paginatedProducts={storeProducts}
         totalPages={totalPages}

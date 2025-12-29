@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   ImageSourcePropType,
   Animated,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
@@ -53,6 +54,7 @@ interface StoreUIProps {
   isLoading: boolean;
   loadingWishlists: Array<string>;
   loadingCart: Array<string>;
+  refreshing: boolean;
   onRefresh: () => void;
   filterOptions: Array<{ label: string; value: string }>;
   paginatedProducts: StoreProduct[];
@@ -95,6 +97,7 @@ export function StoreUI({
   isLoading,
   loadingWishlists = [],
   loadingCart = [],
+  refreshing,
   onRefresh,
   filterOptions,
   paginatedProducts,
@@ -308,6 +311,12 @@ export function StoreUI({
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      }
     >
       {/* Animated Header */}
       <Animated.View
@@ -495,31 +504,6 @@ export function StoreUI({
           </ScrollView>
         </Animated.View>
       )}
-
-      {/* Refresh Button */}
-      <Animated.View
-        style={[
-          styles.refreshContainer,
-          {
-            opacity: searchAnim,
-          },
-        ]}
-      >
-        <TouchableOpacity 
-          style={styles.refreshButton}
-          onPress={onRefresh}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size={16} color={COLORS.PRIMARY_BLUE} />
-          ) : (
-            <Feather name="refresh-cw" size={16} color={COLORS.PRIMARY_BLUE} />
-          )}
-          <ThemeText variant="bodySmall" style={styles.refreshText}>
-            Refresh
-          </ThemeText>
-        </TouchableOpacity>
-      </Animated.View>
 
       {/* Animated Trending Section */}
       <Animated.View
@@ -1432,25 +1416,5 @@ const styles = StyleSheet.create({
     color: COLORS.WHITE,
     fontFamily: 'Geist-Medium',
     fontSize: fs(20),
-  },
-
-  // Refresh Button
-  refreshContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 8,
-  },
-  refreshButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER_GRAY,
-  },
-  refreshText: {
-    color: COLORS.PRIMARY_BLUE,
   },
 });
