@@ -134,7 +134,7 @@ export function DevotionalsSidebar({
                 isFuture ? { opacity: 0.5 } : {},
               ]}
               onPress={() => {
-                if (isFuture) return; // Prevent selecting future days
+                if (isFuture) return; 
                 onSelectDay({
                   month: selectedMonth,
                   day,
