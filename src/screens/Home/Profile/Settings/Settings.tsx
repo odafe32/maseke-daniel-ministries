@@ -1,114 +1,238 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   Switch,
+  Animated,
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
-import { showSuccessToast } from "@/src/utils/toast";
 import { fs, hp, wp } from "@/src/utils";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuthStore } from '@/src/stores/authStore';
 
-interface SettingItem {
-  id: string;
-  title: string;
-  description: string;
-  value: boolean;
+interface SettingsProps {
+  onBack: () => void;
+  notifications: boolean;
+  sermonAlerts: boolean;
+  devotionalReminders: boolean;
+  stayLoggedIn: boolean;
+  onToggle: (id: string, value: boolean) => Promise<void>;
 }
 
-export function Settings({ onBack, settingsData: initialSettingsData }: { 
-  onBack: () => void; 
-  settingsData: SettingItem[];
-}) {
-  const [settings, setSettings] = useState<SettingItem[]>(initialSettingsData);
-  const { setStayLoggedIn, logout } = useAuthStore();
+export function Settings({
+  onBack,
+  notifications,
+  sermonAlerts,
+  devotionalReminders,
+  stayLoggedIn,
+  onToggle
+}: SettingsProps) {
+  // Animation values
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const card1Anim = useRef(new Animated.Value(0)).current;
+  const card2Anim = useRef(new Animated.Value(0)).current;
+  const card3Anim = useRef(new Animated.Value(0)).current;
+  const card4Anim = useRef(new Animated.Value(0)).current;
 
-  // Load stay-logged-in preference on component mount
+  // Trigger animations on mount
   useEffect(() => {
-    const loadStayLoggedInPreference = async () => {
-      try {
-        const stayLoggedInStr = await AsyncStorage.getItem('stayLoggedIn');
-        const stayLoggedIn = stayLoggedInStr ? JSON.parse(stayLoggedInStr) : true;
-        
-        setSettings(prev => 
-          prev.map(setting => 
-            setting.id === 'stay-logged-in' ? { ...setting, value: stayLoggedIn } : setting
-          )
-        );
-      } catch (error) {
-        console.error('Failed to load stay logged in preference:', error);
-      }
-    };
-    
-    loadStayLoggedInPreference();
+    Animated.parallel([
+      // Header - fade and slide from top
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      // Card 1 - slide from left
+      Animated.spring(card1Anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      // Card 2 - slide from right
+      Animated.spring(card2Anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+      // Card 3 - slide from left
+      Animated.spring(card3Anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+      // Card 4 - slide from right
+      Animated.spring(card4Anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
-
-  const handleToggleChange = async (id: string, value: boolean) => {
-    console.log(`Toggle changed: ${id} = ${value}`);
-    
-    const setting = settings.find(s => s.id === id);
-    const statusText = value ? 'enabled' : 'disabled';
-    
-    setSettings(prev => 
-      prev.map(s => 
-        s.id === id ? { ...s, value } : s
-      )
-    );
-
-    // Special handling for stay-logged-in setting
-    if (id === 'stay-logged-in') {
-      try {
-        await AsyncStorage.setItem('stayLoggedIn', JSON.stringify(value));
-        setStayLoggedIn(value);
-        
-        // If turning off stay logged in, clear stored auth
-        if (!value) {
-          await logout();
-        }
-        
-        showSuccessToast('Setting Updated', `${setting?.title} ${statusText}`, { position: 'top', visibilityTime: 2000 });
-      } catch (error) {
-        console.error('Failed to save stay logged in preference:', error);
-        showSuccessToast('Error', 'Failed to update setting', { position: 'top', visibilityTime: 2000 });
-      }
-    } else {
-      // Show toast for other settings
-      const message = `${setting?.title} ${statusText}`;
-      console.log(message);
-      showSuccessToast('Setting Updated', message, { position: 'top', visibilityTime: 2000 });
-    }
-  };
 
   return (
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="My Settings" onBackPress={onBack}/>
+      {/* Animated Header */}
+      <Animated.View
+        style={{
+          opacity: headerAnim,
+          transform: [
+            {
+              translateY: headerAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-20, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        <BackHeader title="My Settings" onBackPress={onBack}/>
+      </Animated.View>
 
       <View style={styles.content}>
-        {settings.map((setting) => (
-          <View key={setting.id} style={styles.card}>
+        {/* Animated Notifications Setting */}
+        <Animated.View
+          style={{
+            opacity: card1Anim,
+            transform: [
+              {
+                translateX: card1Anim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-30, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <View style={styles.card}>
             <View style={styles.textContainer}>
               <ThemeText variant="bodyBold" style={styles.title}>
-                {setting.title}
+                Notifications
               </ThemeText>
               <ThemeText variant="body" style={styles.description}>
-                {setting.description}
+                Enable or disable app notifications
               </ThemeText>
             </View>
             <Switch
-              value={setting.value}
-              onValueChange={(value) => handleToggleChange(setting.id, value)}
+              value={notifications}
+              onValueChange={(value) => onToggle('notifications', value)}
               trackColor={{ false: '#767577', true: '#3B4897' }}
-              thumbColor={setting.value ? '#ffffff' : '#f4f3f4'}
+              thumbColor={notifications ? '#ffffff' : '#f4f3f4'}
               ios_backgroundColor="#3e3e3e"
             />
           </View>
-        ))}
+        </Animated.View>
+
+        {/* Animated Sermon Alerts Setting */}
+        <Animated.View
+          style={{
+            opacity: card2Anim,
+            transform: [
+              {
+                translateX: card2Anim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <View style={styles.card}>
+            <View style={styles.textContainer}>
+              <ThemeText variant="bodyBold" style={styles.title}>
+                Sermon Alerts
+              </ThemeText>
+              <ThemeText variant="body" style={styles.description}>
+                Receive alerts when a live sermon starts
+              </ThemeText>
+            </View>
+            <Switch
+              value={sermonAlerts}
+              onValueChange={(value) => onToggle('sermon-alerts', value)}
+              trackColor={{ false: '#767577', true: '#3B4897' }}
+              thumbColor={sermonAlerts ? '#ffffff' : '#f4f3f4'}
+              ios_backgroundColor="#3e3e3e"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Animated Devotional Reminders Setting */}
+        <Animated.View
+          style={{
+            opacity: card3Anim,
+            transform: [
+              {
+                translateX: card3Anim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-30, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <View style={styles.card}>
+            <View style={styles.textContainer}>
+              <ThemeText variant="bodyBold" style={styles.title}>
+                Daily Devotional reminders
+              </ThemeText>
+              <ThemeText variant="body" style={styles.description}>
+                Get reminders to read the devotional
+              </ThemeText>
+            </View>
+            <Switch
+              value={devotionalReminders}
+              onValueChange={(value) => onToggle('devotional-reminders', value)}
+              trackColor={{ false: '#767577', true: '#3B4897' }}
+              thumbColor={devotionalReminders ? '#ffffff' : '#f4f3f4'}
+              ios_backgroundColor="#3e3e3e"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Animated Stay Logged In Setting */}
+        <Animated.View
+          style={{
+            opacity: card4Anim,
+            transform: [
+              {
+                translateX: card4Anim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <View style={styles.card}>
+            <View style={styles.textContainer}>
+              <ThemeText variant="bodyBold" style={styles.title}>
+                Stay Logged In
+              </ThemeText>
+              <ThemeText variant="body" style={styles.description}>
+                Keep your account signed in on this device.
+              </ThemeText>
+            </View>
+            <Switch
+              value={stayLoggedIn}
+              onValueChange={(value) => onToggle('stay-logged-in', value)}
+              trackColor={{ false: '#767577', true: '#3B4897' }}
+              thumbColor={stayLoggedIn ? '#ffffff' : '#f4f3f4'}
+              ios_backgroundColor="#3e3e3e"
+            />
+          </View>
+        </Animated.View>
       </View>
     </ScrollView>
   );

@@ -1,18 +1,38 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { StoreUI } from "@/src/screens/Home/Store/Store";
 import { useRouter } from "expo-router";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
-import { StoreProduct, storeProducts } from "@/src/constants/data";
 import { showSuccessToast, showInfoToast } from "@/src/utils/toast";
-import { Animated, Dimensions } from "react-native";
+import { Animated, Dimensions, ScrollView } from "react-native";
+import { useStore } from "@/src/hooks/store/useStore";
+import { StoreProduct } from "@/src/constants/data";
 
 export default function StorePage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
 
+  // Use the real store hook for products
+  const {
+    products: storeProducts,
+    pagination,
+    currentFilters,
+    setCurrentFilters,
+    isLoading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    refresh,
+    applyFilters,
+    loadingWishlists,
+    loadingCart,
+    handleWishlistAction,
+    handleCartAction,
+    cartCount,
+  } = useStore();
+
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
-  const carouselRef = useRef<any>(null);
+  const carouselRef = useRef<ScrollView | null>(null);
 
   // Get screen width for carousel calculations
   const screenWidth = Dimensions.get('window').width;
@@ -58,122 +78,89 @@ export default function StorePage() {
   };
 
   // State management
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filterValue, setFilterValue] = useState<string>("all");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [products, setProducts] = useState<StoreProduct[]>(storeProducts);
-  const [loadingProducts, setLoadingProducts] = useState<Set<string>>(new Set());
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Product modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [cartCount, setCartCount] = useState(2); // Simple cart state
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Constants
-  const itemsPerPage = 20;
   const filterOptions = [
     { label: "All Items", value: "all" },
-    { label: "Price: Low to High", value: "price_low_high" },
-    { label: "Price: High to Low", value: "price_high_low" },
+    { label: "Price: Low to High", value: "price_asc" },
+    { label: "Price: High to Low", value: "price_desc" },
   ];
 
-  // Simulate initial page loading for 2 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Filter logic
-  const filteredProducts = useMemo(() => {
-    let filtered = products;
-
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    return filtered;
-  }, [selectedCategory, searchQuery, products]);
-
-  // Pagination logic
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredProducts.slice(startIndex, endIndex);
-  }, [filteredProducts, currentPage]);
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const totalPages = pagination.last_page;
 
   // Event handlers
   const handleBack = () => {
     wrapperRef.current?.reverseAnimate(() => router.back());
   };
 
-  const handleFilterChange = (value: string) => {
-    setFilterValue(value);
+  const handleFilterChange = async (value: string) => {
+    await applyFilters({
+      sort_by: value,
+      page: 1,
+    });
 
-    if (value === "all") {
-      setSelectedCategory("All");
-    } else if (value === "price_low_high" || value === "price_high_low") {
-      // TODO: Implement price sorting functionality
-    } else {
-      setSelectedCategory(value);
-    }
+  };
 
-    setCurrentPage(1);
+  // Handle pagination
+  const handlePageChange = async (newPage: number) => {
+    await applyFilters({
+      page: newPage
+    });
   };
 
   const toggleWishlist = async (productId: string) => {
-    // Add to loading state
-    setLoadingProducts(prev => new Set(prev).add(productId));
+    // Find the product to determine current wishlist state
+    const product = storeProducts.find(p => p.id === productId);
+    if (!product) {
+      console.error('Product not found:', productId);
+      return;
+    }
 
-    // Simulate API call delay (2 seconds)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Determine action based on current wishlist state
+    const action = product.isInWishlist ? 'remove' : 'add';
 
-    // Update product state
-    setProducts(prevProducts => {
-      const updatedProducts = prevProducts.map(product => {
-        if (product.id === productId) {
-          const newWishlistState = !product.isInWishlist;
+    try {
+      // Call the hook to handle the API call
+      const result = await handleWishlistAction(productId, action);
 
-          // Show appropriate toast message
-          if (newWishlistState) {
-            showSuccessToast("Added to wishlist", "Product has been added to your wishlist");
-          } else {
-            showInfoToast("Removed from wishlist", "Product has been removed from your wishlist");
-          }
-
-          return { ...product, isInWishlist: newWishlistState };
+      if (result.success) {
+        // Show appropriate toast message
+        if (action === 'add') {
+          showSuccessToast("Added to wishlist", "Product has been added to your wishlist");
+        } else {
+          showInfoToast("Removed from wishlist", "Product has been removed from your wishlist");
         }
-        return product;
-      });
-      return updatedProducts;
-    });
 
-    // Remove from loading state
-    setLoadingProducts(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(productId);
-      return newSet;
-    });
+        // Refresh products to get updated wishlist state
+        await refresh();
+      } else {
+        // Handle error - show error toast
+        showInfoToast("Error", result.error || "Failed to update wishlist");
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      showInfoToast("Error", "An unexpected error occurred");
+    }
   };
 
   const handleCartPress = () => {
     console.log('Cart pressed');
+  };
+
+  // Handle search when search button is pressed
+  const handleSearchPress = async () => {
+    await applyFilters({
+      search: searchQuery,
+      page: 1,
+    });
   };
 
   // Product modal handlers
@@ -222,11 +209,24 @@ export default function StorePage() {
     setQuantity(prev => Math.max(prev - 1, 1)); // Min 1 item
   };
 
-  const addToCart = () => {
+  const addToCart = async () => {
     if (selectedProduct) {
-      showSuccessToast("Added to cart", `${selectedProduct.title} (${quantity}x) added to cart`);
-      setCartCount(prev => prev + quantity); // Add quantity to cart count
-      closeProductModal();
+      try {
+        // Call the cart action from the hook
+        const result = await handleCartAction(selectedProduct.id, quantity);
+
+        if (result.success) {
+          // Show success toast and close modal
+          showSuccessToast("Added to cart", "Product added successfully");
+          closeProductModal();
+        } else {
+          // Handle error - show error toast
+          showInfoToast("Error", result.error || "Failed to add to cart");
+        }
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        showInfoToast("Error", "An unexpected error occurred");
+      }
     }
   };
 
@@ -236,15 +236,18 @@ export default function StorePage() {
         onBack={handleBack}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        filterValue={filterValue}
+        handleSearchPress={handleSearchPress}
+        currentPage={currentFilters.page ?? 1}
+        handlePageChange={handlePageChange}
+        filterValue={currentFilters.sort_by ?? "all"}
         showFilterDropdown={showFilterDropdown}
         setShowFilterDropdown={setShowFilterDropdown}
-        loadingProducts={loadingProducts}
-        isInitialLoading={isInitialLoading}
+        isLoading={isLoading}
+        loadingWishlists={loadingWishlists}
+        loadingCart={loadingCart}
+        onRefresh={refresh}
         filterOptions={filterOptions}
-        paginatedProducts={paginatedProducts}
+        paginatedProducts={storeProducts}
         totalPages={totalPages}
         handleFilterChange={handleFilterChange}
         toggleWishlist={toggleWishlist}

@@ -6,6 +6,7 @@ import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
 import { useGive } from "@/src/hooks/useGive";
 import { PaystackProvider } from 'react-native-paystack-webview';
+import Constants from 'expo-constants';
 
 export default function GivePage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function GivePage() {
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <PaystackProvider
-        publicKey="pk_test_c37160decf98d151a7ef957d11c7567374e6ba62"
+        publicKey={Constants.expoConfig?.extra?.paystackPublicKey}
       >
         <GivePageContent onBack={handleBack} />
       </PaystackProvider>
@@ -59,7 +60,6 @@ function GivePageContent({ onBack }: { onBack: () => void }) {
     handleGiftTypeChange,
     handleAmountChange,
     submitGive,
-    handlePayment,
   } = useGive();
 
   return (
@@ -75,7 +75,6 @@ function GivePageContent({ onBack }: { onBack: () => void }) {
         amountError={errors.amount}
         isLoading={isSubmitting}
         showPaystack={showPaystack}
-        onPayment={handlePayment}
     />
   );
 }
