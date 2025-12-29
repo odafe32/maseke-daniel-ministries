@@ -1,14 +1,14 @@
 import React, { useMemo, useEffect, useCallback } from "react";
-import { View, ActivityIndicator, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Devotionals, DevotionalTheme } from "@/src/screens/Home/Devotionals/Devotionals";
+import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { Devotionals } from "@/src/screens/Home/Devotionals/Devotionals";
 import { DevotionalMonth, DevotionalsSidebar } from "@/src/screens/Home/Devotionals/DevotionalsSidebar";
 import { VideoIntro } from "@/src/screens/Home/Devotionals/VideoIntro";
 import { CompletionPage } from "@/src/screens/Home/Devotionals/CompletionPage";
 import { useDevotionalEntry } from "@/src/hooks/useDevotionals";
 import { useDevotionalsStore } from "@/src/stores/devotionalsStore";
 import { devotionApi } from "@/src/api/devotionApi";
+import { showToast } from "@/src/utils/toast";
 
-// Clean and format devotional content - preserve text, remove decorations
 const cleanDevotionalContent = (html: string): string => {
   if (!html) return '';
   
@@ -95,7 +95,15 @@ export default function DevotionalsPage() {
     themeOptions,
   } = useDevotionalsStore();
 
-  const { entry, isLoading, loadTodayEntry, loadEntryByDay } = useDevotionalEntry();
+  const { 
+    entry, 
+    isLoading, 
+    isLiking,
+    isBookmarking,
+    loadTodayEntry, 
+    loadEntryByDay,
+    toggleBookmark,
+  } = useDevotionalEntry();
 
   const selectedTheme = useMemo(
     () => themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0],
@@ -219,6 +227,36 @@ export default function DevotionalsPage() {
     setIsLoadingEntry(false);
   };
 
+const handleBookmarkToggle = async () => {
+  if (!entry) {
+    console.warn('No entry loaded yet');
+    return;
+  }
+  
+  if (isBookmarking) {
+    console.warn('Already bookmarking');
+    return;
+  }
+  
+  try {
+    const result = await toggleBookmark();
+    if (result) {
+      showToast({
+        type: result.bookmarked ? 'success' : 'info',
+        title: result.bookmarked ? 'Bookmarked' : 'Bookmark Removed',
+        message: result.bookmarked ? 'Devotional saved to your bookmarks' : 'Devotional removed from bookmarks',
+      });
+    }
+  } catch (error) {
+    console.error('Failed to toggle bookmark:', error);
+    showToast({
+      type: 'error',
+      title: 'Error',
+      message: 'Failed to update bookmark',
+    });
+  }
+};
+
   // Handle prev page
   const handlePrevPage = useCallback(async () => {
     if (currentDayNumber <= 1 || isNavigating) return;
@@ -265,26 +303,28 @@ export default function DevotionalsPage() {
   return (
     <>
       {!isLoadingEntry && !showVideoIntro && (
-       <Devotionals
-        onOpenSidebar={() => setSidebarVisible(true)}
-        settingsVisible={settingsVisible}
-        onToggleSettings={() => setSettingsVisible(!settingsVisible)}
-        onShowSettings={() => setSettingsVisible(true)}
-        onHideSettings={() => setSettingsVisible(false)}
-        themeOptions={themeOptions}
-        content={content}
-        currentMonth={currentMonth}
-        currentDayNumber={entry?.day_number || currentDayNumber}
-        selectedThemeId={selectedThemeId}
-        onSelectTheme={(id) => setSelectedThemeId(id)}
-        fontSize={fontSize}
-        onFontSizeChange={(delta) => setFontSize(Math.max(12, Math.min(30, fontSize + delta)))}
-        onPrevPage={handlePrevPage}
-        onNextPage={handleNextPage}
-        devotionalEntryId={entry?.id}
-        totalDays={entry?.total_days || currentMonth?.entries_count || 31}
-        isNavigating={isNavigating}
-      />
+        <Devotionals
+          onOpenSidebar={() => setSidebarVisible(true)}
+          settingsVisible={settingsVisible}
+          onToggleSettings={() => setSettingsVisible(!settingsVisible)}
+          onShowSettings={() => setSettingsVisible(true)}
+          onHideSettings={() => setSettingsVisible(false)}
+          themeOptions={themeOptions}
+          content={content}
+          currentMonth={currentMonth}
+          currentDayNumber={entry?.day_number || currentDayNumber}
+          selectedThemeId={selectedThemeId}
+          onSelectTheme={(id) => setSelectedThemeId(id)}
+          fontSize={fontSize}
+          onFontSizeChange={(delta) => setFontSize(Math.max(12, Math.min(30, fontSize + delta)))}
+          onPrevPage={handlePrevPage}
+          onNextPage={handleNextPage}
+          devotionalEntryId={entry?.id}
+          totalDays={entry?.total_days || currentMonth?.entries_count || 31}
+          isNavigating={isNavigating}
+          isBookmarking={isBookmarking}
+          onBookmarkToggle={handleBookmarkToggle}
+        />
       )}
 
       <DevotionalsSidebar
@@ -296,7 +336,7 @@ export default function DevotionalsPage() {
         accentColor={selectedTheme.accentColor}
       />
 
-        {/* Loading Overlay - shows when navigating/loading */}
+      {/* Loading Overlay - shows when navigating/loading */}
       {(isLoading || isLoadingEntry || isNavigating) && !showVideoIntro && (
         <View style={[styles.loadingOverlay, { backgroundColor: selectedTheme.backgroundColor }]}>
           <ActivityIndicator size="large" color={selectedTheme.textColor} />
@@ -306,7 +346,7 @@ export default function DevotionalsPage() {
         </View>
       )}
 
-       {showVideoIntro && (
+      {showVideoIntro && (
         <VideoIntro 
           key={`video-${videoKey}-${pendingVideoUrl}`}
           onBeginDevotional={handleBeginDevotional} 

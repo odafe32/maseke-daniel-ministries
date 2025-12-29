@@ -193,6 +193,27 @@ export type OrderStatus =
   | 'completed'
   | 'cancelled'
   | 'refunded';
+
+export interface OrderPayment {
+  id: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  amount: number;
+  method: string;
+  reference: string;
+}
+
+export interface OrderPickup {
+  id: string;
+  pickup_code: string;
+  pickup_status: 'pending' | 'available' | 'picked_up' | 'cancelled';
+}
+
+export interface OrderShipping {
+  id: string;
+  status: 'pending' | 'processing' | 'in_transit' | 'delivered' | 'failed';
+  tracking_number: string;
+  carrier: string;
+}
   
 export interface OrderItem {
   id: string;
@@ -203,6 +224,8 @@ export interface OrderItem {
     image: string | null;
   } | null;
   quantity: number;
+  amount: number;
+  subtotal: number;
   image: any;
 }
 
@@ -223,7 +246,7 @@ export interface Order {
 export const ordersData: Order[] = [
   {
     id: "1",
-    status: "available for pickup",
+    status: "ready_for_pickup",
     deliveryType: "pickup",
     totalAmount: 120.00,
     itemsCount: 10,
@@ -239,6 +262,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "2",
@@ -251,6 +275,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "3",
@@ -263,6 +288,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "4",
@@ -275,6 +301,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "5",
@@ -287,6 +314,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "6",
@@ -299,6 +327,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "7",
@@ -311,6 +340,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "8",
@@ -323,6 +353,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "9",
@@ -335,6 +366,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
       {
         id: "10",
@@ -347,6 +379,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 60.00,
         subtotal: 120.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       },
     ],
     payment: {
@@ -383,6 +416,7 @@ export const ordersData: Order[] = [
         quantity: 1,
         amount: 85.00,
         subtotal: 85.00,
+        image: require("../assets/images/wishlist/image-4.jpg"),
       }
     ],
     payment: {
@@ -420,6 +454,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 75.00,
         subtotal: 150.00,
+        image: require("../assets/images/wishlist/image-2.jpg"),
       }
     ],
     payment: {
@@ -457,6 +492,7 @@ export const ordersData: Order[] = [
         quantity: 1,
         amount: 45.00,
         subtotal: 45.00,
+        image: require("../assets/images/wishlist/image-3.jpg"),
       }
     ],
     payment: {
@@ -493,6 +529,7 @@ export const ordersData: Order[] = [
         quantity: 2,
         amount: 100.00,
         subtotal: 200.00,
+        image: require("../assets/images/wishlist/image-1.jpg"),
       }
     ],
     payment: {

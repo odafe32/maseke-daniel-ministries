@@ -1,367 +1,277 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
   View,
-  TouchableOpacity,
+  Text,
+  StyleSheet,
   FlatList,
+  TouchableOpacity,
   RefreshControl,
   Animated,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { Bell, ArrowLeft, Trash2 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Feather } from "@expo/vector-icons";
-import { BackHeader, ThemeText } from "@/src/components";
-import {  fs, getColor } from "@/src/utils";
-import { Icon } from "@/src/components/icons/Icon";
+// Add these animation declarations at the top of your component or before the return statement
+const Notifications = () => {
+  const router = useRouter();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  date: string;
-  time: string;
-  read: boolean;
-  type: string;
-}
-
-interface NotificationCardProps {
-  item: NotificationItem;
-  onPress: () => void;
-  index: number;
-}
-
-function NotificationCard({ item, onPress, index }: NotificationCardProps) {
-  const colors = getColor();
-  const cardAnim = useRef(new Animated.Value(0)).current;
+  // ADD THESE MISSING ANIMATED VALUES
+  const headerAnim = new Animated.Value(0);
+  const titleAnim = new Animated.Value(0);
+  const emptyStateAnim = new Animated.Value(0);
 
   useEffect(() => {
-    Animated.spring(cardAnim, {
+    // Animate header on mount
+    Animated.timing(headerAnim, {
       toValue: 1,
-      tension: 50,
-      friction: 8,
-      delay: 300 + (index * 80), // Staggered animation
+      duration: 300,
       useNativeDriver: true,
     }).start();
-  }, []);
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'sermon':
-        return 'play-circle';
-      case 'devotional':
-        return 'book-open';
-      case 'live':
-        return 'video';
-      case 'prayer':
-        return 'heart';
-      case 'testimony':
-        return 'message-circle';
-      case 'event':
-        return 'calendar';
-      case 'donation':
-        return 'dollar-sign';
-      case 'app':
-        return 'smartphone';
-      default:
-        return 'bell';
+    // Animate title
+    Animated.timing(titleAnim, {
+      toValue: 1,
+      duration: 400,
+      delay: 100,
+      useNativeDriver: true,
+    }).start();
+
+    // Animate empty state if no notifications
+    if (notifications.length === 0) {
+      Animated.timing(emptyStateAnim, {
+        toValue: 1,
+        duration: 500,
+        delay: 200,
+        useNativeDriver: true,
+      }).start();
     }
+  }, [notifications.length]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Simulate refresh
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
   };
 
-  return (
-    <Animated.View
-      style={{
-        opacity: cardAnim,
-        transform: [
-          {
-            translateY: cardAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [20, 0],
-            }),
-          },
-          {
-            scale: cardAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.95, 1],
-            }),
-          },
-        ],
-      }}
-    >
-      <View style={styles.iconContainer}>
-        <Feather
-          name={getIcon(item.type) as keyof typeof Feather.glyphMap}
-          size={24}
-          color={item.read ? colors.muted : "#0C154C"}
-        />
+  const handleDeleteNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+  };
+
+  const renderNotification = ({ item }: { item: any }) => (
+    <TouchableOpacity style={styles.notificationCard}>
+      <View style={styles.notificationContent}>
+        <View style={styles.iconContainer}>
+          <Bell size={24} color="#6B46C1" />
+        </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationMessage}>{item.message}</Text>
+          <Text style={styles.notificationTime}>{item.time}</Text>
+        </View>
       </View>
-
-      <View style={styles.content}>
-        <View style={styles.cardHeader}>
-          <ThemeText variant="h5" style={item.read ? styles.title : [styles.title, styles.unreadTitle]}>
-            {item.title}
-          </ThemeText>
-          {!item.read && <View style={styles.unreadDot} />}
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.cardHeader}>
-            <ThemeText variant="h5" style={item.read ? styles.title : [styles.title, styles.unreadTitle]}>
-              {item.title}
-            </ThemeText>
-            {!item.read && <View style={styles.unreadDot} />}
-          </View>
-
-          <ThemeText variant="body" color={colors.muted} style={styles.message}>
-            {item.message}
-          </ThemeText>
-
-          <ThemeText variant="caption" color={colors.muted} style={styles.timestamp}>
-            {item.date} at {item.time}
-          </ThemeText>
-        </View>
-
-        <Feather name="chevron-right" size={20} color="#5E596E" />
+      <TouchableOpacity
+        onPress={() => handleDeleteNotification(item.id)}
+        style={styles.deleteButton}
+      >
+        <Trash2 size={20} color="#EF4444" />
       </TouchableOpacity>
-    </Animated.View>
+    </TouchableOpacity>
   );
-}
 
-export function Notifications({
-  onBack,
-  notifications,
-  onNotificationPress,
-  onRefresh,
-  refreshing,
-  onClearAll,
-}: {
-  onBack?: () => void;
-  notifications: NotificationItem[];
-  onNotificationPress: (id: string) => void;
-  onRefresh?: () => void;
-  refreshing?: boolean;
-  onClearAll?: () => void;
-}) {
-  const handleNotificationPress = (id: string) => {
-    onNotificationPress(id);
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const renderHeader = () => (
-    <View style={styles.container}>
-      {/* Animated Header */}
-      <Animated.View
-        style={{
-          opacity: headerAnim,
+  const EmptyState = () => (
+    <Animated.View
+      style={[
+        styles.emptyState,
+        {
+          opacity: emptyStateAnim,
           transform: [
             {
-              translateY: headerAnim.interpolate({
+              translateY: emptyStateAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [-20, 0],
+                outputRange: [20, 0],
               }),
             },
           ],
-        }}
-      >
-        <BackHeader title="Notifications" onBackPress={onBack} />
-      </Animated.View>
+        },
+      ]}
+    >
+      <Bell size={64} color="#9CA3AF" />
+      <Text style={styles.emptyTitle}>No Notifications</Text>
+      <Text style={styles.emptyMessage}>
+        You're all caught up! Check back later for updates.
+      </Text>
+    </Animated.View>
+  );
 
-      {/* Animated Title Section */}
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header */}
       <Animated.View
         style={[
           styles.header,
           {
-            opacity: titleAnim,
+            opacity: headerAnim,
             transform: [
               {
-                translateY: titleAnim.interpolate({
+                translateY: headerAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [-15, 0],
+                  outputRange: [-20, 0],
                 }),
               },
             ],
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          <ThemeText variant="h4" style={styles.headerTitle}>
-            Your Notifications
-          </ThemeText>
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <ThemeText variant="caption" style={styles.badgeText}>
-                {unreadCount} unread
-              </ThemeText>
-            </View>
-          )}
-        </View>
-        {notifications.length > 0 && onClearAll && (
-          <TouchableOpacity onPress={onClearAll} style={styles.clearButton}>
-            <ThemeText variant="bodySmall" style={styles.clearButtonText}>
-              Clear All
-            </ThemeText>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color="#1F2937" />
+        </TouchableOpacity>
+        <Animated.Text
+          style={[
+            styles.title,
+            {
+              opacity: titleAnim,
+              transform: [
+                {
+                  translateY: titleAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-10, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          Notifications
+        </Animated.Text>
+        <View style={styles.placeholder} />
       </Animated.View>
-    </View>
-  );
 
-  const renderEmpty = () => {
-    const colors = getColor();
-    return (
-      <Animated.View
-        style={[
-          styles.emptyContainer,
-          {
-            opacity: emptyStateAnim,
-            transform: [
-              {
-                scale: emptyStateAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.8, 1],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <Icon name="empty" size={56} color={colors.muted} />
-        <ThemeText variant="h4" style={styles.emptyTitle}>
-          No notifications yet
-        </ThemeText>
-      </Animated.View>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-    <FlatList
-      data={notifications}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item, index }) => (
-        <NotificationCard
-          item={item}
-          index={index}
-          onPress={() => handleNotificationPress(item.id)}
-        />
-      )}
-      ListHeaderComponent={renderHeader}
-      ListEmptyComponent={renderEmpty}
-      contentContainerStyle={styles.listContainer}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        onRefresh ? (
-          <RefreshControl
-            refreshing={refreshing || false}
-            onRefresh={onRefresh}
-            colors={[getColor().primary]}
-            tintColor={getColor().primary}
-          />
-        ) : undefined
-      }
-    />
-    </View>
+      {/* Notifications List */}
+      <FlatList
+        data={notifications}
+        renderItem={renderNotification}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={
+          notifications.length === 0 ? styles.emptyContainer : styles.listContent
+        }
+        ListEmptyComponent={<EmptyState />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      />
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    paddingHorizontal: 12,
-    paddingBottom: 20,
+    flex: 1,
+    backgroundColor: "#F9FAFB",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: {
-    color: "#0C154C",
-  },
-  badge: {
-    backgroundColor: "#0C154C",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    color: "#fff",
-  },
-  clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#F0F4FF',
-  },
-  clearButtonText: {
-    color: '#0C154C',
-  },
-  listContainer: {
-    gap: 12,
-  },
-  notificationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  unreadCard: {
-    backgroundColor: "#F0F7FF",
-    borderLeftWidth: 4,
-    borderLeftColor: "#0C154C",
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F7F7FB",
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    gap: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  backButton: {
+    padding: 8,
   },
   title: {
-    flex: 1,
-    color: "#0C154C",
-  },
-  unreadTitle: {
+    fontSize: 20,
     fontFamily: "Geist-SemiBold",
+    color: "#1F2937",
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#0C154C",
+  placeholder: {
+    width: 40,
   },
-  message: {
-    lineHeight: 18,
-  },
-  timestamp: {
-    fontSize: fs(12),
+  listContent: {
+    padding: 16,
   },
   emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  notificationCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  notificationContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#EDE9FE",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontFamily: "Geist-SemiBold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  notificationMessage: {
+    fontSize: 14,
+    fontFamily: "DMSans-Regular",
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  notificationTime: {
+    fontSize: 12,
+    fontFamily: "DMSans-Regular",
+    color: "#9CA3AF",
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyTitle: {
+    fontSize: 20,
+    fontFamily: "Geist-SemiBold",
+    color: "#1F2937",
     marginTop: 16,
-    color: "#666",
-    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    fontFamily: "DMSans-Regular",
+    color: "#6B7280",
+    textAlign: "center",
   },
 });
+
+export default Notifications;
