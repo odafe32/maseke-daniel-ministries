@@ -24,11 +24,7 @@ export default function ProfilePage() {
   const [formEmail, setFormEmail] = useState(user?.email || "");
   const [formPhone, setFormPhone] = useState(user?.phone_number || "");
   const [formAddress, setFormAddress] = useState(user?.address || "");
-<<<<<<< HEAD
-  const [formAvatar, setFormAvatar] = useState<string>(user?.avatar || "");
-=======
   const [isSaving, setIsSaving] = useState(false);
->>>>>>> main
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
@@ -43,12 +39,7 @@ export default function ProfilePage() {
       setFormEmail(user.email);
       setFormPhone(user.phone_number || "");
       setFormAddress(user.address || "");
-<<<<<<< HEAD
-      setFormAvatar(user.avatar || "");
-      setAvatar(user.avatar_base64 || user.avatar_url || avatarUri);
-=======
       setAvatar(user.avatar_url || avatarUri);
->>>>>>> main
     }
   }, [user]);
 
