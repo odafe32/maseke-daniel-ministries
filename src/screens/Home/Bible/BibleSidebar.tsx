@@ -372,7 +372,7 @@ export function BibleSidebar({ visible, onClose, onSelectChapter, surfaceColor, 
                   setSelectedBook(modalBook);
                 }}
               >
-                <Text style={[styles.modalButtonText, { color: primaryText }]}>Access Online</Text>
+                <Text style={[styles.modalButtonText, { color: primaryText }]}>Read </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton, { backgroundColor: accent }]}
