@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
@@ -39,6 +40,8 @@ interface PaymentUIProps {
   totalCartAmount: number;
   onBack: () => void;
   onPayNow: () => void;
+  refreshing: boolean;
+  onRefresh: () => void;
   isProcessing: boolean;
   isLoadingStations?: boolean;
   isLoadingCartTotal?: boolean;
@@ -51,6 +54,8 @@ export function PaymentUI({
   totalCartAmount,
   onBack,
   onPayNow,
+  refreshing,
+  onRefresh,
   isProcessing,
   isLoadingStations = false,
   isLoadingCartTotal = false,
@@ -63,6 +68,12 @@ export function PaymentUI({
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
       >
         <BackHeader 
           title="Make Payment" 
