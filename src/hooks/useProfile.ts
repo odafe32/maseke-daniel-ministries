@@ -73,6 +73,36 @@ export const useProfile = () => {
     }
   };
 
+  const updateAvatar = async (avatar: { avatar: string }) => {
+    setIsUpdating(true);
+    setError(null);
+    try {
+      const response = await profileApi.updateAvatar(avatar);
+      if (response.data.success) {
+        const { user } = response.data;
+        setUser(user);
+        await AsyncStorage.setItem('authUser', JSON.stringify(user));
+        return true;
+      }else{
+        return false;
+      }
+    } catch (err: any) {
+      console.error('Update avatar error:', err.response?.data);
+      const errors = err.response?.data?.errors;
+      let errorMessage = 'Failed to update avatar';
+      if (errors) {
+        const firstField = Object.keys(errors)[0];
+        errorMessage = errors[firstField][0] || errorMessage;
+      } else {
+        errorMessage = err.response?.data?.message || errorMessage;
+      }
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getProfile = async () => {
     setIsFetching(true);
     setError(null);
@@ -123,6 +153,7 @@ export const useProfile = () => {
 
   return {
     updateProfile,
+    updateAvatar,
     getProfile,
     changePassword,
     isUpdating,

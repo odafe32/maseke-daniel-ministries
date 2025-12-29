@@ -101,33 +101,6 @@ export const profileActions = [
   { id: "logout", label: "Logout", icon: "log-out", link: undefined },
 ];
 
-export const settingsData = [
-  {
-    id: 'notifications',
-    title: 'Notifications',
-    description: 'Enable or disable app notifications',
-    value: true,
-  },
-  {
-    id: 'sermon-alerts',
-    title: 'Sermon Alerts',
-    description: 'Receive alerts when a live sermon starts',
-    value: true,
-  },
-  {
-    id: 'devotional-reminders',
-    title: 'Daily Devotional reminders',
-    description: 'Get reminders to read the devotional',
-    value: true,
-  },
-  {
-    id: 'stay-logged-in',
-    title: 'Stay Logged In',
-    description: 'Keep your account signed in on this device.',
-    value: true,
-  },
-];
-
 export type NoteType = 'devotional' | 'bible';
 
 export interface SavedNote {
@@ -211,180 +184,355 @@ export const wishListData = [
   },
 ];
 
-export type OrderStatus = 'completed' | 'cancelled' | 'processing' | 'available for pickup';
-
+export type OrderStatus = 
+  | 'pending'
+  | 'paid'
+  | 'processing'
+  | 'shipped'
+  | 'ready_for_pickup'
+  | 'completed'
+  | 'cancelled'
+  | 'refunded';
+  
 export interface OrderItem {
   id: string;
-  title: string;
-  price: number;
+  product: {
+    id: string;
+    title: string;
+    price: number;
+    image: string | null;
+  } | null;
   quantity: number;
-  image: ImageSourcePropType;
+  image: any;
 }
 
 export interface Order {
   id: string;
-  orderNumber: string;
-  date: string;
   status: OrderStatus;
+  deliveryType: string;
   totalAmount: number;
+  itemsCount: number;
   items: OrderItem[];
+  payment: OrderPayment | null;
+  pickup: OrderPickup | null;
+  shipping: OrderShipping | null;
+  createdDate: string;
+  updatedDate: string;
 }
 
 export const ordersData: Order[] = [
   {
     id: "1",
-    orderNumber: "ORD31121",
-    date: "2024-11-28",
     status: "available for pickup",
+    deliveryType: "pickup",
     totalAmount: 120.00,
+    itemsCount: 10,
     items: [
       {
         id: "1",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "1",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "2",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "2",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "3",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "3",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "4",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "4",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "5",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "5",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "6",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "6",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "7",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "7",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "8",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "8",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "9",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "9",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
       {
         id: "10",
-        title: "King James Bible",
-        price: 60.00,
+        product: {
+          id: "10",
+          title: "King James Bible",
+          price: 60.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 60.00,
+        subtotal: 120.00,
       },
-    ]
+    ],
+    payment: {
+      id: "pay1",
+      status: "completed",
+      amount: 120.00,
+      method: "card",
+      reference: "REF123456",
+    },
+    pickup: {
+      id: "pickup1",
+      pickup_code: "PICK123",
+      pickup_status: "available",
+    },
+    shipping: null,
+    createdDate: "2024-11-28T10:00:00.000Z",
+    updatedDate: "2024-11-28T10:00:00.000Z",
   },
   {
     id: "2", 
-    orderNumber: "ORD31122",
-    date: "2024-11-27",
     status: "processing",
+    deliveryType: "shipping",
     totalAmount: 85.00,
+    itemsCount: 1,
     items: [
       {
         id: "2",
-        title: "Holy Scriptures",
-        price: 85.00,
+        product: {
+          id: "2",
+          title: "Holy Scriptures",
+          price: 85.00,
+          image: require("../assets/images/wishlist/image-4.jpg"),
+        },
         quantity: 1,
-        image: require("../assets/images/wishlist/image-4.jpg"),
+        amount: 85.00,
+        subtotal: 85.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay2",
+      status: "completed",
+      amount: 85.00,
+      method: "card",
+      reference: "REF123457",
+    },
+    pickup: null,
+    shipping: {
+      id: "ship1",
+      status: "in_transit",
+      tracking_number: "TRACK123456",
+      carrier: "DHL",
+    },
+    createdDate: "2024-11-27T10:00:00.000Z",
+    updatedDate: "2024-11-27T10:00:00.000Z",
   },
   {
     id: "3",
-    orderNumber: "ORD31123", 
-    date: "2024-11-26",
     status: "completed",
+    deliveryType: "shipping",
     totalAmount: 150.00,
+    itemsCount: 2,
     items: [
       {
         id: "3",
-        title: "King James Bible Gray",
-        price: 75.00,
+        product: {
+          id: "3",
+          title: "King James Bible Gray",
+          price: 75.00,
+          image: require("../assets/images/wishlist/image-2.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-2.jpg"),
+        amount: 75.00,
+        subtotal: 150.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay3",
+      status: "completed",
+      amount: 150.00,
+      method: "card",
+      reference: "REF123458",
+    },
+    pickup: null,
+    shipping: {
+      id: "ship2",
+      status: "delivered",
+      tracking_number: "TRACK123457",
+      carrier: "FedEx",
+    },
+    createdDate: "2024-11-26T10:00:00.000Z",
+    updatedDate: "2024-11-26T10:00:00.000Z",
   },
   {
     id: "4",
-    orderNumber: "ORD31124",
-    date: "2024-11-25", 
     status: "cancelled",
+    deliveryType: "pickup",
     totalAmount: 45.00,
+    itemsCount: 1,
     items: [
       {
         id: "4",
-        title: "Study Guide",
-        price: 45.00,
+        product: {
+          id: "4",
+          title: "Study Guide",
+          price: 45.00,
+          image: require("../assets/images/wishlist/image-3.jpg"),
+        },
         quantity: 1,
-        image: require("../assets/images/wishlist/image-3.jpg"),
+        amount: 45.00,
+        subtotal: 45.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay4",
+      status: "refunded",
+      amount: 45.00,
+      method: "card",
+      reference: "REF123459",
+    },
+    pickup: {
+      id: "pickup2",
+      pickup_code: "PICK124",
+      pickup_status: "cancelled",
+    },
+    shipping: null,
+    createdDate: "2024-11-25T10:00:00.000Z",
+    updatedDate: "2024-11-25T10:00:00.000Z",
   },
   {
     id: "5",
-    orderNumber: "ORD31125",
-    date: "2024-11-24",
     status: "processing",
+    deliveryType: "shipping",
     totalAmount: 200.00,
+    itemsCount: 2,
     items: [
       {
         id: "5",
-        title: "Complete Bible Set",
-        price: 100.00,
+        product: {
+          id: "5",
+          title: "Complete Bible Set",
+          price: 100.00,
+          image: require("../assets/images/wishlist/image-1.jpg"),
+        },
         quantity: 2,
-        image: require("../assets/images/wishlist/image-1.jpg"),
+        amount: 100.00,
+        subtotal: 200.00,
       }
-    ]
+    ],
+    payment: {
+      id: "pay5",
+      status: "completed",
+      amount: 200.00,
+      method: "card",
+      reference: "REF123460",
+    },
+    pickup: null,
+    shipping: {
+      id: "ship3",
+      status: "processing",
+      tracking_number: "TRACK123458",
+      carrier: "UPS",
+    },
+    createdDate: "2024-11-24T10:00:00.000Z",
+    updatedDate: "2024-11-24T10:00:00.000Z",
   }
 ];
+
+export interface PickupStation {
+  id: string;
+  title: string;
+  name: string;
+  address: string;
+  contact_phone: string;
+  open_hours: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface StoreProduct {
   id: string;
   title: string;
   price: number;
   beforePrice?: number | null;
-  image: ImageSourcePropType;
+  image: string | null;
   category: string;
   description: string;
-  inStock: boolean;
   stockCount: number;
   createdDate: string;
   updatedDate: string;
@@ -393,37 +541,61 @@ export interface StoreProduct {
 
 export interface CartItem {
   id: string;
-  productId: string;
   title: string;
   price: number;
-  image: ImageSourcePropType;
+  beforePrice?: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  createdDate: string;
+  updatedDate: string;
   quantity: number;
+  subtotal: number;
+  cartAddedDate: string;
 }
 
 export const cartItemsData: CartItem[] = [
   {
-    id: "1",
-    productId: "1",
+    id: "uuid-product-1",
     title: "King James Bible - Deluxe Edition",
     price: 25.99,
-    image: require("../assets/images/wishlist/image-1.jpg"),
+    beforePrice: 35.99,
+    image: "https://example.com/storage/products/image1.jpg",
+    category: "Bibles",
+    description: "Beautiful leather-bound King James Bible with gold edges and ribbon marker",
+    createdDate: "2024-01-15T18:00:00.000Z",
+    updatedDate: "2024-11-28T18:00:00.000Z",
     quantity: 2,
+    subtotal: 51.98,
+    cartAddedDate: "2024-11-28T18:30:00.000Z"
   },
   {
-    id: "2", 
-    productId: "4",
+    id: "uuid-product-2", 
     title: "Daily Devotional Journal",
     price: 9.99,
-    image: require("../assets/images/wishlist/image-2.jpg"),
+    beforePrice: null,
+    image: "https://example.com/storage/products/image2.jpg",
+    category: "Journals",
+    description: "365-day devotional journal with scripture verses and reflection space",
+    createdDate: "2024-01-25T17:00:00.000Z",
+    updatedDate: "2024-11-22T17:00:00.000Z",
     quantity: 1,
+    subtotal: 9.99,
+    cartAddedDate: "2024-11-22T18:15:00.000Z"
   },
   {
-    id: "3",
-    productId: "7", 
+    id: "uuid-product-3",
     title: "Children's Bible Stories",
     price: 14.99,
-    image: require("../assets/images/wishlist/image-3.jpg"),
+    beforePrice: 19.99,
+    image: "https://example.com/storage/products/image3.jpg",
+    category: "Children",
+    description: "Beautifully illustrated bible stories for children of all ages",
+    createdDate: "2024-03-20T18:00:00.000Z",
+    updatedDate: "2024-11-26T18:00:00.000Z",
     quantity: 3,
+    subtotal: 44.97,
+    cartAddedDate: "2024-11-26T18:30:00.000Z"
   },
 ];
 
@@ -436,7 +608,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Bibles",
     description: "Beautiful leather-bound King James Bible with gold edges and ribbon marker",
-    inStock: true,
     stockCount: 45,
     createdDate: "2024-01-15",
     updatedDate: "2024-11-28",
@@ -450,7 +621,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Bibles",
     description: "Complete Holy Scriptures with detailed commentary and study notes",
-    inStock: true,
     stockCount: 32,
     createdDate: "2024-02-20",
     updatedDate: "2024-11-25",
@@ -464,7 +634,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Study Guides",
     description: "Comprehensive study guide for the New Testament with questions and answers",
-    inStock: true,
     stockCount: 67,
     createdDate: "2024-03-10",
     updatedDate: "2024-11-20",
@@ -478,7 +647,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Journals",
     description: "365-day devotional journal with scripture verses and reflection space",
-    inStock: true,
     stockCount: 89,
     createdDate: "2024-01-25",
     updatedDate: "2024-11-22",
@@ -492,7 +660,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Prayer Books",
     description: "Collection of powerful prayers for different occasions and needs",
-    inStock: true,
     stockCount: 28,
     createdDate: "2024-04-05",
     updatedDate: "2024-11-18",
@@ -506,7 +673,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Reference",
     description: "Detailed bible maps and historical atlas for better understanding",
-    inStock: true,
     stockCount: 15,
     createdDate: "2024-02-15",
     updatedDate: "2024-11-15",
@@ -520,7 +686,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Children",
     description: "Beautifully illustrated bible stories for children of all ages",
-    inStock: true,
     stockCount: 94,
     createdDate: "2024-03-20",
     updatedDate: "2024-11-26",
@@ -534,7 +699,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Music",
     description: "Collection of uplifting worship songs and hymns",
-    inStock: true,
     stockCount: 56,
     createdDate: "2024-05-12",
     updatedDate: "2024-11-19",
@@ -548,7 +712,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Accessories",
     description: "Handcrafted leather bible cover with zipper and pen holder",
-    inStock: true,
     stockCount: 38,
     createdDate: "2024-06-08",
     updatedDate: "2024-11-21",
@@ -562,7 +725,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Study Guides",
     description: "Comprehensive theology textbook for students and scholars",
-    inStock: true,
     stockCount: 12,
     createdDate: "2024-04-18",
     updatedDate: "2024-11-17",
@@ -576,7 +738,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Christian Living",
     description: "Practical guide to applying biblical principles in daily life",
-    inStock: true,
     stockCount: 73,
     createdDate: "2024-03-15",
     updatedDate: "2024-11-23",
@@ -590,7 +751,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Digital",
     description: "Advanced bible study software with multiple translations and tools",
-    inStock: true,
     stockCount: 8,
     createdDate: "2024-07-22",
     updatedDate: "2024-11-16",
@@ -604,7 +764,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Inspiration",
     description: "Inspiring stories of missionaries and their work around the world",
-    inStock: true,
     stockCount: 41,
     createdDate: "2024-05-30",
     updatedDate: "2024-11-14",
@@ -618,7 +777,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Reference",
     description: "Comprehensive history of the Christian church from ancient times",
-    inStock: true,
     stockCount: 19,
     createdDate: "2024-04-12",
     updatedDate: "2024-11-13",
@@ -632,7 +790,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Gift Items",
     description: "Set of 50 beautifully designed bible promise cards for encouragement",
-    inStock: true,
     stockCount: 156,
     createdDate: "2024-08-14",
     updatedDate: "2024-11-27",
@@ -646,7 +803,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Christian Living",
     description: "Biblical principles for building strong marriages and families",
-    inStock: true,
     stockCount: 52,
     createdDate: "2024-06-25",
     updatedDate: "2024-11-24",
@@ -660,7 +816,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Ministry",
     description: "Complete handbook for youth ministry leaders and volunteers",
-    inStock: true,
     stockCount: 24,
     createdDate: "2024-09-10",
     updatedDate: "2024-11-20",
@@ -674,7 +829,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Study Guides",
     description: "In-depth study of biblical prophecy and end times",
-    inStock: true,
     stockCount: 33,
     createdDate: "2024-07-08",
     updatedDate: "2024-11-12",
@@ -688,7 +842,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Fiction",
     description: "Inspirational Christian fiction novel with powerful message",
-    inStock: true,
     stockCount: 87,
     createdDate: "2024-10-05",
     updatedDate: "2024-11-25",
@@ -702,7 +855,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Discipleship",
     description: "Complete manual for training new disciples and church leaders",
-    inStock: true,
     stockCount: 21,
     createdDate: "2024-08-20",
     updatedDate: "2024-11-18",
@@ -716,7 +868,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Reference",
     description: "Comprehensive bible dictionary with detailed explanations",
-    inStock: true,
     stockCount: 16,
     createdDate: "2024-05-18",
     updatedDate: "2024-11-19",
@@ -730,7 +881,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-4.jpg"),
     category: "Worship",
     description: "Complete guide for worship leaders and music ministers",
-    inStock: true,
     stockCount: 35,
     createdDate: "2024-09-28",
     updatedDate: "2024-11-21",
@@ -744,7 +894,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-3.jpg"),
     category: "Christian Living",
     description: "Biblical principles for effective Christian parenting",
-    inStock: true,
     stockCount: 64,
     createdDate: "2024-07-15",
     updatedDate: "2024-11-22",
@@ -758,7 +907,6 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-2.jpg"),
     category: "Reference",
     description: "Complete bible concordance for easy scripture finding",
-    inStock: true,
     stockCount: 29,
     createdDate: "2024-06-30",
     updatedDate: "2024-11-17",
@@ -772,22 +920,23 @@ export const storeProducts: StoreProduct[] = [
     image: require("../assets/images/wishlist/image-1.jpg"),
     category: "Spiritual Growth",
     description: "Understanding spiritual warfare and standing firm in faith",
-    inStock: true,
     stockCount: 48,
     createdDate: "2024-08-05",
-    updatedDate: "2024-11-26",
-    isInWishlist: true
-  }
+    updatedDate: "2024-11-11",
+    isInWishlist: false
+  },
 ];
 
-export interface PickupDetails {
-  minister: string;
-  church: string;
-  phone: string;
+export interface IWishlist {
+  id: string;
+  title: string;
+  price: number;
+  beforePrice: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  createdDate: string;
+  updatedDate: string;
+  isInWishlist: boolean;
+  wishlistAddedDate: string;
 }
-
-export const pickupData: PickupDetails = {
-  minister: "Minister Eli",
-  church: "The Grace Dimension Church Jos",
-  phone: "(760) 895-234 98 111 1111"
-};

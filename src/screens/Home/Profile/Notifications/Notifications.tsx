@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
   TouchableOpacity,
   FlatList,
   RefreshControl,
+  Animated,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
@@ -25,10 +26,22 @@ interface NotificationItem {
 interface NotificationCardProps {
   item: NotificationItem;
   onPress: () => void;
+  index: number;
 }
 
-function NotificationCard({ item, onPress }: NotificationCardProps) {
+function NotificationCard({ item, onPress, index }: NotificationCardProps) {
   const colors = getColor();
+  const cardAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(cardAnim, {
+      toValue: 1,
+      tension: 50,
+      friction: 8,
+      delay: 300 + (index * 80), // Staggered animation
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -54,10 +67,24 @@ function NotificationCard({ item, onPress }: NotificationCardProps) {
   };
 
   return (
-    <TouchableOpacity
-      style={[styles.notificationCard, !item.read && styles.unreadCard]}
-      onPress={onPress}
-      activeOpacity={0.7}
+    <Animated.View
+      style={{
+        opacity: cardAnim,
+        transform: [
+          {
+            translateY: cardAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [20, 0],
+            }),
+          },
+          {
+            scale: cardAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.95, 1],
+            }),
+          },
+        ],
+      }}
     >
       <View style={styles.iconContainer}>
         <Feather
@@ -75,17 +102,26 @@ function NotificationCard({ item, onPress }: NotificationCardProps) {
           {!item.read && <View style={styles.unreadDot} />}
         </View>
 
-        <ThemeText variant="body" color={colors.muted} style={styles.message}>
-          {item.message}
-        </ThemeText>
+        <View style={styles.content}>
+          <View style={styles.cardHeader}>
+            <ThemeText variant="h5" style={item.read ? styles.title : [styles.title, styles.unreadTitle]}>
+              {item.title}
+            </ThemeText>
+            {!item.read && <View style={styles.unreadDot} />}
+          </View>
 
-        <ThemeText variant="caption" color={colors.muted} style={styles.timestamp}>
-          {item.date} at {item.time}
-        </ThemeText>
-      </View>
+          <ThemeText variant="body" color={colors.muted} style={styles.message}>
+            {item.message}
+          </ThemeText>
 
-      <Feather name="chevron-right" size={20} color="#5E596E" />
-    </TouchableOpacity>
+          <ThemeText variant="caption" color={colors.muted} style={styles.timestamp}>
+            {item.date} at {item.time}
+          </ThemeText>
+        </View>
+
+        <Feather name="chevron-right" size={20} color="#5E596E" />
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -112,9 +148,40 @@ export function Notifications({
 
   const renderHeader = () => (
     <View style={styles.container}>
-      <BackHeader title="Notifications" onBackPress={onBack} />
+      {/* Animated Header */}
+      <Animated.View
+        style={{
+          opacity: headerAnim,
+          transform: [
+            {
+              translateY: headerAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-20, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        <BackHeader title="Notifications" onBackPress={onBack} />
+      </Animated.View>
 
-      <View style={styles.header}>
+      {/* Animated Title Section */}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: titleAnim,
+            transform: [
+              {
+                translateY: titleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-15, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.headerLeft}>
           <ThemeText variant="h4" style={styles.headerTitle}>
             Your Notifications
@@ -134,19 +201,34 @@ export function Notifications({
             </ThemeText>
           </TouchableOpacity>
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 
   const renderEmpty = () => {
     const colors = getColor();
     return (
-      <View style={styles.emptyContainer}>
+      <Animated.View
+        style={[
+          styles.emptyContainer,
+          {
+            opacity: emptyStateAnim,
+            transform: [
+              {
+                scale: emptyStateAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <Icon name="empty" size={56} color={colors.muted} />
         <ThemeText variant="h4" style={styles.emptyTitle}>
           No notifications yet
         </ThemeText>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -155,9 +237,10 @@ export function Notifications({
     <FlatList
       data={notifications}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
         <NotificationCard
           item={item}
+          index={index}
           onPress={() => handleNotificationPress(item.id)}
         />
       )}
