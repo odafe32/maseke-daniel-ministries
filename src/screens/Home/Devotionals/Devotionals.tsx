@@ -51,7 +51,9 @@ interface DevotionalsProps {
   onNextPage: () => void;
   devotionalEntryId?: number;
   totalDays?: number;
-  isNavigating?: boolean; 
+  isNavigating?: boolean;
+  isBookmarking?: boolean;
+  onBookmarkToggle?: () => void;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -136,7 +138,6 @@ const formatDateLabel = (dateString?: string): string => {
     const dayNum = date.getDate();
     const monthName = months[date.getMonth()];
     
-    // Add ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
     const getOrdinal = (n: number): string => {
       const s = ['th', 'st', 'nd', 'rd'];
       const v = n % 100;
@@ -167,7 +168,9 @@ export function Devotionals({
   onNextPage,
   devotionalEntryId,
   totalDays = 31,
-  isNavigating = false, 
+  isNavigating = false,
+  isBookmarking = false,
+  onBookmarkToggle,
 }: DevotionalsProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -190,9 +193,9 @@ export function Devotionals({
 
   const readingBodyLineHeight = Math.max(26, fontSize * 1.6);
 
-const headerTitle = useMemo(() => {
-  return formatDateLabel(content.dateLabel);
-}, [content.dateLabel]);
+  const headerTitle = useMemo(() => {
+    return formatDateLabel(content.dateLabel);
+  }, [content.dateLabel]);
 
   const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
   const statusBarBackground = selectedTheme?.backgroundColor ?? "#fff";
@@ -402,6 +405,12 @@ const headerTitle = useMemo(() => {
     }
   };
 
+  const handleBookmarkToggle = () => {
+    if (onBookmarkToggle) {
+      onBookmarkToggle();
+    }
+  };
+
   const handleNextPage = () => setShowResponseModal(true);
 
   const handleSave = async (heart: string, takeaway: string) => {
@@ -429,8 +438,10 @@ const headerTitle = useMemo(() => {
   return (
     <View style={[styles.container, { backgroundColor: statusBarBackground }]}>
       <StatusBar backgroundColor={statusBarBackground} style={statusBarStyle} animated />
-         {/* HEADER */}
+      
+      {/* HEADER - Responsive Layout */}
       <View style={styles.headerRow}>
+        {/* Back Button */}
         <Animated.View style={{ transform: [{ scale: headerScale }] }}>
           <Pressable
             onPress={handleBack}
@@ -448,11 +459,20 @@ const headerTitle = useMemo(() => {
           </Pressable>
         </Animated.View>
 
-        <Text style={[styles.headerTitle, { color: selectedTheme?.textColor }]}>
-          {headerTitle}
-        </Text>
+        {/* Title - Flexible with ellipsis */}
+        <View style={styles.headerTitleContainer}>
+          <Text 
+            style={[styles.headerTitle, { color: selectedTheme?.textColor }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {headerTitle}
+          </Text>
+        </View>
 
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        {/* Action Buttons */}
+        <View style={styles.headerActions}>
+          {/* Like Button with Counter */}
           <Pressable
             onPress={handleLikeToggle}
             disabled={isLiking}
@@ -469,12 +489,53 @@ const headerTitle = useMemo(() => {
             {isLiking ? (
               <ActivityIndicator size="small" color={selectedTheme?.textColor} />
             ) : (
-              <Feather name="heart" size={20} color={isLiked ? "#FF4444" : selectedTheme?.textColor} />
+              <View style={styles.likeButtonContainer}>
+                <Feather 
+                  name="heart" 
+                  size={20} 
+                  color={isLiked ? "#FF4444" : selectedTheme?.textColor}
+                  fill={isLiked ? "#FF4444" : "transparent"}
+                />
+                {likeCount > 0 && (
+                  <View style={styles.likeBadge}>
+                    <Text style={styles.likeBadgeText}>
+                      {likeCount > 99 ? '99+' : likeCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
             )}
           </Pressable>
 
+        {/* Bookmark Button */}
           <Pressable
-            onPress={isSelectionMode ? () => setSelectedParagraphs([]) : onOpenSidebar}
+            onPress={handleBookmarkToggle}
+            disabled={isBookmarking}
+            style={[
+              styles.headerButton,
+              {
+                borderColor: headerButtonBorderColor,
+                borderWidth: headerButtonBorderWidth,
+                backgroundColor: headerButtonBackground,
+              },
+            ]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            {isBookmarking ? (
+              <ActivityIndicator size="small" color={selectedTheme?.textColor} />
+            ) : (
+              <Feather
+                name="bookmark"
+                size={20}
+                color={entry?.bookmarked ? selectedTheme?.accentColor : selectedTheme?.textColor}
+                fill={entry?.bookmarked ? selectedTheme?.accentColor : "transparent"}
+              />
+            )}
+          </Pressable>
+
+          {/* Menu Button */}
+          <Pressable
+            onPress={onOpenSidebar}
             style={[
               styles.headerButton,
               {
@@ -486,15 +547,15 @@ const headerTitle = useMemo(() => {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Feather
-              name={isSelectionMode ? "bookmark" : "menu"}
+              name="menu"
               size={20}
-              color={selectionIconColor}
+              color={selectedTheme?.textColor}
             />
           </Pressable>
         </View>
       </View>
 
-      {/* CONTENT - Always show, no conditional loading */}
+      {/* CONTENT */}
       <View style={styles.contentWrapper}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -558,7 +619,7 @@ const headerTitle = useMemo(() => {
         </ScrollView>
       </View>
 
-      {/* SETTINGS PANEL - keep as is */}
+      {/* SETTINGS PANEL */}
       <Animated.View
         pointerEvents={settingsVisible ? "auto" : "none"}
         style={[
@@ -666,14 +727,14 @@ const headerTitle = useMemo(() => {
         </View>
       </Animated.View>
 
-    <ResponseModal
-      visible={showResponseModal}
-      onSave={handleSave}
-      onSkip={handleSkip}
-      theme={selectedTheme}
-      isSubmitting={isSubmittingResponse}
-      dateLabel={content.dateLabel}
-    />
+      <ResponseModal
+        visible={showResponseModal}
+        onSave={handleSave}
+        onSkip={handleSkip}
+        theme={selectedTheme}
+        isSubmitting={isSubmittingResponse}
+        dateLabel={content.dateLabel}
+      />
     </View>
   );
 }
@@ -785,12 +846,29 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Medium",
     fontSize: 14,
   },
+  // RESPONSIVE HEADER STYLES
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 16,
     marginBottom: 24,
+    gap: 8,
+  },
+  headerTitleContainer: {
+    flex: 1,
+    marginHorizontal: 8,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontFamily: "DMSans-Bold",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+    flexShrink: 0,
   },
   headerButton: {
     width: 44,
@@ -800,8 +878,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
-    fontFamily: "DMSans-Bold",
-    fontSize: 18,
+  likeButtonContainer: {
+    position: 'relative',
+  },
+  likeBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#FF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  likeBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'DMSans-Bold',
   },
 });

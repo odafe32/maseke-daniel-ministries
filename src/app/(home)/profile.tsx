@@ -24,6 +24,10 @@ export default function ProfilePage() {
   const [formEmail, setFormEmail] = useState(user?.email || "");
   const [formPhone, setFormPhone] = useState(user?.phone_number || "");
   const [formAddress, setFormAddress] = useState(user?.address || "");
+<<<<<<< HEAD
+=======
+  const [formAvatar, setFormAvatar] = useState<string>(user?.avatar || "");
+>>>>>>> 7d0c8bc579f7e99a2a1b2627bdaab0d8de0046be
   const [isSaving, setIsSaving] = useState(false);
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
@@ -39,7 +43,12 @@ export default function ProfilePage() {
       setFormEmail(user.email);
       setFormPhone(user.phone_number || "");
       setFormAddress(user.address || "");
+<<<<<<< HEAD
       setAvatar(user.avatar_url || avatarUri);
+=======
+      setFormAvatar(user.avatar || "");
+      setAvatar(user.avatar_base64 || user.avatar_url || avatarUri);
+>>>>>>> 7d0c8bc579f7e99a2a1b2627bdaab0d8de0046be
     }
   }, [user]);
 
