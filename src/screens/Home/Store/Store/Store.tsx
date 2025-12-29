@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -10,6 +10,7 @@ import {
   Modal,
   ActivityIndicator,
   ImageSourcePropType,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
@@ -76,6 +77,11 @@ interface StoreUIProps {
   actualCarouselWidth: number;
 }
 
+interface ProductItemProps {
+  item: StoreProduct;
+  index: number;
+}
+
 export function StoreUI({
   onBack,
   searchQuery,
@@ -114,11 +120,118 @@ export function StoreUI({
 }: StoreUIProps) {
   console.log("isLoading: ",isLoading);
   console.log("selectedProduct: ",selectedProduct);
-  const renderProductItem = ({ item }: { item: StoreProduct }) => {
 
+  // Animation values
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const carouselAnim = useRef(new Animated.Value(0)).current;
+  const searchAnim = useRef(new Animated.Value(0)).current;
+  const trendingAnim = useRef(new Animated.Value(0)).current;
+  const paginationAnim = useRef(new Animated.Value(0)).current;
+  const skeletonPulse = useRef(new Animated.Value(0.3)).current;
+  const filterDropdownAnim = useRef(new Animated.Value(0)).current;
+  const modalAnim = useRef(new Animated.Value(0)).current;
+
+  // Trigger animations on mount
+  useEffect(() => {
+    // Sequence of animations with staggered timing
+    Animated.parallel([
+      // Header - fade and slide from top
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      // Carousel - scale and fade
+      Animated.spring(carouselAnim, {
+        toValue: 1,
+        tension: 40,
+        friction: 7,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      // Search bar - slide from left
+      Animated.spring(searchAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+      // Trending section - fade in
+      Animated.timing(trendingAnim, {
+        toValue: 1,
+        duration: 400,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Skeleton pulse animation
+  useEffect(() => {
+    if (isLoading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(skeletonPulse, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(skeletonPulse, {
+            toValue: 0.3,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [isLoading]);
+
+  // Filter dropdown animation
+  useEffect(() => {
+    if (showFilterDropdown) {
+      Animated.spring(filterDropdownAnim, {
+        toValue: 1,
+        tension: 60,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      filterDropdownAnim.setValue(0);
+    }
+  }, [showFilterDropdown]);
+
+  // Pagination animation when products change
+  useEffect(() => {
+    if (!isLoading && paginatedProducts.length > 0) {
+      paginationAnim.setValue(0);
+      Animated.timing(paginationAnim, {
+        toValue: 1,
+        duration: 400,
+        delay: 500,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [paginatedProducts, isLoading]);
+
+  // Modal animation
+  useEffect(() => {
+    if (modalVisible) {
+      modalAnim.setValue(0);
+      Animated.spring(modalAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [modalVisible]);
+
+  const ProductItem = ({ item, index }: ProductItemProps) => {
     return (
-      <TouchableOpacity 
-        style={styles.itemContainer} 
+      <TouchableOpacity
+        style={styles.itemContainer}
         activeOpacity={0.8}
         onPress={() => openProductModal(item)}
       >
@@ -151,12 +264,12 @@ export function StoreUI({
           <ThemeText variant="paragraph" style={styles.itemTitle} numberOfLines={2}>
             {item.title}
           </ThemeText>
-          
+
           <View style={styles.priceContainer}>
             <ThemeText variant="bodySmall" style={styles.currentPrice}>
               ₦{item.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </ThemeText>
-            
+
             {item.beforePrice && (
               <ThemeText variant="bodySmall" style={styles.beforePrice}>
                 ₦{item.beforePrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -167,6 +280,7 @@ export function StoreUI({
       </TouchableOpacity>
     );
   };
+
 
   const renderPaginationButton = (pageNumber: number, isActive: boolean) => (
     <TouchableOpacity
@@ -195,16 +309,45 @@ export function StoreUI({
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <BackHeader 
-        title={"GDM SHOP"} 
-        onBackPress={onBack} 
-        showCartButton={true} 
-        cartCount={cartCount}
-      />
+      {/* Animated Header */}
+      <Animated.View
+        style={{
+          opacity: headerAnim,
+          transform: [
+            {
+              translateY: headerAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-20, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        <BackHeader
+          title={"GDM SHOP"}
+          onBackPress={onBack}
+          showCartButton={true}
+          cartCount={cartCount}
+        />
+      </Animated.View>
 
-      {/* Hero Carousel */}
-      <View style={styles.heroCarousel}>
+      {/* Animated Hero Carousel */}
+      <Animated.View
+        style={[
+          styles.heroCarousel,
+          {
+            opacity: carouselAnim,
+            transform: [
+              {
+                scale: carouselAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.95, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         {/* Image Cards Container */}
         <ScrollView
           ref={carouselRef}
@@ -219,14 +362,14 @@ export function StoreUI({
         >
           {carouselData.map((slide) => (
             <View key={slide.id} style={[styles.heroCard, { width: actualCarouselWidth }]}>
-              <Image 
-                source={slide.image} 
+              <Image
+                source={slide.image}
                 style={styles.heroImage}
               />
             </View>
           ))}
         </ScrollView>
-        
+
         {/* Absolute Text Overlay */}
         <LinearGradient
           style={styles.heroOverlay}
@@ -238,7 +381,7 @@ export function StoreUI({
             {carouselData[currentSlide].text}
           </ThemeText>
         </LinearGradient>
-        
+
         {/* Absolute Progress Indicator */}
         <View style={styles.progressIndicator}>
           {carouselData.map((_, index) => (
@@ -254,10 +397,25 @@ export function StoreUI({
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Search and Filter Section */}
-      <View style={styles.searchFilterContainer}>
+      {/* Animated Search and Filter Section */}
+      <Animated.View
+        style={[
+          styles.searchFilterContainer,
+          {
+            opacity: searchAnim,
+            transform: [
+              {
+                translateX: searchAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-50, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.searchField}>
           <TextInput
             style={styles.searchInput}
@@ -287,11 +445,29 @@ export function StoreUI({
             <Icon name="chevronDown" size={12} color={COLORS.TEXT_GRAY} />
           </View>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      {/* Filter Dropdown */}
+      {/* Animated Filter Dropdown */}
       {showFilterDropdown && (
-        <View style={styles.filterDropdown}>
+        <Animated.View
+          style={[
+            styles.filterDropdown,
+            {
+              opacity: filterDropdownAnim,
+              transform: [
+                {
+                  scaleY: filterDropdownAnim,
+                },
+                {
+                  translateY: filterDropdownAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-10, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <ScrollView style={styles.filterDropdownScroll} showsVerticalScrollIndicator={false}>
             {filterOptions.map((option) => (
               <TouchableOpacity
@@ -317,11 +493,18 @@ export function StoreUI({
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
+        </Animated.View>
       )}
 
       {/* Refresh Button */}
-      <View style={styles.refreshContainer}>
+      <Animated.View
+        style={[
+          styles.refreshContainer,
+          {
+            opacity: searchAnim,
+          },
+        ]}
+      >
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={onRefresh}
@@ -336,21 +519,36 @@ export function StoreUI({
             Refresh
           </ThemeText>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      {/* Trending Section */}
-      <View style={styles.trendingContainer}>
+      {/* Animated Trending Section */}
+      <Animated.View
+        style={[
+          styles.trendingContainer,
+          {
+            opacity: trendingAnim,
+          },
+        ]}
+      >
         <ThemeText variant="h4" style={styles.trendingText}>
           Trending
         </ThemeText>
-      </View>
+      </Animated.View>
 
       {/* Products Grid */}
       {isLoading ? (
-        // Skeleton grid when loading
+        // Animated Skeleton grid when loading
         <View style={[styles.row, styles.skeletonGrid]}>
           {Array.from({ length: 6 }, (_, index) => (
-            <View key={index} style={styles.itemContainer}>
+            <Animated.View
+              key={index}
+              style={[
+                styles.itemContainer,
+                {
+                  opacity: skeletonPulse,
+                },
+              ]}
+            >
               <View style={styles.imageContainer}>
                 <View style={styles.skeletonImage} />
                 <View style={styles.skeletonHeartIcon} />
@@ -359,32 +557,44 @@ export function StoreUI({
                 <View style={styles.skeletonTitleBar} />
                 <View style={styles.skeletonPriceBar} />
               </View>
-            </View>
+            </Animated.View>
           ))}
         </View>
       ) : (
         // Actual products when not loading
-        <FlatList
-          data={paginatedProducts}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={
+        <View style={styles.productsContainer}>
+          {paginatedProducts.length > 0 ? (
+            paginatedProducts.map((item, index) => (
+              <ProductItem key={item.id} item={item} index={index} /> // eslint-disable-line react/prop-types
+            ))
+          ) : (
             <View style={styles.emptyContainer}>
               <ThemeText variant="body" style={styles.emptyText}>
                 No products found
               </ThemeText>
             </View>
-          }
-        />
+          )}
+        </View>
       )}
 
-      {/* Pagination */}
+      {/* Animated Pagination */}
       {totalPages > 1 && (
-        <View style={styles.paginationContainer}>
+        <Animated.View
+          style={[
+            styles.paginationContainer,
+            {
+              opacity: paginationAnim,
+              transform: [
+                {
+                  translateY: paginationAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.paginationButton,
@@ -422,27 +632,51 @@ export function StoreUI({
               color={currentPage === totalPages ? "#ccc" : "#666"}
             />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       )}
 
       {/* Product Details Modal */}
       <Modal
         visible={modalVisible}
         transparent={true}
-        animationType="slide"
+        animationType="none"
         statusBarTranslucent={true}
       >
         {/* Modal Overlay */}
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity 
+        <Animated.View
+          style={[
+            styles.modalOverlay,
+            {
+              opacity: modalAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 1],
+              }),
+            },
+          ]}
+        >
+          <TouchableOpacity
             style={styles.modalOverlayTouchable}
             activeOpacity={1}
             onPress={closeProductModal}
           />
-        </View>
+        </Animated.View>
 
-        {/* Modal Content */}
-        <View style={styles.modalContent}>
+        {/* Animated Modal Content */}
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              transform: [
+                {
+                  translateY: modalAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [300, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           {/* Product Image Section with Floating Header */}
           <View style={styles.productImageSection}>
             {selectedProduct?.image ? (
@@ -550,7 +784,7 @@ export function StoreUI({
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </Modal>
     </ScrollView>
   );
@@ -748,6 +982,12 @@ const styles = StyleSheet.create({
   },
 
   // Product Cards
+  productsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 16,
+  },
   itemContainer: {
     backgroundColor: COLORS.TRANSPARENT,
     overflow: "hidden",
@@ -771,6 +1011,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.LIGHT_GRAY,
     justifyContent: 'center',
     alignItems: 'center',
+    width: "100%"
   },
   // Skeleton styles for product items
   skeletonImage: {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
@@ -41,103 +42,253 @@ export function PrayerRequest({
   messageError,
   isLoading,
 }: PrayerRequestProps) {
+  // Animation values
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const titleAnim = useRef(new Animated.Value(0)).current;
+  const nameFieldAnim = useRef(new Animated.Value(0)).current;
+  const emailFieldAnim = useRef(new Animated.Value(0)).current;
+  const messageFieldAnim = useRef(new Animated.Value(0)).current;
+  const buttonsAnim = useRef(new Animated.Value(0)).current;
+
+  // Trigger animations on mount
+  useEffect(() => {
+    Animated.parallel([
+      // Header - fade and slide from top
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      // Title - fade in with scale
+      Animated.spring(titleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      // Name field - slide from left
+      Animated.spring(nameFieldAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+      // Email field - slide from right
+      Animated.spring(emailFieldAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+      // Message field - slide from left
+      Animated.spring(messageFieldAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 400,
+        useNativeDriver: true,
+      }),
+      // Buttons - fade and slide up
+      Animated.spring(buttonsAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <BackHeader title="Prayer Requests" onBackPress={onBack}/>
+      {/* Animated Header */}
+      <Animated.View
+        style={{
+          opacity: headerAnim,
+          transform: [
+            {
+              translateY: headerAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-20, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        <BackHeader title="Prayer Requests" onBackPress={onBack}/>
+      </Animated.View>
 
       <View style={styles.content}>
-        <ThemeText variant="h5" style={styles.title}>
-          Send a Prayer Request
-        </ThemeText>
-        
+        {/* Animated Title */}
+        <Animated.View
+          style={{
+            opacity: titleAnim,
+            transform: [
+              {
+                scale: titleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.9, 1],
+                }),
+              },
+            ],
+          }}
+        >
+          <ThemeText variant="h5" style={styles.title}>
+            Send a Prayer Request
+          </ThemeText>
+        </Animated.View>
+
         <View style={styles.formContainer}>
-          <ThemeText variant="body" style={styles.label}>
-            Full Name
-          </ThemeText>
-          <TextInput
-            style={[styles.input, nameError && styles.inputError]}
-            value={name}
-            onChangeText={onNameChange}
-            placeholder="Enter your full name"
-            placeholderTextColor="#999"
-            autoCapitalize="words"
-          />
-          {nameError ? (
-            <ThemeText variant="caption" style={styles.errorText}>
-              {nameError}
-            </ThemeText>
-          ) : null}
-          
-          <ThemeText variant="body" style={styles.label}>
-            Email Address
-          </ThemeText>
-          <TextInput
-            style={[styles.input, emailError && styles.inputError]}
-            value={email}
-            onChangeText={onEmailChange}
-            placeholder="Enter your email address"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {emailError ? (
-            <ThemeText variant="caption" style={styles.errorText}>
-              {emailError}
-            </ThemeText>
-          ) : null}
-          
-          <ThemeText variant="body" style={styles.label}>
-            Prayer Message
-          </ThemeText>
-          <TextInput
-            style={[styles.input, styles.textArea, messageError && styles.inputError]}
-            value={message}
-            onChangeText={onMessageChange}
-            placeholder="Enter your prayer request"
-            placeholderTextColor="#999"
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-          />
-          {messageError ? (
-            <ThemeText variant="caption" style={styles.errorText}>
-              {messageError}
-            </ThemeText>
-          ) : null}
-          
-          <TouchableOpacity 
-            style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
-            onPress={onSubmit}
-            disabled={isLoading}
-            activeOpacity={isLoading ? 1 : 0.8}
+          {/* Animated Name Field */}
+          <Animated.View
+            style={{
+              opacity: nameFieldAnim,
+              transform: [
+                {
+                  translateX: nameFieldAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-30, 0],
+                  }),
+                },
+              ],
+            }}
           >
-            <View style={styles.buttonContent}>
-              {isLoading && (
-                <ActivityIndicator 
-                  size="small" 
-                  color="#FFFFFF" 
-                  style={styles.spinner} 
-                />
-              )}
-              <ThemeText variant="body" style={styles.sendButtonText}>
-                {isLoading ? "Sending..." : "Send Request"}
+            <ThemeText variant="body" style={styles.label}>
+              Full Name
+            </ThemeText>
+            <TextInput
+              style={[styles.input, nameError && styles.inputError]}
+              value={name}
+              onChangeText={onNameChange}
+              placeholder="Enter your full name"
+              placeholderTextColor="#999"
+              autoCapitalize="words"
+            />
+            {nameError ? (
+              <ThemeText variant="caption" style={styles.errorText}>
+                {nameError}
               </ThemeText>
-            </View>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.cancelButton}
-            onPress={onCancel}
-            activeOpacity={0.8}
+            ) : null}
+          </Animated.View>
+
+          {/* Animated Email Field */}
+          <Animated.View
+            style={{
+              opacity: emailFieldAnim,
+              transform: [
+                {
+                  translateX: emailFieldAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [30, 0],
+                  }),
+                },
+              ],
+            }}
           >
-            <ThemeText variant="body" style={styles.cancelButtonText}>
-              Cancel
+            <ThemeText variant="body" style={styles.label}>
+              Email Address
             </ThemeText>
-          </TouchableOpacity>
+            <TextInput
+              style={[styles.input, emailError && styles.inputError]}
+              value={email}
+              onChangeText={onEmailChange}
+              placeholder="Enter your email address"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            {emailError ? (
+              <ThemeText variant="caption" style={styles.errorText}>
+                {emailError}
+              </ThemeText>
+            ) : null}
+          </Animated.View>
+
+          {/* Animated Message Field */}
+          <Animated.View
+            style={{
+              opacity: messageFieldAnim,
+              transform: [
+                {
+                  translateX: messageFieldAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-30, 0],
+                  }),
+                },
+              ],
+            }}
+          >
+            <ThemeText variant="body" style={styles.label}>
+              Prayer Message
+            </ThemeText>
+            <TextInput
+              style={[styles.input, styles.textArea, messageError && styles.inputError]}
+              value={message}
+              onChangeText={onMessageChange}
+              placeholder="Enter your prayer request"
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+            />
+            {messageError ? (
+              <ThemeText variant="caption" style={styles.errorText}>
+                {messageError}
+              </ThemeText>
+            ) : null}
+          </Animated.View>
+
+          {/* Animated Buttons */}
+          <Animated.View
+            style={{
+              opacity: buttonsAnim,
+              transform: [
+                {
+                  translateY: buttonsAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
+            }}
+          >
+            <TouchableOpacity
+              style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
+              onPress={onSubmit}
+              disabled={isLoading}
+              activeOpacity={isLoading ? 1 : 0.8}
+            >
+              <View style={styles.buttonContent}>
+                {isLoading && (
+                  <ActivityIndicator
+                    size="small"
+                    color="#FFFFFF"
+                    style={styles.spinner}
+                  />
+                )}
+                <ThemeText variant="body" style={styles.sendButtonText}>
+                  {isLoading ? "Sending..." : "Send Request"}
+                </ThemeText>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={onCancel}
+              activeOpacity={0.8}
+            >
+              <ThemeText variant="body" style={styles.cancelButtonText}>
+                Cancel
+              </ThemeText>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </View>
     </ScrollView>
@@ -165,7 +316,6 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: "Geist-Medium",
     color: "#121116",
-    marginBottom: -8,
   },
   input: {
     borderWidth: 1,
@@ -218,7 +368,7 @@ const styles = StyleSheet.create({
     color: "#DC2626",
     fontSize: 12,
     fontFamily: "Geist-Medium",
-    marginTop: -8,
+    marginTop: 4,
   },
   sendButtonDisabled: {
     backgroundColor: "#94A3B8",

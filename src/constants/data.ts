@@ -945,3 +945,17 @@ export const storeProducts: StoreProduct[] = [
     isInWishlist: false
   },
 ];
+
+export interface IWishlist {
+  id: string;
+  title: string;
+  price: number;
+  beforePrice: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  createdDate: string;
+  updatedDate: string;
+  isInWishlist: boolean;
+  wishlistAddedDate: string;
+}

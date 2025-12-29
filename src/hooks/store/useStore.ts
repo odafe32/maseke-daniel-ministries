@@ -5,6 +5,7 @@ import { cartApi } from '../../api/cartApi';
 import { storeStore } from '../../stores/store';
 import { cartStore } from '../../stores/store/cartStore';
 import { StoreProduct } from '../../constants/data';
+import { wishlistStore } from '@/src/stores/wishlistStore';
 
 interface ProductFilters {
   search?: string;
@@ -174,6 +175,7 @@ export const useStore = () => {
       } else {
         await wishlistApi.removeFromWishlist(productId);
       }
+      await wishlistStore.getState().clearCache();
 
       return { success: true };
     } catch (err: unknown) {

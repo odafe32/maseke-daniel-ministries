@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -40,6 +40,11 @@ interface OrdersProps {
   onRefresh?: () => void;
 }
 
+interface AnimatedOrderCardProps {
+  item: Order;
+  index: number;
+}
+
 export function Orders({
   onBack,
   ordersData,
@@ -61,6 +66,51 @@ export function Orders({
   isRefreshing = false,
   onRefresh,
 }: OrdersProps) {
+  // Animation values for page entrance
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const filterAnim = useRef(new Animated.Value(0)).current;
+  const skeletonPulse = useRef(new Animated.Value(0.3)).current;
+
+  // Trigger animations on mount
+  useEffect(() => {
+    Animated.parallel([
+      // Header - fade and slide from top
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      // Filter section - slide from left
+      Animated.spring(filterAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Skeleton pulse animation
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(skeletonPulse, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(skeletonPulse, {
+            toValue: 0.3,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading]);
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -104,68 +154,109 @@ export function Orders({
     }
   };
 
-  const renderOrderCard = ({ item }: { item: Order }) => (
-    <TouchableOpacity 
-      style={styles.orderCard}
-      activeOpacity={0.8}
-      onPress={() => onOrderPress(item)}
+  const AnimatedOrderCard = ({ item, index }: AnimatedOrderCardProps) => {
+    const cardAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+      Animated.spring(cardAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 200 + (index * 80), // Staggered animation
+        useNativeDriver: true,
+      }).start();
+    }, []);
+
+    return (
+      <Animated.View
+        style={{
+          opacity: cardAnim,
+          transform: [
+            {
+              translateY: cardAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [30, 0],
+              }),
+            },
+            {
+              scale: cardAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.95, 1],
+              }),
+            },
+          ],
+        }}
+      >
+        <TouchableOpacity
+          style={styles.orderCard}
+          activeOpacity={0.8}
+          onPress={() => onOrderPress(item)}
+        >
+          {/* Product Image */}
+          <Image
+            source={getProductImage(item.items?.[0] || {})}
+            style={styles.orderImage}
+            resizeMode="cover"
+          />
+
+          {/* Order Details */}
+          <View style={styles.orderDetails}>
+            <View style={styles.orderHeader}>
+              <ThemeText variant="body" style={styles.orderNumber} numberOfLines={1}>
+                #{item.id}
+              </ThemeText>
+              <ThemeText variant="body" style={styles.orderPrice}>
+                ₦{item.totalAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </ThemeText>
+            </View>
+
+            <View style={styles.orderFooter}>
+              <ThemeText variant="caption" style={styles.quantityText}>
+                Qty: {item.items.reduce((sum, item) => sum + item.quantity, 0)}
+              </ThemeText>
+
+              <View style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(item.status) }
+              ]}>
+                <ThemeText
+                  variant="caption"
+                  style={[
+                    styles.statusText,
+                    { color: getStatusTextColor(item.status) }
+                  ]}
+                >
+                  {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                </ThemeText>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const renderSkeletonOrderCard = (index: number) => (
+    <Animated.View
+      key={`skeleton-${index}`}
+      style={{
+        opacity: skeletonPulse,
+      }}
     >
-      {/* Product Image */}
-      <Image 
-        source={getProductImage(item.items?.[0] || {})} 
-        style={styles.orderImage}
-        resizeMode="cover"
-      />
-      
-      {/* Order Details */}
-      <View style={styles.orderDetails}>
-        <View style={styles.orderHeader}>
-          <ThemeText variant="body" style={styles.orderNumber} numberOfLines={1}>
-            #{item.id}
-          </ThemeText>
-          <ThemeText variant="body" style={styles.orderPrice}>
-            ₦{item.totalAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </ThemeText>
-        </View>
-        
-        <View style={styles.orderFooter}>
-          <ThemeText variant="caption" style={styles.quantityText}>
-            Qty: {item.items.reduce((sum, item) => sum + item.quantity, 0)}
-          </ThemeText>
-          
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(item.status) }
-          ]}>
-            <ThemeText 
-              variant="caption" 
-              style={[
-                styles.statusText,
-                { color: getStatusTextColor(item.status) }
-              ]}
-            >
-              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-            </ThemeText>
+      <View style={styles.orderCard}>
+        <View style={styles.skeletonImage} />
+        <View style={styles.orderDetails}>
+          <View style={styles.orderHeader}>
+            <View style={[styles.skeletonBar, { width: '60%', height: 16 }]} />
+            <View style={[styles.skeletonBar, { width: '30%', height: 16 }]} />
+          </View>
+          <View style={styles.orderFooter}>
+            <View style={[styles.skeletonBar, { width: '20%', height: 12 }]} />
+            <View style={[styles.skeletonBar, { width: '40%', height: 20, borderRadius: 10 }]} />
           </View>
         </View>
       </View>
-    </TouchableOpacity>
-  );
-
-  const renderSkeletonOrderCard = (index: number) => (
-    <View key={`skeleton-${index}`} style={styles.orderCard}>
-      <View style={styles.skeletonImage} />
-      <View style={styles.orderDetails}>
-        <View style={styles.orderHeader}>
-          <View style={[styles.skeletonBar, { width: '60%', height: 16 }]} />
-          <View style={[styles.skeletonBar, { width: '30%', height: 16 }]} />
-        </View>
-        <View style={styles.orderFooter}>
-          <View style={[styles.skeletonBar, { width: '20%', height: 12 }]} />
-          <View style={[styles.skeletonBar, { width: '40%', height: 20, borderRadius: 10 }]} />
-        </View>
-      </View>
-    </View>
+    </Animated.View>
   );
 
   const FilterButton = ({ filter, label }: { filter: 'all' | 'ongoing' | 'past'; label: string }) => (
@@ -224,29 +315,59 @@ export function Orders({
           />
         ) : undefined}
       >
-        <BackHeader title="My Orders" onBackPress={onBack} />
+        {/* Animated Header */}
+        <Animated.View
+          style={{
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <BackHeader title="My Orders" onBackPress={onBack} />
+        </Animated.View>
 
-        <View style={styles.filterContainer}>
-          <View style={styles.filterRow}>
-            <FilterButton filter="all" label="All" />
-            <FilterButton filter="ongoing" label="Ongoing Orders" />
-            <FilterButton filter="past" label="Past Orders" />
+        {/* Animated Filter Section */}
+        <Animated.View
+          style={{
+            opacity: filterAnim,
+            transform: [
+              {
+                translateY: filterAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-15, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <View style={styles.filterContainer}>
+            <View style={styles.filterRow}>
+              <FilterButton filter="all" label="All" />
+              <FilterButton filter="ongoing" label="Ongoing Orders" />
+              <FilterButton filter="past" label="Past Orders" />
+            </View>
+
+            {onRefresh && (
+              <TouchableOpacity
+                onPress={onRefresh}
+                activeOpacity={0.7}
+                style={styles.refreshButton}
+              >
+                {isRefreshing ? (
+                  <ActivityIndicator size="small" color="#0C154C" />
+                ) : (
+                  <Feather name="refresh-ccw" size={16} color="#0C154C" />
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-          
-          {onRefresh && (
-            <TouchableOpacity
-              onPress={onRefresh}
-              activeOpacity={0.7}
-              style={styles.refreshButton}
-            >
-              {isRefreshing ? (
-                <ActivityIndicator size="small" color="#0C154C" />
-              ) : (
-                <Feather name="refresh-ccw" size={16} color="#0C154C" />
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
+        </Animated.View>
 
 
         {loading ? (
@@ -256,7 +377,7 @@ export function Orders({
         ) : (
           <FlatList
             data={filteredOrders}
-            renderItem={renderOrderCard}
+            renderItem={({ item, index }) => <AnimatedOrderCard item={item} index={index} />}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}

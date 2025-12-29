@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 
 import { BackHeader, ThemeText, Dropdown } from "@/src/components";
@@ -37,6 +38,56 @@ export function Give({
   isLoading,
   showPaystack,
 }: GiveProps) {
+  // Animation values
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const descriptionAnim = useRef(new Animated.Value(0)).current;
+  const giftTypeAnim = useRef(new Animated.Value(0)).current;
+  const amountAnim = useRef(new Animated.Value(0)).current;
+  const footerAnim = useRef(new Animated.Value(100)).current;
+
+  // Trigger animations on mount
+  useEffect(() => {
+    Animated.parallel([
+      // Header - fade and slide from top
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      // Description - fade in
+      Animated.timing(descriptionAnim, {
+        toValue: 1,
+        duration: 500,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      // Gift type field - slide from left
+      Animated.spring(giftTypeAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+      // Amount field - slide from right
+      Animated.spring(amountAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+      // Footer - slide from bottom
+      Animated.spring(footerAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        delay: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
     <View style={styles.mainContainer}>
@@ -44,55 +95,127 @@ export function Give({
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <BackHeader title="Giving" onBackPress={onBack}/>
+        {/* Animated Header */}
+        <Animated.View
+          style={{
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <BackHeader title="Giving" onBackPress={onBack}/>
+        </Animated.View>
 
         <View style={styles.content}>
-          <ThemeText variant="body" style={styles.description}>
-            Give your widow&apos;s mite. Every small act of generosity counts in God&apos;s kingdom.
-          </ThemeText>
-          
+          {/* Animated Description */}
+          <Animated.View
+            style={{
+              opacity: descriptionAnim,
+              transform: [
+                {
+                  scale: descriptionAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.95, 1],
+                  }),
+                },
+              ],
+            }}
+          >
+            <ThemeText variant="body" style={styles.description}>
+              Give your widow&apos;s mite. Every small act of generosity counts in God&apos;s kingdom.
+            </ThemeText>
+          </Animated.View>
+
           <View style={styles.formContainer}>
-            <View style={styles.formField}>
-              <ThemeText variant="body" style={styles.label}>
-                Select Gift Type
-              </ThemeText>
-              <Dropdown
-                options={giftTypeOptions}
-                selectedValue={giftType}
-                onValueChange={onGiftTypeChange}
-                placeholder="Select gift type"
-              />
-              {giftTypeError ? (
-                <ThemeText variant="caption" style={styles.errorText}>
-                  {giftTypeError}
+            {/* Animated Gift Type Field */}
+            <Animated.View
+              style={{
+                opacity: giftTypeAnim,
+                transform: [
+                  {
+                    translateX: giftTypeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-30, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <View style={styles.formField}>
+                <ThemeText variant="body" style={styles.label}>
+                  Select Gift Type
                 </ThemeText>
-              ) : null}
-            </View>
-            
-            <View style={styles.formField}>
-              <ThemeText variant="body" style={styles.label}>
-                Enter Amount (₦)
-              </ThemeText>
-              <TextInput
-                style={[styles.input, amountError && styles.inputError]}
-                value={amount}
-                onChangeText={onAmountChange}
-                placeholder="Enter amount"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                autoCapitalize="none"
-              />
-              {amountError ? (
-                <ThemeText variant="caption" style={styles.errorText}>
-                  {amountError}
+                <Dropdown
+                  options={giftTypeOptions}
+                  selectedValue={giftType}
+                  onValueChange={onGiftTypeChange}
+                  placeholder="Select gift type"
+                />
+                {giftTypeError ? (
+                  <ThemeText variant="caption" style={styles.errorText}>
+                    {giftTypeError}
+                  </ThemeText>
+                ) : null}
+              </View>
+            </Animated.View>
+
+            {/* Animated Amount Field */}
+            <Animated.View
+              style={{
+                opacity: amountAnim,
+                transform: [
+                  {
+                    translateX: amountAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [30, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <View style={styles.formField}>
+                <ThemeText variant="body" style={styles.label}>
+                  Enter Amount (₦)
                 </ThemeText>
-              ) : null}
-            </View>
+                <TextInput
+                  style={[styles.input, amountError && styles.inputError]}
+                  value={amount}
+                  onChangeText={onAmountChange}
+                  placeholder="Enter amount"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  autoCapitalize="none"
+                />
+                {amountError ? (
+                  <ThemeText variant="caption" style={styles.errorText}>
+                    {amountError}
+                  </ThemeText>
+                ) : null}
+              </View>
+            </Animated.View>
           </View>
         </View>
       </ScrollView>
-      
-      <View style={styles.footer}>
+
+      {/* Animated Footer */}
+      <Animated.View
+        style={[
+          styles.footer,
+          {
+            transform: [
+              {
+                translateY: footerAnim,
+              },
+            ],
+          },
+        ]}
+      >
         <TouchableOpacity 
           style={[styles.continueButton, isLoading && styles.continueButtonDisabled]}
           onPress={onSubmit}
@@ -112,7 +235,7 @@ export function Give({
             </ThemeText>
           )}
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
