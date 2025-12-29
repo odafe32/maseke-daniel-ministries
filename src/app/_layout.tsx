@@ -12,6 +12,8 @@ import { usePathname } from "expo-router";
 import { shouldHideBottomMenu } from "../constants/navigation";
 import { useInternetConnectivity } from "../hooks/useInternetConnectivity";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import SystemPopupModal from "../components/SystemPopupModal";
+import { useSystemPopup } from "../hooks/useSystemPopup";
 
 // Color constants
 const Colors = {
@@ -209,9 +211,12 @@ function RootLayoutNav() {
   const pathname = usePathname();
 
   const showBottomMenu = token && pathname && !shouldHideBottomMenu(pathname);
-  
+
   // Monitor internet connectivity for both auth and home sections
   useInternetConnectivity();
+
+  // System popup hook - only active when user is authenticated
+  const { popup, isVisible, handleClose } = useSystemPopup(!!token);
 
   if (!token) {
     // Auth stack
@@ -257,6 +262,13 @@ function RootLayoutNav() {
         {/* Add other main screens here */}
       </Stack>
       {showBottomMenu && <BottomMenu />}
+
+      {/* System Popup Modal */}
+      <SystemPopupModal
+        visible={isVisible}
+        popup={popup}
+        onClose={handleClose}
+      />
     </View>
   );
 }
