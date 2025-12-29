@@ -4,7 +4,7 @@ import { wishlistApi } from '../../api/wishlistApi';
 import { cartApi } from '../../api/cartApi';
 import { storeStore } from '../../stores/store';
 import { cartStore } from '../../stores/store/cartStore';
-import { StoreProduct } from '../../constants/data';
+import { StoreProduct } from '@/src/utils/types';
 import { wishlistStore } from '@/src/stores/wishlistStore';
 
 interface ProductFilters {

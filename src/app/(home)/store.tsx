@@ -5,7 +5,7 @@ import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWr
 import { showSuccessToast, showInfoToast } from "@/src/utils/toast";
 import { Animated, Dimensions, ScrollView } from "react-native";
 import { useStore } from "@/src/hooks/store/useStore";
-import { StoreProduct } from "@/src/constants/data";
+import { StoreProduct } from '@/src/utils/types';
 
 export default function StorePage() {
   const router = useRouter();
@@ -202,7 +202,9 @@ export default function StorePage() {
   };
 
   const increaseQuantity = () => {
-    setQuantity(prev => Math.min(prev + 1, 10)); // Max 10 items
+    if (selectedProduct) {
+      setQuantity(prev => Math.min(prev + 1, selectedProduct.stockCount)); // Max is stock count
+    }
   };
 
   const decreaseQuantity = () => {

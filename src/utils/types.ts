@@ -74,3 +74,17 @@ export interface WishlistProps {
   onBack: () => void;
   loading?: boolean;
 }
+
+export interface StoreProduct {
+  id: string;
+  title: string;
+  price: number;
+  beforePrice?: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  stockCount: number;
+  createdDate: string;
+  updatedDate: string;
+  isInWishlist: boolean;
+}
