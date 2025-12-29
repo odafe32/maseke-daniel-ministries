@@ -15,6 +15,7 @@ interface User {
   address?: string;
   avatar?: string;
   avatar_url?: string;
+  avatar_base64?: string;
 }
 
 interface AuthState {
@@ -26,7 +27,6 @@ interface AuthState {
   pushToken: string | null;
   lastSyncedPushToken: string | null;
 
-  // Actions
   setToken: (token: string) => void;
   setUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
@@ -47,7 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   error: null,
-  stayLoggedIn: true, // Default to true for backward compatibility
+  stayLoggedIn: true, 
   pushToken: null,
   lastSyncedPushToken: null,
 
@@ -78,13 +78,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ token, user, isLoading: false });
 
-      // If push token exists but backend did not store it (e.g., first login in another device),
-      // ensure it remains synchronized via dedicated endpoint.
       if (pushToken) {
         get().sendPushToken(pushToken);
       }
-    } catch (error: any) {
-      set({ error: error.response?.data?.message || 'Login failed', isLoading: false });
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+      set({ error: message || 'Login failed', isLoading: false });
       throw error;
     }
   },
@@ -115,23 +114,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await axios.post(`${API_URL}/mobile/auth/register`, { email, full_name: fullName });
       set({ isLoading: false });
       return response.data;
-    } catch (error: any) {
-      set({ error: error.response?.data?.message || 'Registration failed', isLoading: false });
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+      set({ error: message || 'Registration failed', isLoading: false });
       throw error;
     }
   },
 
   async logout() {
-    // Save token before clearing state
     const { token: currentToken } = get();
 
-    // Always clear local storage first, regardless of API call
     await AsyncStorage.removeItem('authToken');
     await AsyncStorage.removeItem('authUser');
     await AsyncStorage.removeItem(LAST_SYNCED_PUSH_TOKEN_KEY);
     set({ token: null, user: null, error: null, lastSyncedPushToken: null });
 
-    // Try to call logout API with the saved token
     if (currentToken) {
       try {
         await client.post('/mobile/auth/logout', {}, {
@@ -154,18 +151,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         headers: { Authorization: `Bearer ${token}` }
       });
       set({ user: response.data, isLoading: false });
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
         get().logout();
       }
-      set({ error: error.response?.data?.message || 'Failed to fetch user', isLoading: false });
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+      set({ error: message || 'Failed to fetch user', isLoading: false });
     }
   },
 
   async loadStoredAuth() {
     try {
       const stayLoggedInStr = await AsyncStorage.getItem('stayLoggedIn');
-      const stayLoggedIn = stayLoggedInStr ? JSON.parse(stayLoggedInStr) : true; // Default to true for backward compatibility
+      const stayLoggedIn = stayLoggedInStr ? JSON.parse(stayLoggedInStr) : true;
 
       set({ stayLoggedIn });
 
@@ -194,8 +192,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await axios.post(`${API_URL}/mobile/auth/forgot-password`, { email });
       set({ isLoading: false });
       return response.data;
-    } catch (error: any) {
-      set({ error: error.response?.data?.message || 'Forgot password failed', isLoading: false });
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+      set({ error: message || 'Forgot password failed', isLoading: false });
       throw error;
     }
   },

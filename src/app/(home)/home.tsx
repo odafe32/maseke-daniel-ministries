@@ -6,6 +6,10 @@ import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { HomeStorage } from "@/src/utils/homeStorage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+interface Notification {
+  read: boolean;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -23,7 +27,7 @@ export default function HomePage() {
         const stored = await AsyncStorage.getItem('notifications');
         if (stored) {
           const notifications = JSON.parse(stored);
-          const unread = notifications.filter((n: any) => !n.read).length;
+          const unread = notifications.filter((n: Notification) => !n.read).length;
           setNotificationCount(unread);
         }
       } catch (error) {
@@ -33,13 +37,11 @@ export default function HomePage() {
     loadNotifications();
   }, []);
 
-  // Initialize home data on first load
   useEffect(() => {
     const initializeHomeData = async () => {
       try {
         const hasHomeData = await HomeStorage.hasHomeData();
         if (!hasHomeData) {
-          // Save initial quick actions data
           const initialHomeData = {
             user: null,
             quickActions: quickActions,
@@ -59,13 +61,10 @@ export default function HomePage() {
     setRefreshing(true);
     setLoading(true);
 
-    // Force sync with fresh API data
     const timer = setTimeout(async () => {
       try {
-        // Clear stale data flag to force API sync
         const homeData = await HomeStorage.getHomeData();
         if (homeData) {
-          // Update last_synced to force refresh
           homeData.last_synced = new Date().toISOString();
           await HomeStorage.saveHomeData(homeData);
         }

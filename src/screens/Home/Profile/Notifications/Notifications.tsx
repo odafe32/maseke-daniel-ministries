@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   TouchableOpacity,
   FlatList,
   RefreshControl,
@@ -11,7 +10,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { BackHeader, ThemeText } from "@/src/components";
-import { colors, fs, getColor } from "@/src/utils";
+import {  fs, getColor } from "@/src/utils";
 import { Icon } from "@/src/components/icons/Icon";
 
 interface NotificationItem {
@@ -87,17 +86,20 @@ function NotificationCard({ item, onPress, index }: NotificationCardProps) {
         ],
       }}
     >
-      <TouchableOpacity
-        style={[styles.notificationCard, !item.read && styles.unreadCard]}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        <View style={styles.iconContainer}>
-          <Feather
-            name={getIcon(item.type) as any}
-            size={24}
-            color={item.read ? colors.muted : "#0C154C"}
-          />
+      <View style={styles.iconContainer}>
+        <Feather
+          name={getIcon(item.type) as keyof typeof Feather.glyphMap}
+          size={24}
+          color={item.read ? colors.muted : "#0C154C"}
+        />
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.cardHeader}>
+          <ThemeText variant="h5" style={item.read ? styles.title : [styles.title, styles.unreadTitle]}>
+            {item.title}
+          </ThemeText>
+          {!item.read && <View style={styles.unreadDot} />}
         </View>
 
         <View style={styles.content}>
@@ -138,42 +140,6 @@ export function Notifications({
   refreshing?: boolean;
   onClearAll?: () => void;
 }) {
-  const colors = getColor();
-
-  // Animation values
-  const headerAnim = useRef(new Animated.Value(0)).current;
-  const titleAnim = useRef(new Animated.Value(0)).current;
-  const emptyStateAnim = useRef(new Animated.Value(0)).current;
-
-  // Trigger animations on mount
-  useEffect(() => {
-    Animated.parallel([
-      // Header - fade and slide from top
-      Animated.spring(headerAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      // Title section - fade and slide
-      Animated.spring(titleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        delay: 100,
-        useNativeDriver: true,
-      }),
-      // Empty state - scale up
-      Animated.spring(emptyStateAnim, {
-        toValue: 1,
-        tension: 40,
-        friction: 6,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
   const handleNotificationPress = (id: string) => {
     onNotificationPress(id);
   };

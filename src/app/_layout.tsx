@@ -1,6 +1,6 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StatusBar, View, Text, StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,6 +12,8 @@ import { usePathname } from "expo-router";
 import { shouldHideBottomMenu } from "../constants/navigation";
 import { useInternetConnectivity } from "../hooks/useInternetConnectivity";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SystemPopupModal from "../components/SystemPopupModal";
 import { useSystemPopup } from "../hooks/useSystemPopup";
 
@@ -129,6 +131,9 @@ const toastConfig = {
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
+// Create a client for React Query
+const queryClient = new QueryClient();
+
 // Main layout component that doesn't depend on auth state
 const RootLayout = () => {
   const [fontsLoaded, error] = useFonts({
@@ -173,7 +178,7 @@ const RootLayout = () => {
 
     // Allow auto-rotation
     ScreenOrientation.unlockAsync();
-  }, []);
+  }, [loadStoredAuth]);
 
   useEffect(() => {
     if (error) throw error;
@@ -195,14 +200,16 @@ const RootLayout = () => {
   }
 
   return (
-    <>
-      <StatusBar barStyle={"dark-content"} backgroundColor={Colors.whiteBg} />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar barStyle={"dark-content"} backgroundColor={Colors.whiteBg} />
 
-      {showContent && (
-        <RootLayoutNav />
-      )}
-      <Toast config={toastConfig} />
-    </>
+        {showContent && (
+          <RootLayoutNav />
+        )}
+        <Toast config={toastConfig} />
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 };
 
@@ -258,7 +265,25 @@ function RootLayoutNav() {
           animationDuration: 250,
         }}
       >
-        <Stack.Screen name="(home)" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/home" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/profile" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/bible" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/saved-notes" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/settings" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/store" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/cart" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/orders" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/wishlists" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/about" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/help" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/prayer-request" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/privacy-policy" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/change-password" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/payment" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/live" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/sermon-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/devotionals" options={{ headerShown: false }} />
         {/* Add other main screens here */}
       </Stack>
       {showBottomMenu && <BottomMenu />}

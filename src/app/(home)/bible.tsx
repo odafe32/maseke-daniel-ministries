@@ -79,7 +79,7 @@ export default function BiblePage() {
     const [settingsVisible, setSettingsVisible] = useState(true);
     const [selectedThemeId, setSelectedThemeId] = useState("classic");
     const [fontSize, setFontSize] = useState(18);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage] = useState(1);
     const totalPages = 26;
 
     // Track current book and chapter
@@ -87,11 +87,10 @@ export default function BiblePage() {
     const [currentChapterNumber, setCurrentChapterNumber] = useState<number>(1);
 
     // Offline Bible data state
-    const [hasBibleData, setHasBibleData] = useState<boolean>(false);
     const [showDownloadManager, setShowDownloadManager] = useState<boolean>(false);
     const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
-    const { currentChapter, fetchChapter, clearCurrentChapter, isLoadingChapter, downloadProgress } = useBible();
+    const { currentChapter, fetchChapter, isLoadingChapter, downloadProgress } = useBible();
 
     // Initialize notes store
     useNotes();
@@ -106,7 +105,6 @@ export default function BiblePage() {
 
                 // Check if Bible data exists
                 const bibleDataExists = await BibleStorage.hasBibleData();
-                setHasBibleData(bibleDataExists);
 
                 if (!bibleDataExists) {
                     // Show download manager if no Bible data
@@ -136,12 +134,11 @@ export default function BiblePage() {
         };
 
         loadPreferences();
-    }, []);
+    }, [fetchChapter]);
 
     // Handle download completion
     const handleDownloadComplete = () => {
         setShowDownloadManager(false);
-        setHasBibleData(true);
     };
 
     // Handle download cancellation
@@ -223,18 +220,9 @@ export default function BiblePage() {
         }
     };
 
-    const handlePrevPage = () => {
-        setCurrentPage((prev) => (prev > 1 ? prev - 1 : totalPages));
-    };
-
-    const handleNextPage = () => {
-        setCurrentPage((prev) => (prev < totalPages ? prev + 1 : 1));
-    };
-
     return(
         <>
             {isInitializing ? (
-                // Loading screen while checking preferences and data
                 <View style={[styles.loadingContainer, { backgroundColor: currentTheme.backgroundColor }]}>
                     <ActivityIndicator size="large" color={currentTheme.textColor} />
                     <Text style={[styles.loadingText, { color: currentTheme.textColor }]}>Loading Bible...</Text>

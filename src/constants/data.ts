@@ -1,13 +1,16 @@
+import { ImageSourcePropType } from 'react-native';
+
 export interface OnboardingItem {
   id: string;
   title: string;
   description: string;
-  image: any;
+  image: ImageSourcePropType;
 }
 
 export const images = {
   logo: require("../assets/logo.png"),
   logovector: require("../assets/topvector.png"),
+  HeroSection: require("../assets/images/sermonhero.jpg"),
 };
 
 export const onboardingData: OnboardingItem[] = [
@@ -200,29 +203,7 @@ export interface OrderItem {
     image: string | null;
   } | null;
   quantity: number;
-  amount: number;
-  subtotal: number;
-}
-
-export interface OrderPayment {
-  id: string;
-  status: string;
-  amount: number;
-  method: string;
-  reference: string | null;
-}
-
-export interface OrderPickup {
-  id: string;
-  pickup_code: string | null;
-  pickup_status: string | null;
-}
-
-export interface OrderShipping {
-  id: string;
-  status: string | null;
-  tracking_number: string | null;
-  carrier: string | null;
+  image: any;
 }
 
 export interface Order {

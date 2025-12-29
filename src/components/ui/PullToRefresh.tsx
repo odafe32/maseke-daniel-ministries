@@ -1,30 +1,32 @@
-import React, { useRef, useState, ReactNode } from "react";
+import React, { useState, ReactNode } from "react";
 import {
-  Animated,
-  PanResponder,
-  PanResponderInstance,
   RefreshControl,
   ScrollView,
+  StyleProp,
   StyleSheet,
-  View,
   ViewStyle,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
-import { hp, wp, getColor } from "@/src/utils";
+import {  getColor } from "@/src/utils";
 
 interface PullToRefreshProps {
   children: ReactNode;
   onRefresh: () => void | Promise<void>;
   refreshThreshold?: number;
-  containerStyle?: ViewStyle;
+  containerStyle?: StyleProp<ViewStyle>;
+  contentContainerStyle?: StyleProp<ViewStyle>;
   indicatorColor?: string;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
 export const PullToRefresh = ({
   children,
   onRefresh,
-  refreshThreshold = 80,
   containerStyle,
+  contentContainerStyle,
   indicatorColor,
+  onScroll,
 }: PullToRefreshProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const colors = getColor();
@@ -43,6 +45,7 @@ export const PullToRefresh = ({
   return (
     <ScrollView
       style={[styles.container, containerStyle]}
+      contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -53,7 +56,7 @@ export const PullToRefresh = ({
         />
       }
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.contentContainer}
+      onScroll={onScroll}
     >
       {children}
     </ScrollView>

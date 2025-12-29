@@ -24,7 +24,11 @@ export default function ProfilePage() {
   const [formEmail, setFormEmail] = useState(user?.email || "");
   const [formPhone, setFormPhone] = useState(user?.phone_number || "");
   const [formAddress, setFormAddress] = useState(user?.address || "");
+<<<<<<< HEAD
+  const [formAvatar, setFormAvatar] = useState<string>(user?.avatar || "");
+=======
   const [isSaving, setIsSaving] = useState(false);
+>>>>>>> main
   const [avatar, setAvatar] = useState(avatarUri);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
@@ -39,7 +43,12 @@ export default function ProfilePage() {
       setFormEmail(user.email);
       setFormPhone(user.phone_number || "");
       setFormAddress(user.address || "");
+<<<<<<< HEAD
+      setFormAvatar(user.avatar || "");
+      setAvatar(user.avatar_base64 || user.avatar_url || avatarUri);
+=======
       setAvatar(user.avatar_url || avatarUri);
+>>>>>>> main
     }
   }, [user]);
 
@@ -52,7 +61,7 @@ export default function ProfilePage() {
       }
     };
     fetchProfile();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -60,7 +69,7 @@ export default function ProfilePage() {
         const stored = await AsyncStorage.getItem('notifications');
         if (stored) {
           const notifications = JSON.parse(stored);
-          const unread = notifications.filter((n: any) => !n.read).length;
+          const unread = notifications.filter((n: { read: boolean }) => !n.read).length;
           setUnreadCount(unread);
         }
       } catch (error) {
@@ -102,7 +111,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile({
+      const updatedUser = await updateProfile({
         full_name: formName,
         email: formEmail,
         phone_number: formPhone,
@@ -112,6 +121,12 @@ export default function ProfilePage() {
         showSuccessToast('Error', error);
       } else {
         setProfile({ name: formName, email: formEmail, phone: formPhone, address: formAddress });
+        // Update avatar with server-returned data (prefer base64 for mobile display)
+        if (updatedUser?.avatar_base64) {
+          setAvatar(updatedUser.avatar_base64);
+        } else if (updatedUser?.avatar_url) {
+          setAvatar(updatedUser.avatar_url);
+        }
         setIsEditing(false);
         showSuccessToast('Success', 'Profile updated successfully');
       }
