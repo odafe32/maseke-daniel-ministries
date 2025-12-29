@@ -3,6 +3,7 @@ import { profileApi } from '../api/profileApi';
 import { useAuthStore } from '../stores/authStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AxiosError } from 'axios';
+import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 
 interface ApiErrorResponse {
   message?: string;
@@ -77,7 +78,7 @@ export const useProfile = () => {
     setIsUpdating(true);
     setError(null);
     try {
-      const response = await profileApi.updateAvatar(avatar);
+      const response = await profileApi.updateProfileAvatar(avatar.avatar);
       if (response.data.success) {
         const { user } = response.data;
         setUser(user);
@@ -133,6 +134,7 @@ export const useProfile = () => {
       const response = await profileApi.changePassword(data);
       return response.data;
     } catch (err: unknown) {
+      console.log("err: ", err);
       const axiosError = err as AxiosError;
       console.error('Change password error:', axiosError.response?.data);
       const responseData = axiosError.response?.data as ApiErrorResponse;
@@ -143,6 +145,9 @@ export const useProfile = () => {
         errorMessage = errors[firstField][0] || errorMessage;
       } else {
         errorMessage = responseData?.message || errorMessage;
+      }
+      if(responseData?.message){
+        showErrorToast("Error", responseData?.message);
       }
       setError(errorMessage);
       throw err;

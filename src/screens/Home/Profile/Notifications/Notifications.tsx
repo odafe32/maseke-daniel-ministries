@@ -120,7 +120,7 @@ function NotificationCard({ item, onPress, index }: NotificationCardProps) {
         </View>
 
         <Feather name="chevron-right" size={20} color="#5E596E" />
-      </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
@@ -140,6 +140,37 @@ export function Notifications({
   refreshing?: boolean;
   onClearAll?: () => void;
 }) {
+  // Animation values
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const titleAnim = useRef(new Animated.Value(0)).current;
+  const emptyStateAnim = useRef(new Animated.Value(0)).current;
+
+  // Trigger animations on mount
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(titleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      Animated.spring(emptyStateAnim, {
+        toValue: 1,
+        tension: 40,
+        friction: 6,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [headerAnim, titleAnim, emptyStateAnim]);
+
   const handleNotificationPress = (id: string) => {
     onNotificationPress(id);
   };

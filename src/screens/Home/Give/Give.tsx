@@ -177,6 +177,7 @@ export function Give({
                     }),
                   },
                 ],
+                zIndex:-1,
               }}
             >
               <View style={styles.formField}>
