@@ -121,8 +121,6 @@ export function StoreUI({
   goToSlide,
   actualCarouselWidth,
 }: StoreUIProps) {
-  console.log("isLoading: ",isLoading);
-  console.log("selectedProduct: ",selectedProduct);
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -545,20 +543,27 @@ export function StoreUI({
             </Animated.View>
           ))}
         </View>
+      ) : paginatedProducts.length === 0 ? (
+        // Empty State
+        <View style={styles.emptyStateContainer}>
+          <View style={styles.emptyStateIconContainer}>
+            <Feather name="shopping-bag" size={64} color="#D1D5DB" />
+          </View>
+          <ThemeText variant="h3" style={styles.emptyStateTitle}>
+            No Products Found
+          </ThemeText>
+          <ThemeText variant="body" style={styles.emptyStateDescription}>
+            {searchQuery
+              ? `We couldn't find any products matching "${searchQuery}". Try different keywords or browse all items.`
+              : "There are no products available at the moment. Please check back later!"}
+          </ThemeText>
+        </View>
       ) : (
         // Actual products when not loading
         <View style={styles.productsContainer}>
-          {paginatedProducts.length > 0 ? (
-            paginatedProducts.map((item, index) => (
-              <ProductItem key={item.id} item={item} index={index} /> // eslint-disable-line react/prop-types
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <ThemeText variant="body" style={styles.emptyText}>
-                No products found
-              </ThemeText>
-            </View>
-          )}
+          {paginatedProducts.map((item, index) => (
+            <ProductItem key={item.id} item={item} index={index} /> // eslint-disable-line react/prop-types
+          ))}
         </View>
       )}
 
@@ -1110,14 +1115,36 @@ const styles = StyleSheet.create({
   },
 
   // Empty State
-  emptyContainer: {
-    alignItems: 'center',
+  emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingVertical: 40,
+    alignItems: 'center',
+    paddingVertical: hp(80),
+    paddingHorizontal: wp(40),
   },
-  emptyText: {
-    color: COLORS.TEXT_LIGHT_GRAY,
+  emptyStateIconContainer: {
+    width: wp(120),
+    height: hp(120),
+    borderRadius: 60,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyStateTitle: {
+    color: COLORS.TEXT_DARK,
+    fontFamily: 'Geist-Bold',
+    fontSize: fs(22),
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: '#6B7280',
+    fontFamily: 'Geist-Regular',
+    fontSize: fs(15),
+    textAlign: 'center',
+    lineHeight: fs(22),
+    maxWidth: '85%',
   },
 
   // Pagination

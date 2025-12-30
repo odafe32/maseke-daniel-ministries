@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Animated,
+  RefreshControl,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 
@@ -21,6 +22,7 @@ interface WishlistProps {
   loading?: boolean;
   loadingWishlists?: Array<string>;
   toggleWishlist?: (productId: string) => void;
+  isRefreshing?: boolean;
   onRefresh?: () => void;
 }
 
@@ -30,11 +32,11 @@ export function Wishlist({
   loading = false,
   loadingWishlists = [],
   toggleWishlist,
+  isRefreshing = false,
   onRefresh,
 }: WishlistProps) {
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
-  const refreshAnim = useRef(new Animated.Value(0)).current;
   const gridAnim = useRef(new Animated.Value(0)).current;
   const emptyStateAnim = useRef(new Animated.Value(0)).current;
   const skeletonPulse = useRef(new Animated.Value(0.3)).current;
@@ -49,19 +51,11 @@ export function Wishlist({
         friction: 8,
         useNativeDriver: true,
       }),
-      // Refresh button - fade and slide from right
-      Animated.spring(refreshAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        delay: 100,
-        useNativeDriver: true,
-      }),
       // Grid - fade in
       Animated.timing(gridAnim, {
         toValue: 1,
         duration: 400,
-        delay: 200,
+        delay: 100,
         useNativeDriver: true,
       }),
       // Empty state - scale up
@@ -69,7 +63,7 @@ export function Wishlist({
         toValue: 1,
         tension: 40,
         friction: 6,
-        delay: 300,
+        delay: 200,
         useNativeDriver: true,
       }),
     ]).start();
@@ -166,6 +160,14 @@ export function Wishlist({
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
+      refreshControl={onRefresh ? (
+        <RefreshControl
+          refreshing={!!isRefreshing}
+          onRefresh={onRefresh}
+          tintColor="#0C154C"
+          colors={["#0C154C"]}
+        />
+      ) : undefined}
     >
       {/* Animated Header */}
       <Animated.View
@@ -183,37 +185,6 @@ export function Wishlist({
       >
         <BackHeader title="My Wishlist" onBackPress={onBack} />
       </Animated.View>
-
-      {/* Animated Refresh Button */}
-      {!loading && onRefresh && (
-        <Animated.View
-          style={[
-            styles.refreshContainer,
-            {
-              opacity: refreshAnim,
-              transform: [
-                {
-                  translateX: refreshAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [30, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={onRefresh}
-            disabled={loading}
-          >
-            <Feather name="refresh-cw" size={16} color="#0C154C" />
-            <ThemeText variant="bodySmall" style={styles.refreshText}>
-              Refresh
-            </ThemeText>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
 
       {loading ? (
         <View style={styles.skeletonGrid}>
@@ -238,7 +209,7 @@ export function Wishlist({
       ) : (
         <Animated.View
           style={[
-            styles.emptyContainer,
+            styles.emptyStateContainer,
             {
               opacity: emptyStateAnim,
               transform: [
@@ -252,8 +223,14 @@ export function Wishlist({
             },
           ]}
         >
-          <ThemeText variant="body" style={styles.emptyText}>
-            No items in your wishlist
+          <View style={styles.emptyStateIconContainer}>
+            <Feather name="heart" size={64} color="#D1D5DB" />
+          </View>
+          <ThemeText variant="h2" style={styles.emptyStateTitle}>
+            Your Wishlist is Empty
+          </ThemeText>
+          <ThemeText variant="body" style={styles.emptyStateDescription}>
+            Save your favorite items here! Browse the store and tap the heart icon to add products to your wishlist.
           </ThemeText>
         </Animated.View>
       )}
@@ -363,31 +340,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
+  // Empty State Styles
+  emptyStateContainer: {
     flex: 1,
-  },
-  emptyText: {
-    color: '#666666',
-  },
-  refreshContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 8,
-  },
-  refreshButton: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingVertical: hp(80),
+    paddingHorizontal: wp(40),
   },
-  refreshText: {
-    color: '#0C154C',
+  emptyStateIconContainer: {
+    width: wp(120),
+    height: hp(120),
+    borderRadius: 60,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyStateTitle: {
+    color: '#0B0A0D',
+    fontFamily: 'Geist-Bold',
+    fontSize: 22,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: '#6B7280',
+    fontFamily: 'Geist-Regular',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: '85%',
   },
 });

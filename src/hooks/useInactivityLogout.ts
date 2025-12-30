@@ -40,11 +40,6 @@ export const useInactivityLogout = (currentPathname?: string) => {
 
     // Only set timer if user is logged in, stayLoggedIn is false, and not on excluded page
     const shouldMonitor = token && !stayLoggedIn && !isExcludedPage;
-    console.log("stayLoggedIn: ", stayLoggedIn);
-    // console.log("shouldMonitor: ", shouldMonitor);
-    // console.log("token: ", token);
-    // console.log("isExcludedPage: ", isExcludedPage);
-    // console.log("currentPathname: ", currentPathname);
     if (shouldMonitor) {
       inactivityTimerRef.current = setTimeout(() => {
         handleInactivityLogout();

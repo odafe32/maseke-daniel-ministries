@@ -22,6 +22,8 @@ export const useOrders = () => {
     const initializeOrders = async () => {
       // First load cached data
       await orderStore.getState().loadCachedOrders();
+
+      console.log("Loading from store");
       
       // Only fetch from API if no cached data exists
       const cachedData = await AsyncStorage.getItem('@orders_cache');
@@ -44,12 +46,16 @@ export const useOrders = () => {
     try {
       const response = await orderApi.getAllOrders();
       
+      console.log("response:", response);
+
       if (response.data.success) {
         const orders = response.data.data;
+        console.log("orders:", orders);
         
         // Update store with fresh data
         orderStore.getState().setOrders(orders);
       } else {
+        
         throw new Error(response.data.message || 'Failed to fetch orders');
       }
     } catch (err: unknown) {

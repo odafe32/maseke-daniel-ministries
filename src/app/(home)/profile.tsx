@@ -189,7 +189,7 @@ export default function ProfilePage() {
       // Explicitly navigate to login screen to ensure redirect
       setTimeout(() => {
         router.replace('/(auth)/login');
-      }, 1000); // Small delay to show the success toast
+      }, 500); // Small delay to show the success toast
       
     } catch (error) {
       console.error('Logout failed:', error);
