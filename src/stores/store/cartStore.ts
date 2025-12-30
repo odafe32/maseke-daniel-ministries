@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CartItem } from '@/src/constants/data'
+import { CartItem } from '@/src/utils/types'
 
 const CART_CACHE_KEY = '@cart_cache';
 

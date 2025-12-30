@@ -84,7 +84,7 @@ export function Profile({
                       {action.custom ? (
                         <Icon name={typeof action.icon === 'string' ? action.icon as "archive" : "archive"} color="#121116" size={24} />
                       ) : (
-                        <Feather name={typeof action.icon === 'string' ? action.icon as any : 'circle' as any} size={24} color={String(action.id) === 'logout' ? '#DC2626' : '#121116'} />
+                        <Feather name={typeof action.icon === 'string' ? (action.icon as keyof typeof Feather.glyphMap) : 'circle'} size={24} color={String(action.id) === 'logout' ? '#DC2626' : '#121116'} />
                       )}
                       {(() => {
                         const badgeCount = action.badgeCount ?? 0;
@@ -275,11 +275,6 @@ const styles = StyleSheet.create({
   },
   editContent: {
     gap: 16,
-  },
-  editTitle: {
-    textAlign: "center",
-    fontFamily: "Geist-SemiBold",
-    color: "#0C154C",
   },
   editAvatarWrapper: {
     alignSelf: "center",

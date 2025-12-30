@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StoreProduct } from '@/src/constants/data';
+import { StoreProduct } from '@/src/utils/types';
 
 const PRODUCTS_CACHE_KEY = '@store_products_cache';
 const CART_COUNT_KEY = '@store_cart_count';

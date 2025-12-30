@@ -1,13 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
 import { ThemeText } from "@/src/components";
-import { colors, fs, getColor, hp, wp } from "@/src/utils";
+import { fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
-import { HomeStorage, HomeData } from "@/src/utils/homeStorage";
+import { HomeStorage } from "@/src/utils/homeStorage";
 import { quickActions } from "@/src/constants/data";
 import {
   StyleSheet,
   View,
-  Image,
   ScrollView,
   ImageBackground,
   TouchableOpacity,
@@ -16,9 +15,17 @@ import {
   Text,
 } from "react-native";
 import { avatarUri } from "@/src/constants/data";
-import { useUser } from '../../hooks/useUser';
-import { useOrientation, Orientation } from '../../hooks/useOrientation';
+import { useUser } from "../../hooks/useUser";
+import { useAdsStore } from "../../stores/adsStore";
+import { HomeImageSection } from "./HomeImageSection";
 import Feather from "@expo/vector-icons/Feather";
+
+interface LocalUser {
+  full_name: string;
+  avatar_url?: string;
+  avatar_base64?: string;
+  last_updated: string;
+}
 
 export const Home = ({
   loading,
@@ -32,15 +39,13 @@ export const Home = ({
 }: HomeProps) => {
   const colors = getColor();
   const { user: apiUser } = useUser();
-  const orientation: Orientation = useOrientation();
+  const { ads, loading: adsLoading, fetchAds } = useAdsStore();
   const profileScale = useRef(new Animated.Value(1)).current;
 
-  // Offline data state
-  const [localUser, setLocalUser] = useState<any>(null);
+  const [localUser, setLocalUser] = useState<LocalUser | null>(null);
   const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // Dynamic styles for elements that use colors
   const dynamicStyles = {
     notificationBadge: {
       position: 'absolute' as const,
@@ -57,16 +62,17 @@ export const Home = ({
     },
   };
 
-  // Use local data if available, otherwise use API data
   const user = localUser || apiUser;
   const displayQuickActions = localQuickActions;
 
-  // Get avatar URI (network or default)
   const getAvatarUri = () => {
-    if (user?.avatar_url) {
-      return user.avatar_url;
+    if (user?.avatar_base64) {
+      return user.avatar_base64; 
     }
-    return avatarUri; // Fallback to default
+    if (user?.avatar_url) {
+      return user.avatar_url; 
+    }
+    return avatarUri;
   };
 
   const handleProfilePressInternal = () => {
@@ -125,6 +131,11 @@ export const Home = ({
     loadOfflineData();
   }, []);
 
+  // Fetch ads on mount
+  useEffect(() => {
+    fetchAds();
+  }, [fetchAds]);
+
   // Sync with API data when user data changes
   useEffect(() => {
     if (apiUser && !isOfflineMode) {
@@ -133,6 +144,7 @@ export const Home = ({
           const userData = {
             full_name: apiUser.full_name || '',
             avatar_url: apiUser.avatar_url,
+            avatar_base64: apiUser.avatar_base64, 
             last_updated: new Date().toISOString(),
           };
 
@@ -147,6 +159,9 @@ export const Home = ({
       syncUserData();
     }
   }, [apiUser, isOfflineMode]);
+
+  const imageUris = ads.map(ad => ad.image);
+  const durations = ads.map(ad => ad.display_duration * 1000);
 
   return (
     <View style={styles.container}>
@@ -190,6 +205,7 @@ export const Home = ({
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
+        <HomeImageSection imageUris={imageUris} durations={durations} loading={adsLoading} />
         {loading ? (
           <View style={styles.cardsWrapper}>
             {Array.from({ length: 6 }).map((_, index) => (
@@ -243,12 +259,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  serviceLabel: {
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    fontFamily: "Geist-Medium",
-    fontSize: fs(12),
   },
   greeting: {
     marginTop: 4,
@@ -305,17 +315,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Geist-SemiBold",
     fontSize: fs(18),
-  },
-  skeletonBar: {
-    height: hp(14),
-    borderRadius: wp(8),
-    backgroundColor: "#E3E6EB",
-  },
-  skeletonAvatar: {
-    width: wp(40),
-    height: hp(40),
-    borderRadius: wp(20),
-    backgroundColor: "#E3E6EB",
   },
   skeletonCard: {
     height: hp(160),

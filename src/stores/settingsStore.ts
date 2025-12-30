@@ -5,16 +5,15 @@ interface SettingsState {
   notifications: boolean;
   sermonAlerts: boolean;
   devotionalReminders: boolean;
-  stayLoggedIn: boolean;
-  setSetting: (key: keyof Omit<SettingsState, 'setSetting' | 'loadSettings'>, value: boolean) => void;
+  setSetting: (key: keyof Omit<SettingsState, 'setSetting' | 'loadSettings' | 'clearSettings'>, value: boolean) => void;
   loadSettings: () => Promise<void>;
+  clearSettings: () => Promise<void>;
 }
 
 const DEFAULT_SETTINGS = {
   notifications: true,
   sermonAlerts: true,
   devotionalReminders: true,
-  stayLoggedIn: true,
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -42,13 +41,26 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       );
 
       const newSettings = settings.reduce((acc, { key, value }) => {
-        acc[key as keyof Omit<SettingsState, 'setSetting' | 'loadSettings'>] = value;
+        acc[key as keyof Omit<SettingsState, 'setSetting' | 'loadSettings' | 'clearSettings'>] = value;
         return acc;
       }, {} as Partial<SettingsState>);
 
       set(newSettings);
     } catch (error) {
       console.error('Failed to load settings:', error);
+    }
+  },
+
+  clearSettings: async () => {
+    try {
+      await Promise.all(
+        Object.keys(DEFAULT_SETTINGS).map(async (key) => {
+          await AsyncStorage.removeItem(`setting_${key}`);
+        })
+      );
+      set(DEFAULT_SETTINGS);
+    } catch (error) {
+      console.error('Failed to clear settings:', error);
     }
   },
 }));

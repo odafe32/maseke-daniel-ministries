@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { SavedNotes } from "@/src/screens/Home/Profile/SavedNotes";
 import { useRouter } from "expo-router";
 import { Animated } from "react-native";
@@ -6,7 +6,6 @@ import { Note } from "@/src/api/notesApi";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { useNotes } from "@/src/hooks/useNotes";
 import { showSuccessToast } from "@/src/utils/toast";
-import { bibleApi } from "@/src/api/bibleApi";
 
 type NoteFilter = "all" | "bible" | "devotional";
 

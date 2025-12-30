@@ -8,11 +8,12 @@ import {
   FlatList,
   ActivityIndicator,
   Animated,
+  RefreshControl,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { CartItem } from "@/src/constants/data";
+import { CartItem } from "@/src/utils/types";
 import { fs, hp, wp } from "@/src/utils";
 
 // Color constants to avoid color literals
@@ -44,6 +45,7 @@ interface CartUIProps {
   getTotalAmount: () => number;
   onBack: () => void;
   onCheckout: () => void;
+  refreshing: boolean;
   onRefresh: () => void;
   isLoading: boolean;
   updatingItemId: string | null;
@@ -63,6 +65,7 @@ export function CartUI({
   getTotalAmount,
   onBack,
   onCheckout,
+  refreshing,
   onRefresh,
   isLoading,
   updatingItemId = null,
@@ -267,6 +270,12 @@ export function CartUI({
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
       >
         {/* Animated Header */}
         <Animated.View
@@ -380,44 +389,23 @@ export function CartUI({
           </ThemeText>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          {/* Refresh Button */}
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={onRefresh}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size={20} color={COLORS.PRIMARY_BLUE} />
-            ) : (
-              <>
-                <Feather name="refresh-cw" size={20} color={COLORS.PRIMARY_BLUE} />
-                <ThemeText variant="h4" style={styles.refreshText}>
-                  Refresh
-                </ThemeText>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {/* Checkout Button */}
-          <TouchableOpacity
-            style={[styles.checkoutButton, styles.checkoutButtonExpanded]}
-            onPress={onCheckout}
-            disabled={isCheckingOut}
-          >
-            {isCheckingOut ? (
-              <ActivityIndicator size={20} color={COLORS.WHITE} />
-            ) : (
-              <>
-                <ThemeText variant="h3" style={styles.checkoutText}>
-                  Checkout
-                </ThemeText>
-                <Icon name="cart" size={20} color={COLORS.WHITE} />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+        {/* Checkout Button */}
+        <TouchableOpacity
+          style={styles.checkoutButton}
+          onPress={onCheckout}
+          disabled={isCheckingOut}
+        >
+          {isCheckingOut ? (
+            <ActivityIndicator size={20} color={COLORS.WHITE} />
+          ) : (
+            <>
+              <ThemeText variant="h3" style={styles.checkoutText}>
+                Checkout
+              </ThemeText>
+              <Icon name="cart" size={20} color={COLORS.WHITE} />
+            </>
+          )}
+        </TouchableOpacity>
       </Animated.View>
     </>
   );
@@ -570,30 +558,6 @@ const styles = StyleSheet.create({
     color: COLORS.PRIMARY_BLUE,
     fontWeight: '600',
     fontFamily: 'Geist-Bold',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  refreshButton: {
-    alignItems: 'center',
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.PRIMARY_BLUE,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    paddingVertical: 16,
-    flex: 1,
-  },
-  refreshText: {
-    color: COLORS.PRIMARY_BLUE,
-    fontSize: fs(16),
-    fontWeight: '600',
-  },
-  checkoutButtonExpanded: {
-    flex: 2,
   },
   checkoutButton: {
     alignItems: 'center',

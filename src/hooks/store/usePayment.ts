@@ -6,7 +6,7 @@ import { paymentStore } from '@/src/stores/store/paymentStore';
 import { cartStore } from '@/src/stores/store/cartStore';
 import { storeStore } from '@/src/stores/store/storeStore';
 import { orderStore } from '@/src/stores/orderStore';
-import { PickupStation } from '@/src/constants/data';
+import { PickupStation } from '@/src/utils/types';
 import { usePaystack } from 'react-native-paystack-webview';
 import { showSuccessToast , showErrorToast } from "@/src/utils/toast";
 import { useRouter } from 'expo-router';

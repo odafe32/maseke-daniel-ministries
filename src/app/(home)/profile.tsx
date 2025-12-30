@@ -52,7 +52,7 @@ export default function ProfilePage() {
       }
     };
     fetchProfile();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -60,7 +60,7 @@ export default function ProfilePage() {
         const stored = await AsyncStorage.getItem('notifications');
         if (stored) {
           const notifications = JSON.parse(stored);
-          const unread = notifications.filter((n: any) => !n.read).length;
+          const unread = notifications.filter((n: { read: boolean }) => !n.read).length;
           setUnreadCount(unread);
         }
       } catch (error) {
@@ -102,7 +102,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile({
+      const updatedUser = await updateProfile({
         full_name: formName,
         email: formEmail,
         phone_number: formPhone,
@@ -112,6 +112,12 @@ export default function ProfilePage() {
         showSuccessToast('Error', error);
       } else {
         setProfile({ name: formName, email: formEmail, phone: formPhone, address: formAddress });
+        // Update avatar with server-returned data (prefer base64 for mobile display)
+        if (updatedUser?.avatar_base64) {
+          setAvatar(updatedUser.avatar_base64);
+        } else if (updatedUser?.avatar_url) {
+          setAvatar(updatedUser.avatar_url);
+        }
         setIsEditing(false);
         showSuccessToast('Success', 'Profile updated successfully');
       }
@@ -183,7 +189,7 @@ export default function ProfilePage() {
       // Explicitly navigate to login screen to ensure redirect
       setTimeout(() => {
         router.replace('/(auth)/login');
-      }, 1000); // Small delay to show the success toast
+      }, 500); // Small delay to show the success toast
       
     } catch (error) {
       console.error('Logout failed:', error);

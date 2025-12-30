@@ -15,6 +15,10 @@ export const bottomMenuHiddenSegments = [
   "/give",
   "/cart",
   "/payment",
+  "/live",
+  "/sermon-detail",
+  "/sermons",
+  "/devotionals",
 ];
 
 export const shouldHideBottomMenu = (pathname?: string | null) => {

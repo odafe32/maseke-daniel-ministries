@@ -7,12 +7,11 @@ export function useSettings() {
     notifications,
     sermonAlerts,
     devotionalReminders,
-    stayLoggedIn,
     setSetting,
     loadSettings,
   } = useSettingsStore();
 
-  const { setStayLoggedIn, logout } = useAuthStore();
+  const { stayLoggedIn, setStayLoggedIn } = useAuthStore();
 
   useEffect(() => {
     loadSettings();
@@ -32,13 +31,7 @@ export function useSettings() {
         await setSetting('devotionalReminders', value);
         break;
       case 'stay-logged-in':
-        await setSetting('stayLoggedIn', value);
         setStayLoggedIn(value);
-        
-        // If turning off stay logged in, clear stored auth
-        if (!value) {
-          await logout();
-        }
         break;
     }
   };
