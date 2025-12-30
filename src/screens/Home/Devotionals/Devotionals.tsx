@@ -17,7 +17,6 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { DevotionalMonth } from "./DevotionalsSidebar";
 import { ResponseModal } from "./ResponseModal";
-import { useDevotionalEntry } from "@/src/hooks/useDevotionals";
 
 export interface DevotionalTheme {
   id: string;
@@ -52,8 +51,16 @@ interface DevotionalsProps {
   devotionalEntryId?: number;
   totalDays?: number;
   isNavigating?: boolean;
+  bookmarkedParagraphs?: number[];
+  onBookmarkParagraphs?: (paragraphIds: number[]) => void;
+  onUnbookmarkParagraphs?: (paragraphIds: number[]) => void;
   isBookmarking?: boolean;
-  onBookmarkToggle?: () => void;
+  isLiked?: boolean;
+  likeCount?: number;
+  onToggleLike?: () => void;
+  isLiking?: boolean;
+  onSaveResponse?: (heart: string, takeaway: string) => Promise<void>;
+  isSubmittingResponse?: boolean;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -83,29 +90,6 @@ const isHexDark = (hex?: string) => {
   const b = bigint & 255;
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return luminance < 0.5;
-};
-
-const getContrastRatio = (color1: string, color2: string) => {
-  const getLuminance = (hex: string) => {
-    const sanitized = hex.replace("#", "");
-    const bigint = parseInt(sanitized, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    const rsRGB = r / 255;
-    const gsRGB = g / 255;
-    const bsRGB = b / 255;
-    const rLinear = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
-    const gLinear = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
-    const bLinear = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
-    return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
-  };
-
-  const lum1 = getLuminance(color1);
-  const lum2 = getLuminance(color2);
-  const brightest = Math.max(lum1, lum2);
-  const darkest = Math.min(lum1, lum2);
-  return (brightest + 0.05) / (darkest + 0.05);
 };
 
 const formatDateLabel = (dateString?: string): string => {
@@ -169,19 +153,23 @@ export function Devotionals({
   devotionalEntryId,
   totalDays = 31,
   isNavigating = false,
+  bookmarkedParagraphs = [],
+  onBookmarkParagraphs,
+  onUnbookmarkParagraphs,
   isBookmarking = false,
-  onBookmarkToggle,
+  isLiked = false,
+  likeCount = 0,
+  onToggleLike,
+  isLiking = false,
+  onSaveResponse,
+  isSubmittingResponse = false,
 }: DevotionalsProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const selectedTheme = themeOptions.find((t) => t.id === selectedThemeId) ?? themeOptions[0];
   const [selectedParagraphs, setSelectedParagraphs] = useState<number[]>([]);
   const [showResponseModal, setShowResponseModal] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
   const [panelHeight, setPanelHeight] = useState(0);
-
-  const { entry, toggleLike, isLiking, submitResponse, isSubmittingResponse } = useDevotionalEntry();
 
   const headerScale = useRef(new Animated.Value(1)).current;
   const settingsPanelProgress = useRef(new Animated.Value(settingsVisible ? 1 : 0)).current;
@@ -228,41 +216,11 @@ export function Devotionals({
   const headerButtonBorderWidth =
     selectedTheme?.headerButtonBorderWidth ?? fallbackHeaderBorderWidth;
 
+  const isDarkTheme = isHexDark(selectedTheme?.backgroundColor);
+  const bookmarkedBackgroundColor = isDarkTheme ? 'rgba(255, 249, 196, 0.2)' : '#FFF9C4';
+  const bookmarkIconColor = isDarkTheme ? '#FFFFFF' : (selectedTheme?.accentColor ?? selectedTheme?.textColor);
+
   const isSelectionMode = selectedParagraphs.length > 0;
-
-  const resolvedAccentForIcon = useMemo(() => {
-    const accent = selectedTheme?.accentColor;
-    const background = selectedTheme?.backgroundColor;
-    const themeId = selectedTheme?.id;
-
-    if (themeId === "sepia" || themeId === "mist" || themeId === "dusk") {
-      return "#000000";
-    }
-
-    if (!accent) return selectedTheme?.textColor ?? "#0C154C";
-
-    if (isHexWhite(accent)) {
-      return isHexDark(background) ? "#FFFFFF" : "#0C154C";
-    }
-
-    if (isHexDark(accent)) {
-      return "#FFFFFF";
-    }
-
-    const contrastRatio = getContrastRatio(accent, background || "#FFFFFF");
-    if (contrastRatio < 4.5) {
-      return isHexDark(background) ? "#FFFFFF" : "#0C154C";
-    }
-
-    return accent;
-  }, [selectedTheme]);
-
-  const selectionIconColor = useMemo(() => {
-    if (!isSelectionMode) {
-      return selectedTheme?.textColor ?? "#FFFFFF";
-    }
-    return resolvedAccentForIcon;
-  }, [isSelectionMode, resolvedAccentForIcon, selectedTheme]);
 
   const paragraphs = useMemo(() => {
     if (!content?.body) return [];
@@ -303,13 +261,6 @@ export function Devotionals({
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (entry) {
-      setIsLiked(entry.liked);
-      setLikeCount(entry.like_count);
-    }
-  }, [entry]);
 
   const hiddenOffset = panelHeight ? panelHeight + insets.bottom + 32 : 320;
   const panelAnimatedStyle = {
@@ -393,38 +344,23 @@ export function Devotionals({
   };
 
   const handleLikeToggle = async () => {
-    if (!entry || isLiking) return;
-    try {
-      const result = await toggleLike(!isLiked);
-      if (result) {
-        setIsLiked(result.liked);
-        setLikeCount(result.like_count);
-      }
-    } catch (error) {
-      console.error('Failed to toggle like:', error);
+    if (onToggleLike) {
+      onToggleLike();
     }
   };
 
   const handleBookmarkToggle = () => {
-    if (onBookmarkToggle) {
-      onBookmarkToggle();
+    if (isSelectionMode && onBookmarkParagraphs) {
+      onBookmarkParagraphs(selectedParagraphs);
+      setSelectedParagraphs([]);
     }
   };
 
   const handleNextPage = () => setShowResponseModal(true);
 
   const handleSave = async (heart: string, takeaway: string) => {
-    if (!entry) {
-      setShowResponseModal(false);
-      onNextPage();
-      return;
-    }
-    if (heart.trim() || takeaway.trim()) {
-      try {
-        await submitResponse({ heart_response: heart, takeaway_response: takeaway });
-      } catch (error) {
-        console.error('Failed to submit response:', error);
-      }
+    if (onSaveResponse && (heart.trim() || takeaway.trim())) {
+      await onSaveResponse(heart, takeaway);
     }
     setShowResponseModal(false);
     onNextPage();
@@ -439,7 +375,7 @@ export function Devotionals({
     <View style={[styles.container, { backgroundColor: statusBarBackground }]}>
       <StatusBar backgroundColor={statusBarBackground} style={statusBarStyle} animated />
       
-      {/* HEADER - Responsive Layout */}
+      {/* HEADER - Original Layout */}
       <View style={styles.headerRow}>
         {/* Back Button */}
         <Animated.View style={{ transform: [{ scale: headerScale }] }}>
@@ -472,51 +408,19 @@ export function Devotionals({
 
         {/* Action Buttons */}
         <View style={styles.headerActions}>
-          {/* Like Button with Counter */}
-          <Pressable
-            onPress={handleLikeToggle}
-            disabled={isLiking}
-            style={[
-              styles.headerButton,
-              {
-                borderColor: headerButtonBorderColor,
-                borderWidth: headerButtonBorderWidth,
-                backgroundColor: headerButtonBackground,
-              },
-            ]}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            {isLiking ? (
-              <ActivityIndicator size="small" color={selectedTheme?.textColor} />
-            ) : (
-              <View style={styles.likeButtonContainer}>
-                <Feather 
-                  name="heart" 
-                  size={20} 
-                  color={isLiked ? "#FF4444" : selectedTheme?.textColor}
-                  fill={isLiked ? "#FF4444" : "transparent"}
-                />
-                {likeCount > 0 && (
-                  <View style={styles.likeBadge}>
-                    <Text style={styles.likeBadgeText}>
-                      {likeCount > 99 ? '99+' : likeCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </Pressable>
+    
 
-        {/* Bookmark Button */}
+          {/* Bookmark Button - Shows badge when paragraphs selected */}
           <Pressable
             onPress={handleBookmarkToggle}
-            disabled={isBookmarking}
+            disabled={isBookmarking || !isSelectionMode}
             style={[
               styles.headerButton,
               {
                 borderColor: headerButtonBorderColor,
                 borderWidth: headerButtonBorderWidth,
                 backgroundColor: headerButtonBackground,
+                opacity: isSelectionMode ? 1 : 0.5,
               },
             ]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -524,12 +428,21 @@ export function Devotionals({
             {isBookmarking ? (
               <ActivityIndicator size="small" color={selectedTheme?.textColor} />
             ) : (
-              <Feather
-                name="bookmark"
-                size={20}
-                color={entry?.bookmarked ? selectedTheme?.accentColor : selectedTheme?.textColor}
-                fill={entry?.bookmarked ? selectedTheme?.accentColor : "transparent"}
-              />
+              <View style={styles.bookmarkButtonContainer}>
+                <Feather
+                  name="bookmark"
+                  size={20}
+                  color={selectedTheme?.textColor}
+                  fill={isSelectionMode ? selectedTheme?.accentColor : "transparent"}
+                />
+                {isSelectionMode && selectedParagraphs.length > 0 && (
+                  <View style={[styles.selectionBadge, { backgroundColor: selectedTheme?.accentColor }]}>
+                    <Text style={styles.selectionBadgeText}>
+                      {selectedParagraphs.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
             )}
           </Pressable>
 
@@ -581,28 +494,56 @@ export function Devotionals({
             <View style={styles.versesContainer}>
               {paragraphs.map((paragraph) => {
                 const isSelected = selectedParagraphs.includes(paragraph.id);
+                const isBookmarked = bookmarkedParagraphs.includes(paragraph.id);
+                
                 return (
-                  <TouchableOpacity
+                  <View
                     key={paragraph.id}
-                    activeOpacity={0.9}
-                    onPress={() => toggleParagraphSelection(paragraph.id)}
-                    style={styles.verseLine}
+                    style={[
+                      styles.verseLine,
+                      isBookmarked && { backgroundColor: bookmarkedBackgroundColor },
+                    ]}
                   >
-                    <Text
-                      style={[
-                        styles.verseText,
-                        {
-                          color: selectedTheme?.textColor,
-                          fontSize,
-                          lineHeight: readingBodyLineHeight,
-                          textDecorationLine: isSelected ? "underline" : "none",
-                          textDecorationColor: selectedTheme?.accentColor ?? selectedTheme?.textColor,
-                        },
-                      ]}
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => toggleParagraphSelection(paragraph.id)}
+                      style={styles.verseTextContainer}
                     >
-                      {paragraph.text}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text
+                        style={[
+                          styles.verseText,
+                          {
+                            color: selectedTheme?.textColor,
+                            fontSize,
+                            lineHeight: readingBodyLineHeight,
+                          },
+                          isBookmarked && styles.bookmarkedText,
+                          isSelected && {
+                            textDecorationLine: "underline",
+                            textDecorationColor: selectedTheme?.accentColor ?? selectedTheme?.textColor,
+                          },
+                        ]}
+                      >
+                        {paragraph.text}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {isBookmarked && (
+                      <TouchableOpacity
+                        onPress={() => onUnbookmarkParagraphs?.([paragraph.id])}
+                        style={styles.paragraphBookmarkIcon}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        disabled={isBookmarking}
+                      >
+                        <Feather
+                          name="bookmark"
+                          size={16}
+                          color={bookmarkIconColor}
+                          fill={bookmarkIconColor}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 );
               })}
             </View>
@@ -765,9 +706,29 @@ const styles = StyleSheet.create({
   },
   verseLine: {
     marginBottom: 0,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  bookmarkedVerse: {
+    backgroundColor: '#FFF9C4',
+  },
+  verseTextContainer: {
+    flex: 1,
+    paddingVertical: 4,
   },
   verseText: {
     fontFamily: "DMSans-Regular",
+  },
+  bookmarkedText: {
+    // Additional styling for bookmarked text if needed
+  },
+  paragraphBookmarkIcon: {
+    marginLeft: 8,
+    padding: 4,
   },
   settingsPanel: {
     position: "absolute",
@@ -846,7 +807,6 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Medium",
     fontSize: 14,
   },
-  // RESPONSIVE HEADER STYLES
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -894,6 +854,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   likeBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: 'DMSans-Bold',
+  },
+  bookmarkButtonContainer: {
+    position: 'relative',
+  },
+  selectionBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  selectionBadgeText: {
     color: '#FFFFFF',
     fontSize: 10,
     fontFamily: 'DMSans-Bold',

@@ -8,7 +8,6 @@ import {
   LikeStatus,
   SubmitResponsePayload,
   DevotionalReflection,
-  BookmarkStatus,
   DevotionalBookmark,
 } from '../api/devotionApi';
 
@@ -75,22 +74,18 @@ export const useDevotionalEntry = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
-  const [isBookmarking, setIsBookmarking] = useState(false);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
-  const mergeLikeStatus = useCallback((status: LikeStatus) => {
-    setEntry((prev) => {
-      if (!prev) return null;
-      return { ...prev, liked: status.liked, like_count: status.like_count };
-    });
-  }, []);
-
-  const mergeBookmarkStatus = useCallback((status: BookmarkStatus) => {
-    setEntry((prev) => {
-      if (!prev) return null;
-      return { ...prev, bookmarked: status.bookmarked };
-    });
-  }, []);
+const mergeLikeStatus = useCallback((status: LikeStatus) => {
+  setEntry((prev) => {
+    if (!prev) return null;
+    return { 
+      ...prev, 
+      liked: status.liked, 
+      like_count: status.like_count 
+    };
+  });
+}, []);
 
   const loadTodayEntry = useCallback(async () => {
     setIsLoading(true);
@@ -212,47 +207,6 @@ export const useDevotionalEntry = () => {
     [entry, mergeLikeStatus]
   );
 
-  const toggleBookmark = useCallback(
-    async () => {
-      if (!entry) {
-        console.warn('Cannot toggle bookmark: No entry loaded');
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'No devotional entry loaded',
-        });
-        return null;
-      }
-      
-      setIsBookmarking(true);
-      try {
-        const status = await devotionApi.toggleBookmark(entry.id);
-        mergeBookmarkStatus(status);
-        
-        // Show success toast
-        Toast.show({
-          type: status.bookmarked ? 'success' : 'info',
-          text1: status.bookmarked ? 'Bookmarked' : 'Bookmark Removed',
-          text2: status.bookmarked ? 'Devotional saved to your bookmarks' : 'Devotional removed from bookmarks',
-        });
-        
-        return status;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to update bookmark';
-        setError(message);
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: message,
-        });
-        return null;
-      } finally {
-        setIsBookmarking(false);
-      }
-    },
-    [entry, mergeBookmarkStatus]
-  );
-
   const submitResponse = useCallback(
     async (payload: SubmitResponsePayload): Promise<DevotionalReflection | null> => {
       if (!entry) {
@@ -294,13 +248,11 @@ export const useDevotionalEntry = () => {
     isLoading,
     error,
     isLiking,
-    isBookmarking,
     isSubmittingResponse,
     loadTodayEntry,
     loadEntryByDay,
     refreshLikeStatus,
     toggleLike,
-    toggleBookmark,
     submitResponse,
   };
 };
