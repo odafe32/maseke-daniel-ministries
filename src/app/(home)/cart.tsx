@@ -9,6 +9,9 @@ export default function CartPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
 
+  // Pull to refresh state
+  const [refreshing, setRefreshing] = useState(false);
+
   // Use cart hook
   const {
     cartItems,
@@ -50,10 +53,13 @@ export default function CartPage() {
   };
 
   const handleRefresh = async () => {
+    setRefreshing(true);
     try {
       await refresh();
     } catch (error) {
       console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -67,6 +73,7 @@ export default function CartPage() {
         getTotalAmount={getTotalAmount}
         onBack={handleBack}
         onCheckout={handleCheckout}
+        refreshing={refreshing}
         onRefresh={handleRefresh}
         isLoading={isLoading}
         updatingItemId={updatingItemId}

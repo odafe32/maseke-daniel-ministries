@@ -1,5 +1,5 @@
 import client from './client';
-import { PickupStation } from '@/src/constants/data';
+import { PickupStation } from '@/src/utils/types';
 
 export const pickupStationApi = {
   /**

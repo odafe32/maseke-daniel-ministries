@@ -5,11 +5,14 @@ import { useRouter } from "expo-router";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { showInfoToast } from "@/src/utils/toast";
 import { useOrders } from "@/src/hooks/useOrders";
-import { Order, OrderStatus } from "@/src/constants/data";
+import { Order, OrderStatus } from "@/src/utils/types";
 
 export default function OrdersPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
+
+  // Pull to refresh state
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use orders hook
   const {
@@ -84,13 +87,11 @@ export default function OrdersPage() {
     });
   };
 
+  // Handle pull to refresh
   const handleRefresh = async () => {
-    try {
-      await refresh();
-    } catch (error) {
-      console.error('Refresh error:', error);
-      showInfoToast("Refresh Failed", "Failed to refresh orders. Please try again.");
-    }
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
   };
 
   return (
@@ -113,7 +114,7 @@ export default function OrdersPage() {
         getOrderNumber={getOrderNumber}
         getProductImage={getProductImage}
         getProductTitle={getProductTitle}
-        isRefreshing={isRefreshing}
+        isRefreshing={refreshing}
         onRefresh={handleRefresh}
       />
     </AuthPageWrapper>

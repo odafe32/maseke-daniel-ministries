@@ -16,6 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SystemPopupModal from "../components/SystemPopupModal";
 import { useSystemPopup } from "../hooks/useSystemPopup";
+import { useInactivityLogout } from "../hooks/useInactivityLogout";
 
 // Color constants
 const Colors = {
@@ -225,6 +226,10 @@ function RootLayoutNav() {
   // System popup hook - only active when user is authenticated
   const { popup, isVisible, handleClose } = useSystemPopup(!!token);
 
+  // Monitor user inactivity - only active when logged in and stayLoggedIn is false
+  // Excludes live page to allow users to watch without being logged out
+  const { panResponder } = useInactivityLogout(pathname || undefined);
+
   if (!token) {
     // Auth stack
     return (
@@ -251,7 +256,7 @@ function RootLayoutNav() {
 
   // Main stack
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...panResponder.panHandlers}>
       <Stack
         screenOptions={{
           headerShown: false,

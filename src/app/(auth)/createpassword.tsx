@@ -51,7 +51,7 @@ export default function CreatePasswordPage() {
     try {
       setIsLoading(true);
       if (source === "reset") {
-        await resetPassword(email!, password, confirmPassword);
+        await createPassword(email!, password, confirmPassword);
         showSuccessToast('Success', 'Password reset successfully. Please login with your new password.');
         console.log('Password reset successful');
       } else {

@@ -163,7 +163,6 @@ export function BibleDownloadManager({
   };
 
   const progressPercentage = Math.round((progress.current / progress.total) * 100);
-
   return (
     <View style={[styles.overlay, { backgroundColor }]}>
       <View style={[styles.container, { backgroundColor: surfaceColor }]}>
@@ -200,8 +199,8 @@ export function BibleDownloadManager({
         )}
 
         {!isDownloading && !progress.isComplete && (
-          <TouchableOpacity style={[styles.downloadButton, { backgroundColor: accentColor }]} onPress={startDownload}>
-            <Text style={[styles.downloadButtonText, { color: surfaceColor }]}>Download Now</Text>
+          <TouchableOpacity style={[{ backgroundColor: accentColor }, styles.downloadButton]} onPress={startDownload}>
+            <Text style={[{ color: surfaceColor }, styles.downloadButtonText]}>Download Now</Text>
           </TouchableOpacity>
         )}
 

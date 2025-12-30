@@ -11,12 +11,13 @@ import {
   ActivityIndicator,
   ImageSourcePropType,
   Animated,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { StoreProduct } from "@/src/constants/data";
+import { StoreProduct } from '@/src/utils/types';
 import { fs, hp, wp } from "@/src/utils";
 
 // Color constants to avoid color literals
@@ -53,6 +54,7 @@ interface StoreUIProps {
   isLoading: boolean;
   loadingWishlists: Array<string>;
   loadingCart: Array<string>;
+  refreshing: boolean;
   onRefresh: () => void;
   filterOptions: Array<{ label: string; value: string }>;
   paginatedProducts: StoreProduct[];
@@ -72,7 +74,7 @@ interface StoreUIProps {
   currentSlide: number;
   setCurrentSlide: (slide: number) => void;
   carouselRef: React.RefObject<ScrollView | null>;
-  carouselData: Array<{ id: number; image: ImageSourcePropType; text: string }>;
+  carouselData: Array<{ id: string; image: ImageSourcePropType; text: string; duration?: number }>;
   goToSlide: (index: number) => void;
   actualCarouselWidth: number;
 }
@@ -95,6 +97,7 @@ export function StoreUI({
   isLoading,
   loadingWishlists = [],
   loadingCart = [],
+  refreshing,
   onRefresh,
   filterOptions,
   paginatedProducts,
@@ -118,8 +121,6 @@ export function StoreUI({
   goToSlide,
   actualCarouselWidth,
 }: StoreUIProps) {
-  console.log("isLoading: ",isLoading);
-  console.log("selectedProduct: ",selectedProduct);
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -308,6 +309,12 @@ export function StoreUI({
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      }
     >
       {/* Animated Header */}
       <Animated.View
@@ -365,6 +372,7 @@ export function StoreUI({
               <Image
                 source={slide.image}
                 style={styles.heroImage}
+                resizeMode="cover"
               />
             </View>
           ))}
@@ -496,31 +504,6 @@ export function StoreUI({
         </Animated.View>
       )}
 
-      {/* Refresh Button */}
-      <Animated.View
-        style={[
-          styles.refreshContainer,
-          {
-            opacity: searchAnim,
-          },
-        ]}
-      >
-        <TouchableOpacity 
-          style={styles.refreshButton}
-          onPress={onRefresh}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size={16} color={COLORS.PRIMARY_BLUE} />
-          ) : (
-            <Feather name="refresh-cw" size={16} color={COLORS.PRIMARY_BLUE} />
-          )}
-          <ThemeText variant="bodySmall" style={styles.refreshText}>
-            Refresh
-          </ThemeText>
-        </TouchableOpacity>
-      </Animated.View>
-
       {/* Animated Trending Section */}
       <Animated.View
         style={[
@@ -560,20 +543,27 @@ export function StoreUI({
             </Animated.View>
           ))}
         </View>
+      ) : paginatedProducts.length === 0 ? (
+        // Empty State
+        <View style={styles.emptyStateContainer}>
+          <View style={styles.emptyStateIconContainer}>
+            <Feather name="shopping-bag" size={64} color="#D1D5DB" />
+          </View>
+          <ThemeText variant="h3" style={styles.emptyStateTitle}>
+            No Products Found
+          </ThemeText>
+          <ThemeText variant="body" style={styles.emptyStateDescription}>
+            {searchQuery
+              ? `We couldn't find any products matching "${searchQuery}". Try different keywords or browse all items.`
+              : "There are no products available at the moment. Please check back later!"}
+          </ThemeText>
+        </View>
       ) : (
         // Actual products when not loading
         <View style={styles.productsContainer}>
-          {paginatedProducts.length > 0 ? (
-            paginatedProducts.map((item, index) => (
-              <ProductItem key={item.id} item={item} index={index} /> // eslint-disable-line react/prop-types
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <ThemeText variant="body" style={styles.emptyText}>
-                No products found
-              </ThemeText>
-            </View>
-          )}
+          {paginatedProducts.map((item, index) => (
+            <ProductItem key={item.id} item={item} index={index} /> // eslint-disable-line react/prop-types
+          ))}
         </View>
       )}
 
@@ -686,25 +676,22 @@ export function StoreUI({
             )}
             {/* Floating Header */}
             <View style={styles.floatingHeader}>
-              <TouchableOpacity 
-                style={styles.closeButton} 
+              <TouchableOpacity
+                style={styles.closeButton}
                 onPress={closeProductModal}
                 activeOpacity={0.7}
               >
                 <Feather name="x" size={20} color={COLORS.TEXT_GRAY} />
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.shareButton}
-                activeOpacity={0.7}
-              >
-                <Feather name="share-2" size={20} color={COLORS.TEXT_GRAY} />
-              </TouchableOpacity>
             </View>
           </View>
 
           {/* Product Details */}
-          <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.modalBody}
+            contentContainerStyle={styles.modalBodyContent}
+            showsVerticalScrollIndicator={true}
+          >
             {/* Product Type */}
             <ThemeText variant="caption" style={styles.productType}>
               {selectedProduct?.category}
@@ -727,31 +714,72 @@ export function StoreUI({
               )}
             </View>
 
-            {/* Quantity Selector */}
-            <View style={styles.quantitySection}>
-              <ThemeText variant="h4" style={styles.quantityLabel}>
-                Select Quantity
-              </ThemeText>
-              <View style={styles.quantityControls}>
-                <TouchableOpacity 
-                  style={styles.quantityButton}
-                  onPress={decreaseQuantity}
-                  activeOpacity={0.7}
+            {/* Availability Indicator */}
+            <View style={styles.availabilitySection}>
+              <View style={[
+                styles.availabilityBadge,
+                selectedProduct && selectedProduct.stockCount === 0 ? styles.availabilityBadgeOutOfStock :
+                selectedProduct && selectedProduct.stockCount <= 5 ? styles.availabilityBadgeLow :
+                styles.availabilityBadgeInStock
+              ]}>
+                <Feather
+                  name={
+                    selectedProduct && selectedProduct.stockCount === 0 ? "x-circle" :
+                    selectedProduct && selectedProduct.stockCount <= 5 ? "alert-circle" :
+                    "check-circle"
+                  }
+                  size={16}
+                  color={
+                    selectedProduct && selectedProduct.stockCount === 0 ? COLORS.ACTIVITY_INDICATOR :
+                    selectedProduct && selectedProduct.stockCount <= 5 ? "#FF8C00" :
+                    "#10B981"
+                  }
+                />
+                <ThemeText
+                  variant="bodySmall"
+                  style={[
+                    styles.availabilityText,
+                    selectedProduct && selectedProduct.stockCount === 0 ? styles.availabilityTextOutOfStock :
+                    selectedProduct && selectedProduct.stockCount <= 5 ? styles.availabilityTextLow :
+                    styles.availabilityTextInStock
+                  ]}
                 >
-                  <Feather name="minus" size={18} color={COLORS.TEXT_GRAY} />
-                </TouchableOpacity>
-                <ThemeText variant="h3" style={styles.quantityValue}>
-                  {quantity}
+                  {selectedProduct && selectedProduct.stockCount === 0 ? "Out of Stock" :
+                   selectedProduct && selectedProduct.stockCount <= 5 ? `Only ${selectedProduct.stockCount} left!` :
+                   `${selectedProduct?.stockCount} Available`}
                 </ThemeText>
-                <TouchableOpacity 
-                  style={styles.quantityButton}
-                  onPress={increaseQuantity}
-                  activeOpacity={0.7}
-                >
-                  <Feather name="plus" size={18} color={COLORS.TEXT_GRAY} />
-                </TouchableOpacity>
               </View>
             </View>
+
+            {/* Quantity Selector - Only show if in stock */}
+            {selectedProduct && selectedProduct.stockCount > 0 && (
+              <View style={styles.quantitySection}>
+                <ThemeText variant="h4" style={styles.quantityLabel}>
+                  Select Quantity
+                </ThemeText>
+                <View style={styles.quantityControls}>
+                  <TouchableOpacity
+                    style={[styles.quantityButton, quantity <= 1 && styles.quantityButtonDisabled]}
+                    onPress={decreaseQuantity}
+                    activeOpacity={0.7}
+                    disabled={quantity <= 1}
+                  >
+                    <Feather name="minus" size={18} color={quantity <= 1 ? COLORS.BORDER_GRAY : COLORS.TEXT_GRAY} />
+                  </TouchableOpacity>
+                  <ThemeText variant="h3" style={styles.quantityValue}>
+                    {quantity}
+                  </ThemeText>
+                  <TouchableOpacity
+                    style={[styles.quantityButton, quantity >= selectedProduct.stockCount && styles.quantityButtonDisabled]}
+                    onPress={increaseQuantity}
+                    activeOpacity={0.7}
+                    disabled={quantity >= selectedProduct.stockCount}
+                  >
+                    <Feather name="plus" size={18} color={quantity >= selectedProduct.stockCount ? COLORS.BORDER_GRAY : COLORS.TEXT_GRAY} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Description */}
             <View style={styles.descriptionSection}>
@@ -766,20 +794,29 @@ export function StoreUI({
 
           {/* Footer */}
           <View style={styles.modalFooter}>
-            <TouchableOpacity 
-              style={styles.addToCartButton}
+            <TouchableOpacity
+              style={[
+                styles.addToCartButton,
+                selectedProduct && selectedProduct.stockCount === 0 && styles.addToCartButtonDisabled
+              ]}
               onPress={addToCart}
               activeOpacity={0.8}
-              disabled={selectedProduct ? loadingCart.includes(selectedProduct.id) : false}
+              disabled={
+                selectedProduct
+                  ? (loadingCart.includes(selectedProduct.id) || selectedProduct.stockCount === 0)
+                  : false
+              }
             >
               {selectedProduct && loadingCart.includes(selectedProduct.id) ? (
                 <ActivityIndicator size={20} color={COLORS.WHITE} />
               ) : (
                 <>
                   <ThemeText variant="h3" style={styles.addToCartText}>
-                    Add to Cart
+                    {selectedProduct && selectedProduct.stockCount === 0 ? "Out of Stock" : "Add to Cart"}
                   </ThemeText>
-                  <Icon name="cart" size={20} color={COLORS.WHITE} />
+                  {selectedProduct && selectedProduct.stockCount > 0 && (
+                    <Icon name="cart" size={20} color={COLORS.WHITE} />
+                  )}
                 </>
               )}
             </TouchableOpacity>
@@ -1078,14 +1115,36 @@ const styles = StyleSheet.create({
   },
 
   // Empty State
-  emptyContainer: {
-    alignItems: 'center',
+  emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingVertical: 40,
+    alignItems: 'center',
+    paddingVertical: hp(80),
+    paddingHorizontal: wp(40),
   },
-  emptyText: {
-    color: COLORS.TEXT_LIGHT_GRAY,
+  emptyStateIconContainer: {
+    width: wp(120),
+    height: hp(120),
+    borderRadius: 60,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyStateTitle: {
+    color: COLORS.TEXT_DARK,
+    fontFamily: 'Geist-Bold',
+    fontSize: fs(22),
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: '#6B7280',
+    fontFamily: 'Geist-Regular',
+    fontSize: fs(15),
+    textAlign: 'center',
+    lineHeight: fs(22),
+    maxWidth: '85%',
   },
 
   // Pagination
@@ -1188,9 +1247,12 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     position: 'absolute',
     right: 0,
+    display: 'flex',
+    flexDirection: 'column',
   },
   productImageSection: {
     position: 'relative',
+    flexShrink: 0,
   },
   productImage: {
     borderTopLeftRadius: 20,
@@ -1239,6 +1301,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  modalBodyContent: {
+    paddingBottom: hp(90),
+  },
   productType: {
     color: COLORS.PRIMARY_BLUE,
     fontFamily: 'Geist-SemiBold',
@@ -1269,6 +1334,41 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     textDecorationLine: 'line-through',
   },
+  availabilitySection: {
+    marginTop: 16,
+  },
+  availabilityBadge: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  availabilityBadgeInStock: {
+    backgroundColor: '#D1FAE5',
+  },
+  availabilityBadgeLow: {
+    backgroundColor: '#FEF3C7',
+  },
+  availabilityBadgeOutOfStock: {
+    backgroundColor: '#FEE2E2',
+  },
+  availabilityText: {
+    fontFamily: 'Geist-SemiBold',
+    fontSize: fs(13),
+    fontWeight: '600',
+  },
+  availabilityTextInStock: {
+    color: '#059669',
+  },
+  availabilityTextLow: {
+    color: '#D97706',
+  },
+  availabilityTextOutOfStock: {
+    color: '#DC2626',
+  },
   quantitySection: {
     marginTop: 24,
   },
@@ -1289,6 +1389,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: wp(50),
   },
+  quantityButtonDisabled: {
+    backgroundColor: COLORS.DISABLED_GRAY,
+    opacity: 0.5,
+  },
   quantityValue: {
     color: COLORS.TEXT_DARK,
     fontSize: fs(24),
@@ -1296,6 +1400,7 @@ const styles = StyleSheet.create({
   },
   descriptionSection: {
     marginTop: 32,
+    marginBottom: 20,
   },
   descriptionLabel: {
     color: COLORS.TEXT_DARK,
@@ -1315,6 +1420,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     position: 'absolute',
     right: 0,
+    flexShrink: 0,
+    elevation: 8,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   addToCartButton: {
     alignItems: 'center',
@@ -1325,29 +1436,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
   },
+  addToCartButtonDisabled: {
+    backgroundColor: COLORS.TEXT_GRAY,
+    opacity: 0.6,
+  },
   addToCartText: {
     color: COLORS.WHITE,
     fontFamily: 'Geist-Medium',
     fontSize: fs(20),
-  },
-
-  // Refresh Button
-  refreshContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 8,
-  },
-  refreshButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER_GRAY,
-  },
-  refreshText: {
-    color: COLORS.PRIMARY_BLUE,
   },
 });

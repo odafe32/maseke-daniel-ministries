@@ -8,15 +8,14 @@ import {
   Image,
   Modal,
   Animated,
-  ActivityIndicator,
-  RefreshControl, // add this
-  ImageSourcePropType, // add this
+  RefreshControl,
+  ImageSourcePropType,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText } from "@/src/components";
 import { fs, hp, wp } from "@/src/utils";
-import { Order, OrderStatus, OrderItem } from "@/src/constants/data";
+import { Order, OrderStatus, OrderItem } from "@/src/utils/types";
 
 interface OrdersProps {
   onBack: () => void;
@@ -352,20 +351,6 @@ export function Orders({
               <FilterButton filter="ongoing" label="Ongoing Orders" />
               <FilterButton filter="past" label="Past Orders" />
             </View>
-
-            {onRefresh && (
-              <TouchableOpacity
-                onPress={onRefresh}
-                activeOpacity={0.7}
-                style={styles.refreshButton}
-              >
-                {isRefreshing ? (
-                  <ActivityIndicator size="small" color="#0C154C" />
-                ) : (
-                  <Feather name="refresh-ccw" size={16} color="#0C154C" />
-                )}
-              </TouchableOpacity>
-            )}
           </View>
         </Animated.View>
 
@@ -373,6 +358,22 @@ export function Orders({
         {loading ? (
           <View style={styles.skeletonContainer}>
             {Array.from({ length: 6 }).map((_, index) => renderSkeletonOrderCard(index))}
+          </View>
+        ) : filteredOrders.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <View style={styles.emptyStateIconContainer}>
+              <Feather name="shopping-bag" size={64} color="#D1D5DB" />
+            </View>
+            <ThemeText variant="h3" style={styles.emptyStateTitle}>
+              No Orders Yet
+            </ThemeText>
+            <ThemeText variant="body" style={styles.emptyStateDescription}>
+              {activeFilter === 'all'
+                ? "You haven't placed any orders yet. Start shopping to see your orders here!"
+                : activeFilter === 'ongoing'
+                ? "You don't have any ongoing orders at the moment."
+                : "You don't have any past orders yet."}
+            </ThemeText>
           </View>
         ) : (
           <FlatList
@@ -527,17 +528,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  refreshButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#0C154C',
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -628,6 +618,38 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 8,
+  },
+  // Empty State Styles
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: hp(80),
+    paddingHorizontal: wp(40),
+  },
+  emptyStateIconContainer: {
+    width: wp(120),
+    height: hp(120),
+    borderRadius: 60,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyStateTitle: {
+    color: '#0B0A0D',
+    fontFamily: 'Geist-Bold',
+    fontSize: fs(22),
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: '#6B7280',
+    fontFamily: 'Geist-Regular',
+    fontSize: fs(15),
+    textAlign: 'center',
+    lineHeight: fs(22),
+    maxWidth: '85%',
   },
   // Modal Styles
   modalBackdrop: {

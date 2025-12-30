@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Order } from '@/src/constants/data';
+import { Order } from '@/src/utils/types';
 
 const ORDERS_CACHE_KEY = '@orders_cache';
 

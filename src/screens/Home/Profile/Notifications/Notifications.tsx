@@ -103,7 +103,7 @@ const Notifications = () => {
       <Bell size={64} color="#9CA3AF" />
       <Text style={styles.emptyTitle}>No Notifications</Text>
       <Text style={styles.emptyMessage}>
-        You're all caught up! Check back later for updates.
+        You`re all caught up! Check back later for updates.
       </Text>
     </Animated.View>
   );

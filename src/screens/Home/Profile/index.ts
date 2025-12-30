@@ -1,5 +1,4 @@
 export * from "./Profile/Profile";
-export * from "./Notifications/Notifications";
 export { Profile } from "./Profile";
 export { Wishlist } from "./Wishlist";
 export { About } from "./About";
@@ -9,5 +8,5 @@ export { Settings } from "./Settings";
 export { SavedNotes } from "./SavedNotes";
 export { Orders } from "./Orders";
 export { PrayerRequest } from "./PrayerRequest";
-export { Notifications } from "./Notifications/Notifications";
+export { default as Notifications } from "./Notifications/Notifications";
 export { ChangePassword } from "./ChangePassword/ChangePassword";

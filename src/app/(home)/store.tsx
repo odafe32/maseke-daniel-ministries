@@ -5,11 +5,15 @@ import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWr
 import { showSuccessToast, showInfoToast } from "@/src/utils/toast";
 import { Animated, Dimensions, ScrollView } from "react-native";
 import { useStore } from "@/src/hooks/store/useStore";
-import { StoreProduct } from "@/src/constants/data";
+import { StoreProduct } from '@/src/utils/types';
+import { useAdsStore } from "@/src/stores/adsStore";
 
 export default function StorePage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
+
+  // Pull to refresh state
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use the real store hook for products
   const {
@@ -30,6 +34,9 @@ export default function StorePage() {
     cartCount,
   } = useStore();
 
+  // Use the ads store
+  const { ads, loading: adsLoading, fetchAds } = useAdsStore();
+
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef<ScrollView | null>(null);
@@ -39,37 +46,61 @@ export default function StorePage() {
   const containerPadding = 32; // 16px padding on each side
   const actualCarouselWidth = screenWidth - containerPadding;
 
-  // Carousel data
-  const carouselData = [
-    {
-      id: 1,
-      image: require("@/src/assets/images/store2.jpg"),
-      text: "Get all your items"
-    },
-    {
-      id: 2,
-      image: require("@/src/assets/images/store2.jpg"),
-      text: "Discover amazing products"
-    },
-    {
-      id: 3,
-      image: require("@/src/assets/images/store2.jpg"),
-      text: "Shop with confidence"
-    }
-  ];
+  // Carousel data - combine ads with default images
+  const carouselData = React.useMemo(() => {
+    // Convert ads to carousel format
+    const adSlides = ads.map((ad, index) => ({
+      id: `ad-${ad.id}`,
+      image: { uri: ad.image },
+      text: ad.title,
+      duration: ad.display_duration * 1000, // Convert to milliseconds
+    }));
 
-  // Auto-slide effect
+    // Default slides
+    const defaultSlides = [
+      {
+        id: "default-1",
+        image: require("@/src/assets/images/store2.jpg"),
+        text: "Get all your items",
+        duration: 3000,
+      },
+      {
+        id: "default-2",
+        image: require("@/src/assets/images/store2.jpg"),
+        text: "Discover amazing products",
+        duration: 3000,
+      },
+      {
+        id: "default-3",
+        image: require("@/src/assets/images/store2.jpg"),
+        text: "Shop with confidence",
+        duration: 3000,
+      }
+    ];
+
+    // If we have ads, use them; otherwise use defaults
+    return adSlides.length > 0 ? adSlides : defaultSlides;
+  }, [ads]);
+
+  // Fetch ads on mount
   useEffect(() => {
+    fetchAds();
+  }, [fetchAds]);
+
+  // Auto-slide effect with dynamic durations
+  useEffect(() => {
+    const currentDuration = carouselData[currentSlide]?.duration || 3000;
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => {
         const nextSlide = (prev + 1) % carouselData.length;
         carouselRef.current?.scrollTo({ x: nextSlide * actualCarouselWidth, animated: true });
         return nextSlide;
       });
-    }, 3000); // Change slide every 3 seconds
+    }, currentDuration);
 
     return () => clearInterval(interval);
-  }, [carouselData.length]);
+  }, [carouselData.length, currentSlide, actualCarouselWidth]);
 
   // Manual slide navigation
   const goToSlide = (index: number) => {
@@ -202,7 +233,9 @@ export default function StorePage() {
   };
 
   const increaseQuantity = () => {
-    setQuantity(prev => Math.min(prev + 1, 10)); // Max 10 items
+    if (selectedProduct) {
+      setQuantity(prev => Math.min(prev + 1, selectedProduct.stockCount)); // Max is stock count
+    }
   };
 
   const decreaseQuantity = () => {
@@ -230,6 +263,13 @@ export default function StorePage() {
     }
   };
 
+  // Handle pull to refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  };
+
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <StoreUI
@@ -245,7 +285,8 @@ export default function StorePage() {
         isLoading={isLoading}
         loadingWishlists={loadingWishlists}
         loadingCart={loadingCart}
-        onRefresh={refresh}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         filterOptions={filterOptions}
         paginatedProducts={storeProducts}
         totalPages={totalPages}

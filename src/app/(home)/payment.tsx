@@ -28,6 +28,9 @@ export default function PaymentPage() {
 }
 
 function PaymentPageContent({ onBack }: { onBack: () => void }) {
+  // Pull to refresh state
+  const [refreshing, setRefreshing] = useState(false);
+
   // Payment data hook
   const {
     isProcessing,
@@ -38,6 +41,8 @@ function PaymentPageContent({ onBack }: { onBack: () => void }) {
     isLoadingCartTotal,
     selectPickupStation,
     makePayment,
+    fetchPickupStations,
+    fetchCartTotal,
   } = usePayment();
 
   const handlePayNow = async () => {
@@ -48,6 +53,20 @@ function PaymentPageContent({ onBack }: { onBack: () => void }) {
     await makePayment();
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchPickupStations(),
+        fetchCartTotal(),
+      ]);
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <PaymentUI
       pickupStations={pickupStations}
@@ -56,6 +75,8 @@ function PaymentPageContent({ onBack }: { onBack: () => void }) {
       totalCartAmount={cartTotal}
       onBack={onBack}
       onPayNow={handlePayNow}
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
       isProcessing={isProcessing}
       isLoadingStations={loading}
       isLoadingCartTotal={isLoadingCartTotal}

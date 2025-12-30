@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Wishlist } from "@/src/screens";
 import { useRouter } from "expo-router";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
@@ -8,6 +8,9 @@ import { showSuccessToast, showInfoToast } from "@/src/utils/toast";
 export default function WishlistPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
+
+  // Pull to refresh state
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use the real wishlist hook
   const {
@@ -44,6 +47,13 @@ export default function WishlistPage() {
     }
   };
 
+  // Handle pull to refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  };
+
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <Wishlist
@@ -52,7 +62,8 @@ export default function WishlistPage() {
         loading={isLoading}
         loadingWishlists={loadingWishlists}
         toggleWishlist={toggleWishlist}
-        onRefresh={refresh}
+        isRefreshing={refreshing}
+        onRefresh={handleRefresh}
       />
     </AuthPageWrapper>
   );

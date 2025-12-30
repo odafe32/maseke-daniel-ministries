@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../env';
 import client from '../api/client';
+import { useSettingsStore } from './settingsStore';
 
 const LAST_SYNCED_PUSH_TOKEN_KEY = 'lastSyncedPushToken';
 
@@ -128,6 +129,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await AsyncStorage.removeItem('authUser');
     await AsyncStorage.removeItem(LAST_SYNCED_PUSH_TOKEN_KEY);
     set({ token: null, user: null, error: null, lastSyncedPushToken: null });
+
+    // Clear settings store
+    await useSettingsStore.getState().clearSettings();
 
     if (currentToken) {
       try {

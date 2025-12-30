@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IWishlist } from '@/src/constants/data';
+import { IWishlist } from '@/src/utils/types';
 
 const WISHLIST_CACHE_KEY = '@wishlist_cache';
 

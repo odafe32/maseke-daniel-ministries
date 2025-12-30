@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { wishlistApi } from '../api/wishlistApi';
 import { wishlistStore } from '../stores/wishlistStore';
-import { IWishlist } from '../constants/data';
+import { IWishlist } from '@/src/utils/types';
 
 interface ApiError {
   response?: {

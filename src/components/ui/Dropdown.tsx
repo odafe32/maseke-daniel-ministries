@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 10000,
     marginTop: 4,
   },
   dropdownList: {
