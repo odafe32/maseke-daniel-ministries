@@ -15,7 +15,7 @@ import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText } from "@/src/components";
 import { fs, hp, wp } from "@/src/utils";
-import { Order, OrderStatus, OrderItem } from "@/src/constants/data";
+import { Order, OrderStatus, OrderItem } from "@/src/utils/types";
 
 interface OrdersProps {
   onBack: () => void;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { orderApi } from '@/src/api/orderApi';
 import { orderStore } from '@/src/stores/orderStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Order, OrderItem, OrderStatus } from '@/src/constants/data';
+import { Order, OrderItem, OrderStatus } from '@/src/utils/types';
 
 interface ApiError {
   response?: {

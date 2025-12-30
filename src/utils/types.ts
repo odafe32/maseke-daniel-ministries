@@ -88,3 +88,102 @@ export interface StoreProduct {
   updatedDate: string;
   isInWishlist: boolean;
 }
+
+export interface IWishlist {
+  id: string;
+  title: string;
+  price: number;
+  beforePrice: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  createdDate: string;
+  updatedDate: string;
+  isInWishlist: boolean;
+  wishlistAddedDate: string;
+}
+
+export interface CartItem {
+  id: string;
+  title: string;
+  price: number;
+  beforePrice?: number | null;
+  image: string | null;
+  category: string;
+  description: string;
+  createdDate: string;
+  updatedDate: string;
+  quantity: number;
+  subtotal: number;
+  cartAddedDate: string;
+}
+
+export interface PickupStation {
+  id: string;
+  title: string;
+  name: string;
+  address: string;
+  contact_phone: string;
+  open_hours: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type OrderStatus = 
+  | 'pending'
+  | 'paid'
+  | 'processing'
+  | 'shipped'
+  | 'ready_for_pickup'
+  | 'completed'
+  | 'cancelled'
+  | 'refunded';
+
+export interface OrderPayment {
+  id: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  amount: number;
+  method: string;
+  reference: string;
+}
+
+export interface OrderPickup {
+  id: string;
+  pickup_code: string;
+  pickup_status: 'pending' | 'available' | 'picked_up' | 'cancelled';
+}
+
+export interface OrderShipping {
+  id: string;
+  status: 'pending' | 'processing' | 'in_transit' | 'delivered' | 'failed';
+  tracking_number: string;
+  carrier: string;
+}
+  
+export interface OrderItem {
+  id: string;
+  product: {
+    id: string;
+    title: string;
+    price: number;
+    image: string | null;
+  } | null;
+  quantity: number;
+  amount: number;
+  subtotal: number;
+  image: any;
+}
+
+export interface Order {
+  id: string;
+  status: OrderStatus;
+  deliveryType: string;
+  totalAmount: number;
+  itemsCount: number;
+  items: OrderItem[];
+  payment: OrderPayment | null;
+  pickup: OrderPickup | null;
+  shipping: OrderShipping | null;
+  createdDate: string;
+  updatedDate: string;
+}

@@ -13,7 +13,7 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { IWishlist } from "@/src/constants/data";
+import { IWishlist } from '@/src/utils/types';
 import { hp, wp, wpt } from "@/src/utils";
 
 interface WishlistProps {

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { PickupStation } from "@/src/constants/data";
+import { PickupStation } from "@/src/utils/types";
 import { fs } from "@/src/utils";
 
 // Color constants to avoid color literals

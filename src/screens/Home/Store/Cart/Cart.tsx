@@ -13,7 +13,7 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
-import { CartItem } from "@/src/constants/data";
+import { CartItem } from "@/src/utils/types";
 import { fs, hp, wp } from "@/src/utils";
 
 // Color constants to avoid color literals

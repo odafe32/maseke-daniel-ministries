@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { showInfoToast } from "@/src/utils/toast";
 import { useOrders } from "@/src/hooks/useOrders";
-import { Order, OrderStatus } from "@/src/constants/data";
+import { Order, OrderStatus } from "@/src/utils/types";
 
 export default function OrdersPage() {
   const router = useRouter();
