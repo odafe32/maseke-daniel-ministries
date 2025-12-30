@@ -76,12 +76,16 @@ export const useDevotionalEntry = () => {
   const [isLiking, setIsLiking] = useState(false);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
-  const mergeLikeStatus = useCallback((status: LikeStatus) => {
-    setEntry((prev) => {
-      if (!prev) return null;
-      return { ...prev, liked: status.liked, like_count: status.like_count };
-    });
-  }, []);
+const mergeLikeStatus = useCallback((status: LikeStatus) => {
+  setEntry((prev) => {
+    if (!prev) return null;
+    return { 
+      ...prev, 
+      liked: status.liked, 
+      like_count: status.like_count 
+    };
+  });
+}, []);
 
   const loadTodayEntry = useCallback(async () => {
     setIsLoading(true);

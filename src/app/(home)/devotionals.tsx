@@ -4,6 +4,7 @@ import { Devotionals } from "@/src/screens/Home/Devotionals/Devotionals";
 import { DevotionalMonth, DevotionalsSidebar } from "@/src/screens/Home/Devotionals/DevotionalsSidebar";
 import { VideoIntro } from "@/src/screens/Home/Devotionals/VideoIntro";
 import { CompletionPage } from "@/src/screens/Home/Devotionals/CompletionPage";
+import { NoDevotionalPage } from "@/src/screens/Home/Devotionals/NoDevotionalPage";
 import { useDevotionalEntry } from "@/src/hooks/useDevotionals";
 import { useDevotionalsStore } from "@/src/stores/devotionalsStore";
 import { devotionApi } from "@/src/api/devotionApi";
@@ -105,6 +106,7 @@ export default function DevotionalsPage() {
   // Local state for bookmarked paragraphs and bookmarking status
   const [bookmarkedParagraphs, setBookmarkedParagraphs] = useState<number[]>([]);
   const [isBookmarking, setIsBookmarking] = useState(false);
+  const [hasNoDevotional, setHasNoDevotional] = useState(false);
 
   const selectedTheme = useMemo(
     () => themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0],
@@ -116,6 +118,16 @@ export default function DevotionalsPage() {
     const initLoad = async () => {
       try {
         const todayEntry = await loadTodayEntry();
+        
+        // Check if no entry was found
+        if (!todayEntry) {
+          setHasNoDevotional(true);
+          setIsLoadingEntry(false);
+          return;
+        }
+        
+        setHasNoDevotional(false);
+        
         if (todayEntry?.devotional_id) {
           setCurrentDevotionalId(todayEntry.devotional_id);
         }
@@ -136,13 +148,13 @@ export default function DevotionalsPage() {
         }
       } catch (error) {
         console.error('Failed to load today entry:', error);
+        setHasNoDevotional(true);
         setIsLoadingEntry(false);
       }
     };
     initLoad();
   }, [loadTodayEntry]);
 
-  // Load bookmarked paragraphs when entry changes
   useEffect(() => {
     const loadBookmarkedParagraphs = async () => {
       if (!entry?.id) {
@@ -167,6 +179,7 @@ export default function DevotionalsPage() {
       return {
         title: "Welcome to Devotionals",
         body: "Loading today's devotional...",
+        dateLabel: undefined,
       };
     }
     
@@ -185,12 +198,23 @@ export default function DevotionalsPage() {
     setIsNavigating(true);
     setShowVideoIntro(false);
     setIsLoadingEntry(true);
+    setHasNoDevotional(false); // Reset the flag
     
     await new Promise(resolve => setTimeout(resolve, 150));
     setPendingVideoUrl(null);
     
     try {
       const fetchedEntry = await loadEntryByDay(devotionalId, dayNumber);
+      
+      // Check if no entry was found
+      if (!fetchedEntry) {
+        setHasNoDevotional(true);
+        setIsLoadingEntry(false);
+        setIsNavigating(false);
+        return null;
+      }
+      
+      setHasNoDevotional(false);
       setCurrentDayNumber(dayNumber);
       
       const videoUrl = fetchedEntry?.video_url ?? null;
@@ -208,6 +232,7 @@ export default function DevotionalsPage() {
       return fetchedEntry;
     } catch (error) {
       console.error('Failed to load entry:', error);
+      setHasNoDevotional(true);
       setIsLoadingEntry(false);
       return null;
     } finally {
@@ -248,7 +273,6 @@ export default function DevotionalsPage() {
     setIsLoadingEntry(false);
   };
 
-  // Handle bookmark paragraphs - saves each paragraph individually like Bible verses
   const handleBookmarkParagraphs = async (paragraphIds: number[]) => {
     if (!entry || paragraphIds.length === 0) {
       console.warn('No entry loaded or no paragraphs selected');
@@ -297,6 +321,38 @@ export default function DevotionalsPage() {
     }
   };
 
+  const handleUnbookmarkParagraphs = async (paragraphIds: number[]) => {
+    if (!entry || paragraphIds.length === 0) {
+      console.warn('No entry loaded or no paragraphs selected');
+      return;
+    }
+
+    setIsBookmarking(true);
+
+    try {
+      // Call the API to remove bookmarks from these paragraphs
+      const result = await devotionApi.removeBookmarkedParagraphs(entry.id, paragraphIds);
+
+      // Update local state by removing the unbookmarked paragraphs
+      setBookmarkedParagraphs(prev => prev.filter(id => !paragraphIds.includes(id)));
+
+      showToast({
+        type: 'success',
+        title: 'Unbookmarked',
+        message: result.message || `${paragraphIds.length} paragraph${paragraphIds.length > 1 ? 's' : ''} removed`,
+      });
+    } catch (error) {
+      console.error('Failed to unbookmark paragraphs:', error);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to remove bookmark',
+      });
+    } finally {
+      setIsBookmarking(false);
+    }
+  };
+
   // Handle prev page
   const handlePrevPage = useCallback(async () => {
     if (currentDayNumber <= 1 || isNavigating) return;
@@ -325,10 +381,43 @@ export default function DevotionalsPage() {
     await navigateToDay(devotionalId, newDay);
   }, [currentDayNumber, entry?.devotional_id, entry?.total_days, currentMonth?.entries_count, currentDevotionalId, navigateToDay, isNavigating]);
 
+  // Show completion page
   if (showCompletion) {
     return <CompletionPage onBack={() => setShowCompletion(false)} />;
   }
 
+  // Show "No Devotional" page
+  if (hasNoDevotional && !isLoading && !isLoadingEntry && !isNavigating) {
+    return (
+      <>
+        <NoDevotionalPage
+          theme={selectedTheme}
+          onBack={() => {
+            setHasNoDevotional(false);
+            // Try to load today's entry
+            loadTodayEntry().then((todayEntry) => {
+              if (todayEntry) {
+                setHasNoDevotional(false);
+              }
+            });
+          }}
+          onOpenSidebar={() => setSidebarVisible(true)}
+          dateLabel={content.dateLabel}
+        />
+        
+        <DevotionalsSidebar
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          onSelectDay={handleDaySelected}
+          surfaceColor={selectedTheme.sidebarBackground}
+          textColor={selectedTheme.sidebarTextColor}
+          accentColor={selectedTheme.accentColor}
+        />
+      </>
+    );
+  }
+
+  // Show loading screen
   if ((isLoading || isLoadingEntry || isNavigating) && !entry && !showVideoIntro) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: selectedTheme.backgroundColor }]}>
@@ -364,6 +453,7 @@ export default function DevotionalsPage() {
           isNavigating={isNavigating}
           bookmarkedParagraphs={bookmarkedParagraphs}
           onBookmarkParagraphs={handleBookmarkParagraphs}
+          onUnbookmarkParagraphs={handleUnbookmarkParagraphs}
           isBookmarking={isBookmarking}
         />
       )}
