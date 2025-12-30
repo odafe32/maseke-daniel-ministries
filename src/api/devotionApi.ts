@@ -34,12 +34,20 @@ export interface DevotionalEntry {
 
 export interface BookmarkStatus {
   bookmarked: boolean;
+<<<<<<< HEAD
+=======
+  count?: number;
+>>>>>>> ba76c09f28613b3c8662b3a56bd015ea3325ed78
   message?: string;
 }
 
 export interface DevotionalBookmark {
   id: number;
   bookmarked_at: string;
+<<<<<<< HEAD
+=======
+  content: string;
+>>>>>>> ba76c09f28613b3c8662b3a56bd015ea3325ed78
   entry: DevotionalEntry;
 }
 
@@ -68,6 +76,18 @@ export interface DevotionalReflection {
   updated_at: string;
 }
 
+<<<<<<< HEAD
+=======
+export interface ParagraphBookmarkPayload {
+  paragraph_ids: number[];
+  paragraph_texts: string[];
+}
+
+export interface BookmarkedParagraphsResponse {
+  paragraph_ids: number[];
+}
+
+>>>>>>> ba76c09f28613b3c8662b3a56bd015ea3325ed78
 export const devotionApi = {
   /** Fetch all devotionals available to the mobile app */
   async getDevotionals(): Promise<DevotionalSummary[]> {
@@ -86,7 +106,10 @@ export const devotionApi = {
     try {
       const response = await client.get<ApiResponse<DevotionalEntry | null>>('/mobile/devotionals/today');
       
+<<<<<<< HEAD
       // Backend now returns 200 with null data when no entry exists
+=======
+>>>>>>> ba76c09f28613b3c8662b3a56bd015ea3325ed78
       if (!response.data.data) {
         console.log('No devotional entry available for today');
         return null;
@@ -98,6 +121,10 @@ export const devotionApi = {
       throw error;
     }
   },
+<<<<<<< HEAD
+=======
+  
+>>>>>>> ba76c09f28613b3c8662b3a56bd015ea3325ed78
   /** Fetch the entry for a devotional by day number */
   async getEntryByDay(devotionalId: number | string, dayNumber: number): Promise<DevotionalEntry> {
     const response = await client.get<ApiResponse<DevotionalEntry>>(
@@ -136,6 +163,7 @@ export const devotionApi = {
     return response.data.data;
   },
 
+<<<<<<< HEAD
   /** Toggle bookmark for a devotional entry */
   async toggleBookmark(entryId: number | string): Promise<BookmarkStatus> {
     const response = await client.post<ApiResponse<BookmarkStatus>>(
@@ -145,6 +173,39 @@ export const devotionApi = {
     return response.data.data;
   },
 
+=======
+  /** Bookmark specific paragraphs (like Bible verses) - creates individual bookmarks */
+  async bookmarkParagraphs(entryId: number | string, payload: ParagraphBookmarkPayload): Promise<BookmarkStatus> {
+    const response = await client.post<ApiResponse<BookmarkStatus>>(
+      `/mobile/devotionals/entries/${entryId}/bookmark-paragraphs`,
+      payload
+    );
+    return response.data.data;
+  },
+
+  /** Remove bookmarks for specific paragraphs */
+  async removeBookmarkedParagraphs(entryId: number | string, paragraphIds: number[]): Promise<BookmarkStatus> {
+    const response = await client.post<ApiResponse<BookmarkStatus>>(
+      `/mobile/devotionals/entries/${entryId}/remove-bookmarked-paragraphs`,
+      { paragraph_ids: paragraphIds }
+    );
+    return response.data.data;
+  },
+
+  /** Get all bookmarked paragraph IDs for a specific entry */
+  async getBookmarkedParagraphs(entryId: number | string): Promise<number[]> {
+    try {
+      const response = await client.get<ApiResponse<BookmarkedParagraphsResponse>>(
+        `/mobile/devotionals/entries/${entryId}/bookmarked-paragraphs`
+      );
+      return response.data.data.paragraph_ids || [];
+    } catch (error) {
+      console.error('Error getting bookmarked paragraphs:', error);
+      return [];
+    }
+  },
+
+>>>>>>> ba76c09f28613b3c8662b3a56bd015ea3325ed78
   /** Get all bookmarked devotionals */
   async getBookmarks(): Promise<DevotionalBookmark[]> {
     const response = await client.get<ApiResponse<DevotionalBookmark[]>>('/mobile/devotionals/bookmarks');

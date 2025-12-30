@@ -12,10 +12,7 @@ export const useBible = () => {
       initializedRef.current = true;
       console.log('Initializing Bible data loading...');
 
-      // Load local data first
       bibleStore.loadLocalData().then(() => {
-        // After loading local data, fetch testaments if we still don't have them
-        // This will use local data if available, or fall back to API
         if (bibleStore.testaments.length === 0 && !bibleStore.isLoadingTestaments) {
           bibleStore.fetchTestaments();
         }
