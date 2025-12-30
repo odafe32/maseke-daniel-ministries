@@ -219,12 +219,11 @@ export function VideoIntro({
       {showButton && (
         <View style={styles.footerSection}>
           <TouchableOpacity 
+          onPress={onBeginDevotional}  
             style={styles.finalButton} 
-            onPress={handleBegin}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.finalButtonText}>Begin Devotional</Text>
-          </TouchableOpacity>
+        >
+          <Text>Begin Devotional</Text>
+        </TouchableOpacity>
         </View>
       )}
     </View>

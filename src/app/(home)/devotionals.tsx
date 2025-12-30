@@ -7,8 +7,10 @@ import { CompletionPage } from "@/src/screens/Home/Devotionals/CompletionPage";
 import { NoDevotionalPage } from "@/src/screens/Home/Devotionals/NoDevotionalPage";
 import { useDevotionalEntry } from "@/src/hooks/useDevotionals";
 import { useDevotionalsStore } from "@/src/stores/devotionalsStore";
-import { devotionApi } from "@/src/api/devotionApi";
+import { DevotionalEntry, devotionApi } from "@/src/api/devotionApi";
 import { showToast } from "@/src/utils/toast";
+import { ResponseModal } from "@/src/screens/Home/Devotionals/ResponseModal";
+import { DevotionalStorage } from "@/src/utils/DevotionalStorage";
 
 const cleanDevotionalContent = (html: string): string => {
   if (!html) return '';
@@ -97,16 +99,20 @@ export default function DevotionalsPage() {
   } = useDevotionalsStore();
 
   const { 
-    entry, 
-    isLoading, 
-    loadTodayEntry, 
+    entry,            
+    setEntry,        
+    isLoading,         
+    loadTodayEntry,
     loadEntryByDay,
   } = useDevotionalEntry();
 
-  // Local state for bookmarked paragraphs and bookmarking status
+  // Local state
   const [bookmarkedParagraphs, setBookmarkedParagraphs] = useState<number[]>([]);
   const [isBookmarking, setIsBookmarking] = useState(false);
   const [hasNoDevotional, setHasNoDevotional] = useState(false);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
+  const [isProcessingNavigation, setIsProcessingNavigation] = useState(false);
 
   const selectedTheme = useMemo(
     () => themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0],
@@ -119,7 +125,6 @@ export default function DevotionalsPage() {
       try {
         const todayEntry = await loadTodayEntry();
         
-        // Check if no entry was found
         if (!todayEntry) {
           setHasNoDevotional(true);
           setIsLoadingEntry(false);
@@ -135,7 +140,6 @@ export default function DevotionalsPage() {
           setCurrentDayNumber(todayEntry.day_number);
         }
 
-        // Check if video needs to be shown
         const videoUrl = todayEntry?.video_url ?? null;
         const hasBeenViewed = todayEntry?.viewed ?? false;
         
@@ -155,6 +159,7 @@ export default function DevotionalsPage() {
     initLoad();
   }, [loadTodayEntry]);
 
+  // Load bookmarked paragraphs when entry changes
   useEffect(() => {
     const loadBookmarkedParagraphs = async () => {
       if (!entry?.id) {
@@ -174,6 +179,12 @@ export default function DevotionalsPage() {
     loadBookmarkedParagraphs();
   }, [entry?.id]);
 
+  // Reset modal state when entry changes
+  useEffect(() => {
+    // Close modal when navigating to a new entry
+    setShowResponseModal(false);
+  }, [entry?.id]);
+
   const content = useMemo(() => {
     if (!entry) {
       return {
@@ -183,7 +194,6 @@ export default function DevotionalsPage() {
       };
     }
     
-    // Clean the content
     const cleanedContent = cleanDevotionalContent(entry.content);
     
     return {
@@ -193,12 +203,13 @@ export default function DevotionalsPage() {
     };
   }, [entry]);
 
-  // Navigate to a specific day and show video if available
   const navigateToDay = useCallback(async (devotionalId: number, dayNumber: number) => {
+    console.log('🔄 Navigating to:', { devotionalId, dayNumber });
+    
     setIsNavigating(true);
     setShowVideoIntro(false);
     setIsLoadingEntry(true);
-    setHasNoDevotional(false); // Reset the flag
+    setHasNoDevotional(false);
     
     await new Promise(resolve => setTimeout(resolve, 150));
     setPendingVideoUrl(null);
@@ -206,13 +217,23 @@ export default function DevotionalsPage() {
     try {
       const fetchedEntry = await loadEntryByDay(devotionalId, dayNumber);
       
-      // Check if no entry was found
       if (!fetchedEntry) {
-        setHasNoDevotional(true);
+        console.warn('❌ No entry returned for day:', dayNumber);
+        showToast({
+          type: 'info',
+          title: 'Day Not Available',
+          message: `Day ${dayNumber} is not available in this devotional.`,
+        });
         setIsLoadingEntry(false);
         setIsNavigating(false);
         return null;
       }
+      
+      console.log('✅ Entry loaded successfully:', {
+        id: fetchedEntry.id,
+        day: fetchedEntry.day_number,
+        date: fetchedEntry.date,
+      });
       
       setHasNoDevotional(false);
       setCurrentDayNumber(dayNumber);
@@ -230,8 +251,28 @@ export default function DevotionalsPage() {
       }
       
       return fetchedEntry;
-    } catch (error) {
-      console.error('Failed to load entry:', error);
+    } catch (error: any) {
+      console.error('❌ Navigation failed:', error);
+      
+      // Handle 403 - Future devotional access denied
+      if (error?.response?.status === 403) {
+        const message = error?.response?.data?.message || 'This devotional is not available yet';
+        console.log('🔒 Access denied (future date):', message);
+        
+        showToast({
+          type: 'info',
+          title: 'Not Available Yet',
+          message: message,
+        });
+        
+        // Stay on current entry
+        setIsLoadingEntry(false);
+        setIsNavigating(false);
+        return null;
+      }
+      
+      // Other errors
+      console.error('Unexpected error:', error?.response?.status);
       setHasNoDevotional(true);
       setIsLoadingEntry(false);
       return null;
@@ -240,7 +281,6 @@ export default function DevotionalsPage() {
     }
   }, [loadEntryByDay]);
 
-  // Handle day selection from sidebar
   const handleDaySelected = async (payload: { month: DevotionalMonth; day: number; devotionalId?: number }) => {
     setSidebarVisible(false);
     
@@ -258,12 +298,173 @@ export default function DevotionalsPage() {
     await navigateToDay(devotionalId, payload.day);
   };
 
-  const handleBeginDevotional = () => {
+  /**
+   * Handle saving devotional reflection
+   */
+  const handleSaveResponse = async (heart: string, takeaway: string) => {
+    if (!entry?.id || isProcessingNavigation) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No devotional entry loaded',
+      });
+      return;
+    }
+
+    setIsSubmittingResponse(true);
+    setIsProcessingNavigation(true);
+
+    try {
+      // Submit response to backend
+      await devotionApi.submitResponse(entry.id, {
+        heart_response: heart || undefined,
+        takeaway_response: takeaway || undefined,
+      });
+
+      // Update entry state immediately
+      const updatedEntry = { ...entry, has_submitted_response: true };
+      setEntry(updatedEntry);
+      
+      // Update cache immediately
+      await DevotionalStorage.saveEntry(updatedEntry);
+
+      // Close modal
+      setShowResponseModal(false);
+
+      // Show success toast
+      showToast({
+        type: 'success',
+        title: 'Reflection Saved',
+        message: 'Your thoughts have been recorded',
+      });
+
+      // Wait for state to settle
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Try to navigate to next day
+      await proceedToNextDay();
+      
+    } catch (error: any) {
+      console.error('❌ Failed to save response:', error);
+      
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to save your reflection. Please try again.',
+      });
+    } finally {
+      setIsSubmittingResponse(false);
+      setIsProcessingNavigation(false);
+    }
+  };
+
+  /**
+   * Handle skipping the response
+   * Saves empty responses to backend to ensure modal won't show again
+   */
+  const handleSkipResponse = async () => {
+    if (isProcessingNavigation || !entry?.id) return;
+    
+    setIsProcessingNavigation(true);
+    setShowResponseModal(false);
+    console.log('⏭️ User skipped reflection');
+    
+    try {
+      // Submit empty responses to backend to mark as "submitted"
+      // This ensures the modal won't show again even if cache is cleared
+      await devotionApi.submitResponse(entry.id, {
+        heart_response: undefined,
+        takeaway_response: undefined,
+      });
+      
+      console.log('✅ Skip saved to backend');
+      
+      // Update local state
+      const updatedEntry = { ...entry, has_submitted_response: true };
+      setEntry(updatedEntry);
+      await DevotionalStorage.saveEntry(updatedEntry);
+      
+    } catch (error) {
+      console.error('❌ Failed to save skip to backend:', error);
+      
+      // Even if backend fails, update local state
+      // User experience is more important than perfect sync
+      const updatedEntry = { ...entry, has_submitted_response: true };
+      setEntry(updatedEntry);
+      await DevotionalStorage.saveEntry(updatedEntry);
+    }
+    
+    // Wait for state to settle
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Try to navigate to next day
+    await proceedToNextDay();
+    
+    setIsProcessingNavigation(false);
+  };
+
+  /**
+   * Helper function to navigate to next day or show completion
+   */
+  const proceedToNextDay = async () => {
+    const devotionalId = entry?.devotional_id || currentDevotionalId;
+    if (!devotionalId) {
+      console.error('No devotional ID available');
+      return;
+    }
+    
+    const totalDays = entry?.total_days || currentMonth?.entries_count || 31;
+    
+    // Check if this was the last day
+    if (currentDayNumber >= totalDays) {
+      showToast({
+        type: 'success',
+        title: 'Congratulations!',
+        message: 'You have completed your devotional',
+      });
+      setShowCompletion(true);
+      return;
+    }
+    
+    // Try to navigate to next day
+    const newDay = currentDayNumber + 1;
+    const result = await navigateToDay(devotionalId, newDay);
+    
+    // If navigation failed due to 403, user will see toast and stay on current day
+    // The entry's has_submitted_response is already marked as true, so modal won't show again
+    if (!result) {
+      console.log('Navigation to next day failed or was denied');
+    }
+  };
+
+  const handleBeginDevotional = async () => {
+    console.log('🎯 BEGIN DEVOTIONAL CLICKED'); 
+    
     setShowVideoIntro(false);
     setPendingVideoUrl(null);
     setIsLoadingEntry(false);
+    
     if (entry?.id) {
-      devotionApi.markViewed(entry.id).catch(console.error);
+      try {
+        console.log('📡 Calling API to mark as viewed...'); 
+        
+        await devotionApi.markViewed(entry.id);
+        console.log('✅ Entry marked as viewed:', entry.id);
+        
+        // Update local state immediately
+        setEntry((prev) => {
+          if (!prev) return null;
+          return { ...prev, viewed: true };
+        });
+        
+        // Update cache
+        const updatedEntry = { ...entry, viewed: true };
+        await DevotionalStorage.saveEntry(updatedEntry);
+        
+        console.log('📦 Cache updated - video will not show again');
+      } catch (error) {
+        console.error('❌ Failed to mark entry as viewed:', error);
+      }
     }
   };
 
@@ -282,7 +483,6 @@ export default function DevotionalsPage() {
     setIsBookmarking(true);
 
     try {
-      // Get the text of selected paragraphs
       const paragraphs = content.body
         .split(/\n+/)
         .map((line) => line.trim())
@@ -292,13 +492,11 @@ export default function DevotionalsPage() {
         .map(id => paragraphs[id - 1])
         .filter(Boolean);
 
-      // Call the API to bookmark these paragraphs individually
       const result = await devotionApi.bookmarkParagraphs(entry.id, {
         paragraph_ids: paragraphIds,
         paragraph_texts: selectedTexts,
       });
 
-      // Update local state with newly bookmarked paragraphs
       setBookmarkedParagraphs(prev => {
         const newBookmarks = new Set([...prev, ...paragraphIds]);
         return Array.from(newBookmarks);
@@ -330,10 +528,8 @@ export default function DevotionalsPage() {
     setIsBookmarking(true);
 
     try {
-      // Call the API to remove bookmarks from these paragraphs
       const result = await devotionApi.removeBookmarkedParagraphs(entry.id, paragraphIds);
 
-      // Update local state by removing the unbookmarked paragraphs
       setBookmarkedParagraphs(prev => prev.filter(id => !paragraphIds.includes(id)));
 
       showToast({
@@ -353,7 +549,6 @@ export default function DevotionalsPage() {
     }
   };
 
-  // Handle prev page
   const handlePrevPage = useCallback(async () => {
     if (currentDayNumber <= 1 || isNavigating) return;
     
@@ -364,22 +559,53 @@ export default function DevotionalsPage() {
     await navigateToDay(devotionalId, newDay);
   }, [currentDayNumber, entry?.devotional_id, currentDevotionalId, navigateToDay, isNavigating]);
 
-  // Handle next page
+  /**
+   * Handle next page navigation
+   * Shows response modal if user hasn't submitted response
+   * (Video watching is optional - not enforced)
+   */
   const handleNextPage = useCallback(async () => {
-    if (isNavigating) return;
+    if (isNavigating || isProcessingNavigation) return;
     
     const devotionalId = entry?.devotional_id || currentDevotionalId;
     if (!devotionalId) return;
     
     const totalDays = entry?.total_days || currentMonth?.entries_count || 31;
+    
+    // Check if we're at the last day
     if (currentDayNumber >= totalDays) {
+      showToast({
+        type: 'success',
+        title: 'Congratulations!',
+        message: 'You have completed your devotional',
+      });
       setShowCompletion(true);
       return;
     }
     
+    // ===== REMOVED: Video check is no longer mandatory =====
+    // Video will show on entry load if not viewed, but user can skip it
+    // and still navigate. If they come back later without watching,
+    // video shows again (handled in entry loading logic).
+    
+    // Check if user should reflect first (ONLY if they haven't submitted yet)
+    if (entry && !entry.has_submitted_response && !showResponseModal) {
+      console.log('📝 Prompting user to reflect before continuing');
+      setShowResponseModal(true);
+      return;
+    }
+    
+    // If modal is already showing, don't proceed
+    if (showResponseModal) {
+      console.log('⚠️ Modal is open, waiting for user action');
+      return;
+    }
+    
+    // All checks passed - proceed to next day
+    console.log('✅ Proceeding to next day');
     const newDay = currentDayNumber + 1;
     await navigateToDay(devotionalId, newDay);
-  }, [currentDayNumber, entry?.devotional_id, entry?.total_days, currentMonth?.entries_count, currentDevotionalId, navigateToDay, isNavigating]);
+  }, [currentDayNumber, entry, currentDevotionalId, currentMonth, navigateToDay, isNavigating, isProcessingNavigation, showResponseModal]);
 
   // Show completion page
   if (showCompletion) {
@@ -394,7 +620,6 @@ export default function DevotionalsPage() {
           theme={selectedTheme}
           onBack={() => {
             setHasNoDevotional(false);
-            // Try to load today's entry
             loadTodayEntry().then((todayEntry) => {
               if (todayEntry) {
                 setHasNoDevotional(false);
@@ -431,16 +656,14 @@ export default function DevotionalsPage() {
 
   return (
     <>
+      {/* Main Devotionals Component */}
       {!isLoadingEntry && !showVideoIntro && (
         <Devotionals
           onOpenSidebar={() => setSidebarVisible(true)}
           settingsVisible={settingsVisible}
           onToggleSettings={() => setSettingsVisible(!settingsVisible)}
-          onShowSettings={() => setSettingsVisible(true)}
-          onHideSettings={() => setSettingsVisible(false)}
           themeOptions={themeOptions}
           content={content}
-          currentMonth={currentMonth}
           currentDayNumber={entry?.day_number || currentDayNumber}
           selectedThemeId={selectedThemeId}
           onSelectTheme={(id) => setSelectedThemeId(id)}
@@ -455,9 +678,14 @@ export default function DevotionalsPage() {
           onBookmarkParagraphs={handleBookmarkParagraphs}
           onUnbookmarkParagraphs={handleUnbookmarkParagraphs}
           isBookmarking={isBookmarking}
+          hasSubmittedResponse={entry?.has_submitted_response || false}
+          currentMonth={currentMonth}
+          onShowSettings={() => setSettingsVisible(true)}
+          onHideSettings={() => setSettingsVisible(false)}
         />
       )}
 
+      {/* Sidebar */}
       <DevotionalsSidebar
         visible={sidebarVisible}
         onClose={() => setSidebarVisible(false)}
@@ -467,7 +695,7 @@ export default function DevotionalsPage() {
         accentColor={selectedTheme.accentColor}
       />
 
-      {/* Loading Overlay - shows when navigating/loading */}
+      {/* Loading Overlay */}
       {(isLoading || isLoadingEntry || isNavigating) && !showVideoIntro && (
         <View style={[styles.loadingOverlay, { backgroundColor: selectedTheme.backgroundColor }]}>
           <ActivityIndicator size="large" color={selectedTheme.textColor} />
@@ -477,12 +705,25 @@ export default function DevotionalsPage() {
         </View>
       )}
 
+      {/* Video Intro */}
       {showVideoIntro && (
         <VideoIntro 
           key={`video-${videoKey}-${pendingVideoUrl}`}
           onBeginDevotional={handleBeginDevotional} 
           videoUri={pendingVideoUrl || undefined}
           onBack={handleVideoBack}
+        />
+      )}
+
+      {/* Response Modal */}
+      {showResponseModal && (
+        <ResponseModal
+          visible={showResponseModal}
+          onSave={handleSaveResponse}
+          onSkip={handleSkipResponse}
+          theme={selectedTheme}
+          isSubmitting={isSubmittingResponse}
+          dateLabel={content.dateLabel}
         />
       )}
     </>
