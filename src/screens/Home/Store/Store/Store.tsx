@@ -74,7 +74,7 @@ interface StoreUIProps {
   currentSlide: number;
   setCurrentSlide: (slide: number) => void;
   carouselRef: React.RefObject<ScrollView | null>;
-  carouselData: Array<{ id: number; image: ImageSourcePropType; text: string }>;
+  carouselData: Array<{ id: string; image: ImageSourcePropType; text: string; duration?: number }>;
   goToSlide: (index: number) => void;
   actualCarouselWidth: number;
 }
@@ -374,6 +374,7 @@ export function StoreUI({
               <Image
                 source={slide.image}
                 style={styles.heroImage}
+                resizeMode="cover"
               />
             </View>
           ))}
