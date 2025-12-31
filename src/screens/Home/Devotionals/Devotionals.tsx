@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { DevotionalMonth } from "./DevotionalsSidebar";
-import { ResponseModal } from "./ResponseModal";
 
 export interface DevotionalTheme {
   id: string;
@@ -61,6 +60,7 @@ interface DevotionalsProps {
   isLiking?: boolean;
   onSaveResponse?: (heart: string, takeaway: string) => Promise<void>;
   isSubmittingResponse?: boolean;
+  hasSubmittedResponse?: boolean;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -163,12 +163,12 @@ export function Devotionals({
   isLiking = false,
   onSaveResponse,
   isSubmittingResponse = false,
+  hasSubmittedResponse = false,
 }: DevotionalsProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const selectedTheme = themeOptions.find((t) => t.id === selectedThemeId) ?? themeOptions[0];
   const [selectedParagraphs, setSelectedParagraphs] = useState<number[]>([]);
-  const [showResponseModal, setShowResponseModal] = useState(false);
   const [panelHeight, setPanelHeight] = useState(0);
 
   const headerScale = useRef(new Animated.Value(1)).current;
@@ -356,18 +356,7 @@ export function Devotionals({
     }
   };
 
-  const handleNextPage = () => setShowResponseModal(true);
-
-  const handleSave = async (heart: string, takeaway: string) => {
-    if (onSaveResponse && (heart.trim() || takeaway.trim())) {
-      await onSaveResponse(heart, takeaway);
-    }
-    setShowResponseModal(false);
-    onNextPage();
-  };
-
-  const handleSkip = () => {
-    setShowResponseModal(false);
+  const handleNextPage = () => {
     onNextPage();
   };
 
@@ -668,14 +657,7 @@ export function Devotionals({
         </View>
       </Animated.View>
 
-      <ResponseModal
-        visible={showResponseModal}
-        onSave={handleSave}
-        onSkip={handleSkip}
-        theme={selectedTheme}
-        isSubmitting={isSubmittingResponse}
-        dateLabel={content.dateLabel}
-      />
+    
     </View>
   );
 }

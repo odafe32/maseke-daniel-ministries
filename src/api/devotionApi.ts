@@ -30,6 +30,7 @@ export interface DevotionalEntry {
   bookmarked: boolean;
   total_days?: number;
   viewed?: boolean;
+  has_submitted_response?: boolean;
 }
 
 export interface BookmarkStatus {
@@ -66,6 +67,7 @@ export interface DevotionalReflection {
   heart_response?: string | null;
   takeaway_response?: string | null;
   viewed?: boolean;
+  submitted?: boolean;
   created_at: string;
   updated_at: string;
 }

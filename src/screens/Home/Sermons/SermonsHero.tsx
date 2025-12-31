@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { hp, wp } from '@/src/utils';
 import { images } from '@/src/constants/data';
 import { LiveStream } from '@/src/api/liveApi';
@@ -31,6 +31,7 @@ export const SermonsHero = ({
 }: SermonsHeroProps) => {
   const { ads, loading: adsLoading } = useAdsStore();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoading, setIsLoading] = useState(false); // ← NEW: Loading state
 
   const displayTitle = liveStream?.title || title;
   const displayDescription = liveStream?.description || description;
@@ -41,11 +42,25 @@ export const SermonsHero = ({
     if (hasLiveService) return;
 
     const carouselInterval = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % 2); // Toggle between 0 and 1
+      setCurrentSlide(prev => (prev + 1) % 2);
     }, 10000); 
 
     return () => clearInterval(carouselInterval);
   }, [hasLiveService]);
+
+  // ← NEW: Handle watch now with loading state
+  const handleWatchNow = async () => {
+    if (!onActionPress || isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      await onActionPress();
+    } finally {
+      // Reset loading after a short delay to show feedback
+      setTimeout(() => setIsLoading(false), 500);
+    }
+  };
+
   return (
     <ImageBackground source={HERO_IMAGE} style={styles.hero} imageStyle={styles.heroImage}>
       <View style={styles.overlay}>
@@ -58,8 +73,18 @@ export const SermonsHero = ({
                   {displayTitle}
                 </Text>
               </View>
-              <TouchableOpacity style={styles.ctaButton} onPress={onActionPress} activeOpacity={0.85}>
-                <Text style={styles.ctaText}>{actionLabel}</Text>
+              {/* ← UPDATED: Button with loading state */}
+              <TouchableOpacity 
+                style={[styles.ctaButton, isLoading && styles.ctaButtonLoading]} 
+                onPress={handleWatchNow} 
+                activeOpacity={0.85}
+                disabled={isLoading} // ← Disable while loading
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.ctaText}>{actionLabel}</Text>
+                )}
               </TouchableOpacity>
             </View>
             <Text style={styles.meta}>{displayMeta}</Text>
@@ -67,7 +92,6 @@ export const SermonsHero = ({
           </View>
         ) : (
           <>
-            {/* Show ads carousel when currentSlide is 0, otherwise show hero image */}
             {currentSlide === 0 && (
               <View style={styles.adsContainer}>
                 <HomeImageSection
@@ -77,7 +101,6 @@ export const SermonsHero = ({
                 />
               </View>
             )}
-            {/* Always show the offline message at bottom */}
             <View style={styles.fallbackBanner}>
               <View style={styles.dotMuted} />
               <Text style={styles.fallbackText}>{offlineMessage}</Text>
@@ -101,11 +124,9 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-  
     justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.12)',
   },
-
   adsContainer: {
     position: 'absolute',
     top: 0,
@@ -114,7 +135,6 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   contentCard: {
-
     paddingVertical: hp(12),
     paddingHorizontal: hp(14),
     borderRadius: wp(8),
@@ -186,6 +206,10 @@ const styles = StyleSheet.create({
     minWidth: wp(110),
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // ← NEW: Loading state style
+  ctaButtonLoading: {
+    opacity: 0.7,
   },
   ctaText: {
     color: '#fff',

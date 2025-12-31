@@ -97,6 +97,18 @@ export const Sermons = ({
 
   const skeletonData = Array.from({ length: 6 }, (_, i) => ({ id: i }));
 
+
+const handleWatchLive = async () => {
+  try {
+    // Navigate to live stream
+    router.push({
+      pathname: '/live-stream',
+      params: { streamId: liveStream?.id },
+    });
+  } catch (error) {
+    console.error('Failed to open live stream:', error);
+  }
+};
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderSkeletonItem = ({ item }: { item: { id: number } }) => (
     <View style={styles.rowGap}>
@@ -220,6 +232,7 @@ export const Sermons = ({
           <SermonsHero
             hasLiveService={hasLiveService}
             liveStream={liveStream}
+              onActionPress={handleWatchLive} 
             onActionPress={() => router.push('/live')}
             offlineMessage="No live sermon available"
           />

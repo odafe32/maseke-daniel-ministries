@@ -102,7 +102,7 @@ export function About({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            The GRACE DIMENSION APP is designed to bring your church experience to your fingertips. Watch live sermons, read devotionals, give tithes and offerings securely, and access a library of past messages anytime, anywhere.
+            The Maseke DanielAPP is designed to bring your church experience to your fingertips. Watch live sermons, read devotionals, give tithes and offerings securely, and access a library of past messages anytime, anywhere.
           </ThemeText>
         </Animated.View>
 

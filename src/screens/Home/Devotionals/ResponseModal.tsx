@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";  
 import {
   Modal,
   View,
@@ -47,6 +47,14 @@ export function ResponseModal({
   const insets = useSafeAreaInsets();
   const [heart, setHeart] = useState("");
   const [takeaway, setTakeaway] = useState("");
+
+    useEffect(() => {
+    if (!visible) {
+      setHeart("");
+      setTakeaway("");
+    }
+  }, [visible]);
+
 
   const handleSave = () => {
     onSave(heart, takeaway);
