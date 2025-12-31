@@ -15,7 +15,7 @@ import { useProfile } from '../../hooks/useProfile';
 export default function ProfilePage() {
   const router = useRouter();
   const { logout } = useAuthStore();
-  const { user } = useUser();
+  const { user, isAuthenticated } = useUser();
   const { updateProfile, updateAvatar, getProfile, isUpdating, error } = useProfile();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [profile, setProfile] = useState(user ? { name: user.full_name, email: user.email, phone: user.phone_number || "", address: user.address || "" } : { name: "", email: "", phone: "", address: "" });
@@ -45,6 +45,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!isAuthenticated) return;
       try {
         await getProfile();
       } catch (error) {
@@ -52,7 +53,7 @@ export default function ProfilePage() {
       }
     };
     fetchProfile();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const loadNotifications = async () => {

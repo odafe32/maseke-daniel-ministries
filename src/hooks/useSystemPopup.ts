@@ -21,16 +21,15 @@ export const useSystemPopup = (isAuthenticated: boolean) => {
         setPopup(response.data);
         setIsVisible(true);
       } else {
+        // No active popup available - this is normal, not an error
         setPopup(null);
         setIsVisible(false);
       }
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        setPopup(null);
-        setIsVisible(false);
-      } else {
-        console.error('Error fetching popup:', error.response?.data?.message || error.message);
-      }
+      // Only log actual errors (not "no popup" cases)
+      console.error('Error fetching popup:', error.response?.data?.message || error.message);
+      setPopup(null);
+      setIsVisible(false);
     } finally {
       setIsLoading(false);
     }
