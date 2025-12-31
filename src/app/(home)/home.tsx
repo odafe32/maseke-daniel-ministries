@@ -17,10 +17,15 @@ interface Notification {
 
 export default function HomePage() {
   const router = useRouter();
-  const { fetchAds } = useAdsStore();
+  const { ads, loading: adsLoading, fetchAds } = useAdsStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+
+  // Fetch ads on component mount
+  useEffect(() => {
+    fetchAds();
+  }, [fetchAds]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
@@ -130,6 +135,8 @@ export default function HomePage() {
         onNotificationPress={handleNotificationPress}
         notificationCount={notificationCount}
         quickActions={quickActions}
+        ads={ads}
+        adsLoading={adsLoading}
       />
     </AuthPageWrapper>
   );

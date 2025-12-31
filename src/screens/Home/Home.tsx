@@ -16,7 +16,6 @@ import {
 } from "react-native";
 import { avatarUri } from "@/src/constants/data";
 import { useUser } from "../../hooks/useUser";
-import { useAdsStore } from "../../stores/adsStore";
 import { HomeImageSection } from "./HomeImageSection";
 import Feather from "@expo/vector-icons/Feather";
 
@@ -25,6 +24,11 @@ interface LocalUser {
   avatar_url?: string;
   avatar_base64?: string;
   last_updated: string;
+}
+
+interface ExtendedHomeProps extends HomeProps {
+  ads?: Array<{ image: string; display_duration: number }>;
+  adsLoading?: boolean;
 }
 
 export const Home = ({
@@ -36,10 +40,11 @@ export const Home = ({
   onNotificationPress,
   notificationCount,
   quickActions: propQuickActions = quickActions,
-}: HomeProps) => {
+  ads = [],
+  adsLoading = false,
+}: ExtendedHomeProps) => {
   const colors = getColor();
   const { user: apiUser } = useUser();
-  const { ads, loading: adsLoading, fetchAds } = useAdsStore();
   const profileScale = useRef(new Animated.Value(1)).current;
 
   const [localUser, setLocalUser] = useState<LocalUser | null>(null);
@@ -131,11 +136,6 @@ export const Home = ({
     loadOfflineData();
   }, []);
 
-  // Fetch ads on mount
-  useEffect(() => {
-    fetchAds();
-  }, [fetchAds]);
-
   // Sync with API data when user data changes
   useEffect(() => {
     if (apiUser && !isOfflineMode) {
@@ -160,8 +160,8 @@ export const Home = ({
     }
   }, [apiUser, isOfflineMode]);
 
-  const imageUris = ads.map(ad => ad.image);
-  const durations = ads.map(ad => ad.display_duration * 1000);
+  const imageUris = ads.map((ad: { image: string; display_duration: number }) => ad.image);
+  const durations = ads.map((ad: { image: string; display_duration: number }) => ad.display_duration * 1000);
 
   return (
     <View style={styles.container}>
