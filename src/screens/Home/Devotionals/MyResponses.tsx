@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#8B5CF6',
+    color: '#0C154C',
     marginBottom: 4,
   },
   statLabel: {
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterTabActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#0C154C',
   },
   filterText: {
     fontSize: 14,
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   responseSectionLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8B5CF6',
+    color: '#0C154C',
     marginBottom: 4,
   },
   responseSectionText: {
