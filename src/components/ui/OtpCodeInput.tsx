@@ -37,56 +37,78 @@ export const OtpCodeInput = ({
 
   const handleChange = (text: string, index: number) => {
     const sanitized = text.replace(/\D/g, "");
+
     if (!sanitized) {
-      const updatedCode = updateCode(index, "");
-      onChange?.(updatedCode.trimEnd());
+      // User cleared the field
+      setCode((prev) => {
+        const next = prev.padEnd(length, "").split("");
+        next[index] = "";
+        const updatedCode = next.join("").slice(0, length);
+        onChange?.(updatedCode.trimEnd());
+        return updatedCode;
+      });
       if (index > 0) {
         inputsRef.current[index - 1]?.focus();
       }
       return;
     }
 
-    const digits = sanitized.split("");
-    let nextIndex = index;
-    let updatedCode = code;
+    // Check if user pasted a full OTP code (or close to full length)
+    if (sanitized.length >= length) {
+      // User pasted the full OTP code - fill all fields at once
+      const pastedCode = sanitized.slice(0, length);
 
-    digits.forEach((digit, idx) => {
-      const targetIndex = index + idx;
-      if (targetIndex < length) {
-        updatedCode = updateCode(targetIndex, digit);
-        nextIndex = targetIndex;
-      }
-    });
+      setCode(pastedCode);
+      onChange?.(pastedCode);
 
-    const finalCode = updatedCode.trimEnd();
-    onChange?.(finalCode);
-
-    if (nextIndex < length - 1) {
-      inputsRef.current[nextIndex + 1]?.focus();
-    } else {
-      inputsRef.current[nextIndex]?.blur();
-      if (finalCode.replace(/\s/g, "").length === length) {
-        onComplete?.(finalCode);
-      }
+      // Blur the current input and trigger onComplete
+      inputsRef.current[length - 1]?.blur();
+      onComplete?.(pastedCode);
+      return;
     }
+
+    // Handle single digit input or partial paste
+    setCode((prev) => {
+      const codeArray = prev.padEnd(length, "").split("");
+      const digits = sanitized.split("");
+      let nextIndex = index;
+
+      digits.forEach((digit, idx) => {
+        const targetIndex = index + idx;
+        if (targetIndex < length) {
+          codeArray[targetIndex] = digit;
+          nextIndex = targetIndex;
+        }
+      });
+
+      const finalCode = codeArray.join("").slice(0, length);
+      onChange?.(finalCode.trimEnd());
+
+      // Handle focus and completion
+      if (nextIndex < length - 1) {
+        inputsRef.current[nextIndex + 1]?.focus();
+      } else {
+        inputsRef.current[nextIndex]?.blur();
+        if (finalCode.replace(/\s/g, "").length === length) {
+          onComplete?.(finalCode);
+        }
+      }
+
+      return finalCode;
+    });
   };
 
   const handleKeyPress = (event: any, index: number) => {
     if (event.nativeEvent.key === "Backspace" && !code[index] && index > 0) {
-      updateCode(index - 1, "");
+      setCode((prev) => {
+        const next = prev.padEnd(length, "").split("");
+        next[index - 1] = "";
+        const updatedCode = next.join("").slice(0, length);
+        onChange?.(updatedCode.trimEnd());
+        return updatedCode;
+      });
       inputsRef.current[index - 1]?.focus();
     }
-  };
-
-  const updateCode = (index: number, digit: string) => {
-    let nextValue = "";
-    setCode((prev) => {
-      const next = prev.padEnd(length, "").split("");
-      next[index] = digit;
-      nextValue = next.join("").slice(0, length);
-      return nextValue;
-    });
-    return nextValue || code;
   };
   
 
@@ -104,7 +126,7 @@ export const OtpCodeInput = ({
           onChangeText={(text) => handleChange(text, index)}
           onKeyPress={(event) => handleKeyPress(event, index)}
           keyboardType={keyboardType}
-          maxLength={1}
+          maxLength={length}
           secureTextEntry={secure}
           placeholder="-"
           placeholderTextColor="#94A3B8"

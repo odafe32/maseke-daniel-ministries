@@ -3,7 +3,7 @@
     "name": "maseke-daniel-ministries",
     "slug": "maseke-daniel-ministries",
     "version": "1.0.0",
-    "icon": "./src/assets/icon.svg",
+    "icon": "./src/assets/logo.png",
     "userInterfaceStyle": "light",
     "scheme": "maseke-daniel-ministries",
     "newArchEnabled": false,
@@ -35,7 +35,7 @@
             "versionCode": 2
     },
     "web": {
-      "favicon": "./src/assets/favicon.png"
+      "favicon": "./src/assets/logo.png"
     }
   }
 }
