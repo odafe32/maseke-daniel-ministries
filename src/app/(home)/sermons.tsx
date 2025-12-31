@@ -138,6 +138,8 @@ export default function SermonsPage() {
     setShowStickyFilters(scrollY > filterY + 50);
   }, [filterY]);
 
+  
+
   return (
     <Sermons
       data={data}

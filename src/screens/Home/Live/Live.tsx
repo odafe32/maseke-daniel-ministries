@@ -141,7 +141,6 @@ export const Live = ({ onBack, liveStream }: LiveProps) => {
 
   const showLocalNotification = async (stream: LiveStream) => {
     try {
-      // Check if we've already shown this notification to avoid duplicates
       const stored = await AsyncStorage.getItem('shown_notifications');
       const shownNotifications = stored ? JSON.parse(stored) : [];
       const notificationKey = `live_stream_${stream.id}`;

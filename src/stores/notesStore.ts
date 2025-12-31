@@ -89,15 +89,17 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       // Update savedVerses cache
       const savedVerses: { [key: string]: number[] } = {};
       notes.forEach(note => {
-        const key = `${note.book.id}-${note.chapter}`;
-        if (!savedVerses[key]) {
-          savedVerses[key] = [];
-        }
-        note.verses.forEach(verseId => {
-          if (!savedVerses[key].includes(verseId)) {
-            savedVerses[key].push(verseId);
+        if (note.book) {
+          const key = `${note.book.id}-${note.chapter}`;
+          if (!savedVerses[key]) {
+            savedVerses[key] = [];
           }
-        });
+          note.verses.forEach(verseId => {
+            if (!savedVerses[key].includes(verseId)) {
+              savedVerses[key].push(verseId);
+            }
+          });
+        }
       });
       set({ savedVerses });
 
@@ -258,26 +260,28 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
         // Update savedVerses cache
         const newSavedVerses = { ...state.savedVerses };
-        const key = `${updatedNote.book.id}-${updatedNote.chapter}`;
+        if (updatedNote.book) {
+          const key = `${updatedNote.book.id}-${updatedNote.chapter}`;
 
-        // Remove old verses from cache
-        if (newSavedVerses[key]) {
-          // Find the old note to remove its verses
-          const oldNote = state.notes.find(note => note.id === noteId);
-          if (oldNote) {
-            newSavedVerses[key] = newSavedVerses[key].filter(verseId => !oldNote.verses.includes(verseId));
+          // Remove old verses from cache
+          if (newSavedVerses[key]) {
+            // Find the old note to remove its verses
+            const oldNote = state.notes.find(note => note.id === noteId);
+            if (oldNote) {
+              newSavedVerses[key] = newSavedVerses[key].filter(verseId => !oldNote.verses.includes(verseId));
+            }
           }
-        }
 
-        // Add new verses to cache
-        if (!newSavedVerses[key]) {
-          newSavedVerses[key] = [];
-        }
-        updatedNote.verses.forEach(verseId => {
-          if (!newSavedVerses[key].includes(verseId)) {
-            newSavedVerses[key].push(verseId);
+          // Add new verses to cache
+          if (!newSavedVerses[key]) {
+            newSavedVerses[key] = [];
           }
-        });
+          updatedNote.verses.forEach(verseId => {
+            if (!newSavedVerses[key].includes(verseId)) {
+              newSavedVerses[key].push(verseId);
+            }
+          });
+        }
 
         return {
           notes: newNotes,
@@ -311,7 +315,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
         const noteToDelete = state.notes.find(note => note.id === noteId);
         const newSavedVerses = { ...state.savedVerses };
 
-        if (noteToDelete) {
+        if (noteToDelete && noteToDelete.book) {
           const key = `${noteToDelete.book.id}-${noteToDelete.chapter}`;
           if (newSavedVerses[key]) {
             newSavedVerses[key] = newSavedVerses[key].filter(verseId => !noteToDelete.verses.includes(verseId));
@@ -346,7 +350,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   // Get notes for a specific book and chapter
   getNotesForReference: (bookId: number, chapter: number): Note[] => {
     const { notes } = get();
-    return notes.filter(note => note.book.id === bookId && note.chapter === chapter);
+    return notes.filter(note => note.book?.id === bookId && note.chapter === chapter);
   },
 
   // Get saved verses for a specific book and chapter

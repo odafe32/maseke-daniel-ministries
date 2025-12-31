@@ -12,26 +12,36 @@ import { useRouter } from "expo-router";
 import { Bell, ArrowLeft, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Add these animation declarations at the top of your component or before the return statement
-const Notifications = () => {
-  const router = useRouter();
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+interface NotificationsProps {
+  onBack?: () => void;
+  notifications: any[];
+  onNotificationPress: (id: string) => void;
+  onRefresh: () => Promise<void>;
+  refreshing: boolean;
+  onClearAll: () => Promise<void>;
+}
 
-  // ADD THESE MISSING ANIMATED VALUES
+const Notifications: React.FC<NotificationsProps> = ({
+  onBack,
+  notifications,
+  onNotificationPress,
+  onRefresh,
+  refreshing,
+  onClearAll,
+}) => {
+  const router = useRouter();
+
   const headerAnim = new Animated.Value(0);
   const titleAnim = new Animated.Value(0);
   const emptyStateAnim = new Animated.Value(0);
 
   useEffect(() => {
-    // Animate header on mount
     Animated.timing(headerAnim, {
       toValue: 1,
       duration: 300,
       useNativeDriver: true,
     }).start();
 
-    // Animate title
     Animated.timing(titleAnim, {
       toValue: 1,
       duration: 400,
@@ -39,7 +49,6 @@ const Notifications = () => {
       useNativeDriver: true,
     }).start();
 
-    // Animate empty state if no notifications
     if (notifications.length === 0) {
       Animated.timing(emptyStateAnim, {
         toValue: 1,
@@ -50,20 +59,8 @@ const Notifications = () => {
     }
   }, [notifications.length]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Simulate refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
-  };
-
-  const handleDeleteNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
-  };
-
   const renderNotification = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.notificationCard}>
+    <TouchableOpacity style={styles.notificationCard} onPress={() => onNotificationPress(item.id)}>
       <View style={styles.notificationContent}>
         <View style={styles.iconContainer}>
           <Bell size={24} color="#6B46C1" />
@@ -74,12 +71,6 @@ const Notifications = () => {
           <Text style={styles.notificationTime}>{item.time}</Text>
         </View>
       </View>
-      <TouchableOpacity
-        onPress={() => handleDeleteNotification(item.id)}
-        style={styles.deleteButton}
-      >
-        <Trash2 size={20} color="#EF4444" />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 

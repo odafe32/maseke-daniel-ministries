@@ -2,6 +2,51 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
+import axios from 'axios';
+import { API_URL } from './env';
+
+export const scheduleDevotionalReminders = async () => {
+  try {
+    // Request permissions if not granted
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Notification permissions not granted');
+      return;
+    }
+
+    // Cancel any existing reminders
+    await Notifications.cancelScheduledNotificationAsync('daily-devotional-reminder');
+
+    // Schedule daily reminder at 8 AM
+    await Notifications.scheduleNotificationAsync({
+      identifier: 'daily-devotional-reminder',
+      content: {
+        title: 'Daily Devotional Reminder',
+        body: 'Time for your daily devotional reading! 🌅',
+        sound: 'default',
+      },
+      // @ts-ignore - Type definitions may be outdated due to Expo version
+      trigger: {
+        type: 'daily',
+        hour: 8,
+        minute: 0,
+      },
+    });
+
+    console.log('Daily devotional reminder scheduled');
+  } catch (error) {
+    console.error('Failed to schedule devotional reminder:', error);
+  }
+};
+
+export const cancelDevotionalReminders = async () => {
+  try {
+    await Notifications.cancelScheduledNotificationAsync('daily-devotional-reminder');
+    console.log('Daily devotional reminder cancelled');
+  } catch (error) {
+    console.error('Failed to cancel devotional reminder:', error);
+  }
+};
 
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
 
@@ -84,3 +129,20 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 
   return token;
 }
+
+export const registerPushToken = async (authToken: string) => {
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status === 'granted') {
+      const token = await Notifications.getExpoPushTokenAsync();
+      await axios.post(`${API_URL}/mobile/auth/push-token`, {
+        push_token: token.data,
+      }, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      console.log('Push token registered');
+    }
+  } catch (error) {
+    console.log('Failed to register push token:', error);
+  }
+};

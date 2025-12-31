@@ -13,6 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemeText } from "@/src/components";
 import { wp } from "@/src/utils";
 import { useDevotionalList, useDevotionalDetail } from "@/src/hooks/useDevotionals";
+import { useRouter } from "expo-router";
 
 export type DevotionalMonth = {
   id: string;
@@ -42,6 +43,7 @@ export function DevotionalsSidebar({
   accentColor = "#EE8F5C",
   onOpenNotes,
 }: DevotionalsSidebarProps) {
+  const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState<DevotionalMonth | null>(null);
   const { devotionals, isLoading, loadDevotionals } = useDevotionalList();
   const { entries, isLoading: isLoadingEntries, loadDevotional } = useDevotionalDetail();
@@ -105,58 +107,93 @@ export function DevotionalsSidebar({
       );
     }
 
-    // Showing days grid
+    // Showing days as vertical list
     const days = entries.length > 0
       ? entries.map((e) => e.day_number)
       : Array.from({ length: selectedMonth.days }, (_, i) => i + 1);
 
+    console.log('📅 Total days:', days.length);
+    console.log('📅 Selected month start_date:', selectedMonth.start_date);
+
+    // Get today's date at midnight in local timezone
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+    
+    console.log('📅 Today:', today.toDateString());
 
     return (
-      <View style={styles.daysGrid}>
-        {days.map((day) => {
-          // Calculate the date for this day
-          const dayDate = selectedMonth.start_date
-            ? new Date(selectedMonth.start_date)
-            : new Date();
-          dayDate.setDate(dayDate.getDate() + (day - 1));
-          dayDate.setHours(0, 0, 0, 0);
+      <ScrollView style={styles.daysScrollView}>
+        <View style={styles.daysColumn}>
+          {days.map((day) => {
+            let isFuture = false;
+            let dayDate: Date | null = null;
+            
+            try {
+              if (selectedMonth.start_date) {
+                // Extract just the date part from ISO timestamp
+                // "2025-12-27T00:00:00.000000Z" -> "2025-12-27"
+                const dateOnly = selectedMonth.start_date.split('T')[0];
+                const [year, month, dayNum] = dateOnly.split('-').map(Number);
+                
+                dayDate = new Date(year, month - 1, dayNum);
+                dayDate.setDate(dayDate.getDate() + (day - 1));
+                dayDate.setHours(0, 0, 0, 0);
+                
+                isFuture = dayDate.getTime() > todayTime;
+                
+                if (day <= 5) {
+                  console.log(`📅 Day ${day}: ${dayDate.toDateString()} - ${isFuture ? 'FUTURE (disabled)' : 'Available'}`);
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing date for day', day, error);
+              // If error, assume it's available (fail open)
+              isFuture = false;
+            }
 
-          const isFuture = dayDate > today;
-
-          return (
-            <TouchableOpacity
-              key={day}
-              style={[
-                styles.dayCircle,
-                { borderColor: `${accentColor}40` },
-                isFuture ? { opacity: 0.5 } : {},
-              ]}
-              onPress={() => {
-                if (isFuture) return; 
-                onSelectDay({
-                  month: selectedMonth,
-                  day,
-                  devotionalId: selectedMonth.devotionalId,
-                });
-                onClose();
-                setSelectedMonth(null);
-              }}
-              disabled={isFuture}
-            >
-              <Text
-                style={{
-                  color: isFuture ? `${textColor}40` : textColor,
-                  fontWeight: "600",
+            return (
+              <TouchableOpacity
+                key={day}
+                style={[
+                  styles.dayRow,
+                  { 
+                    backgroundColor: isFuture ? `${accentColor}08` : `${accentColor}15`,
+                    borderLeftColor: accentColor,
+                  },
+                  isFuture && { opacity: 0.5 },
+                ]}
+                onPress={() => {
+                  if (isFuture) {
+                    console.log(`⚠️ Day ${day} is in the future - click blocked`);
+                    return;
+                  }
+                  onSelectDay({
+                    month: selectedMonth,
+                    day,
+                    devotionalId: selectedMonth.devotionalId,
+                  });
+                  onClose();
+                  setSelectedMonth(null);
                 }}
+                disabled={isFuture}
               >
-                {day}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                <Text
+                  style={[
+                    styles.dayRowText,
+                    { color: isFuture ? `${textColor}40` : textColor },
+                  ]}
+                >
+                   {day}
+                </Text>
+                {!isFuture && (
+                  <Feather name="chevron-right" size={20} color={textColor} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
     );
   };
 
@@ -187,6 +224,21 @@ export function DevotionalsSidebar({
           </View>
 
           <ScrollView contentContainerStyle={styles.list}>{renderList()}</ScrollView>
+
+          <TouchableOpacity
+            onPress={() => {
+              router.push('/(home)/my-responses');
+              onClose();
+            }}
+            style={[styles.notesRow, { borderTopColor: `${textColor}10` }]}
+            activeOpacity={0.8}
+          >
+            <View style={styles.notesLeft}>
+              <Feather name="file-text" size={18} color={textColor} />
+              <Text style={[styles.notesLabel, { color: textColor }]}>My Reflections</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={textColor} />
+          </TouchableOpacity>
 
           {onOpenNotes && (
             <TouchableOpacity
@@ -264,14 +316,27 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
   },
-  daysGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-start", paddingHorizontal: 8 },
-  dayCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  daysScrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  daysColumn: {
+    paddingHorizontal: 0,
+    paddingBottom: 20,
+  },
+  dayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 0,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+  },
+  dayRowText: {
+    fontSize: 16,
+    fontFamily: 'DMSans-SemiBold',
   },
   notesRow: {
     marginTop: 12,

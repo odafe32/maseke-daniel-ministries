@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useBibleStore } from '@/src/stores/bibleStore';
-import { Book, BibleChapter } from '@/src/api/bibleApi';
+import type { Book, BibleChapter, Testament } from '@/src/stores/bibleStore';
+
+// Re-export types to resolve TypeScript naming issues
+export type { Book, BibleChapter, Testament } from '@/src/stores/bibleStore';
 
 export const useBible = () => {
   const bibleStore = useBibleStore();
@@ -68,8 +71,7 @@ export const useBibleBooks = (testamentId?: number) => {
         setIsLoading(false);
       });
     }
-  }, [testamentId]); // Remove bibleStore from dependencies
-
+  }, [testamentId]); 
   return { books, isLoading };
 };
 
@@ -82,11 +84,10 @@ export const useBibleChapter = (bookId?: number, chapter?: number) => {
     if (bookId && chapter) {
       setIsLoading(true);
       bibleStore.fetchChapter(bookId, chapter).then(() => {
-        // The chapter data is stored in the store, so we don't need to set it here
         setIsLoading(false);
       });
     }
-  }, [bookId, chapter]); // Remove bibleStore from dependencies
+  }, [bookId, chapter]); 
 
   return { isLoading };
 };
