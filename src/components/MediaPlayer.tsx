@@ -26,6 +26,7 @@ export const MediaPlayer = ({ uri, isAudio = false, posterUri }: MediaPlayerProp
   const [position, setPosition] = useState(0);
   const [volume, setVolume] = useState(1.0);
   const [playbackRate, setPlaybackRate] = useState(1.0);
+  const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<Video | null>(null);
 
   useFocusEffect(
@@ -92,11 +93,13 @@ export const MediaPlayer = ({ uri, isAudio = false, posterUri }: MediaPlayerProp
   const handleVideoError = (error: string) => {
     console.error('MediaPlayer Video Error:', error);
     setIsLoadingMedia(false);
+    setError('Unable to load media. Please check your connection and try again.');
   };
 
   const handleLoadStart = () => {
     console.log('MediaPlayer: Load started');
     setIsLoadingMedia(true);
+    setError(null);
   };
 
   const handleLoad = () => {
@@ -173,47 +176,56 @@ export const MediaPlayer = ({ uri, isAudio = false, posterUri }: MediaPlayerProp
 
   return (
     <View style={[styles.container, isAudio && styles.audioContainer]}>
-      {isAudio && fullPosterUri && <Image source={{ uri: fullPosterUri }} style={styles.audioPoster} />}
-      <Video
-        ref={videoRef}
-        source={{ uri: fullUri }}
-        style={isAudio ? styles.audioPlayer : styles.videoPlayer}
-        resizeMode={ResizeMode.CONTAIN}
-        useNativeControls={!isAudio}
-        posterSource={fullPosterUri ? { uri: fullPosterUri } : undefined}
-        usePoster={!!fullPosterUri}
-        shouldPlay={true}
-        progressUpdateIntervalMillis={1000}
-        onError={handleVideoError}
-        onLoadStart={handleLoadStart}
-        onLoad={handleLoad}
-        onPlaybackStatusUpdate={isAudio ? handlePlaybackStatusUpdate : undefined}
-      />
-      {isAudio && (
-        <View style={styles.customControls}>
-          <Text style={styles.timeText}>
-            {formatTime(position)} / {formatTime(duration)}
-          </Text>
-          <View style={styles.controlButtons}>
-            <TouchableOpacity onPress={seekBackward} style={styles.controlButton}>
-              <Feather name="rewind" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
-              <Feather name={isPlaying ? "pause" : "play"} size={32} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={seekForward} style={styles.controlButton}>
-              <Feather name="fast-forward" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={toggleVolume} style={styles.controlButton}>
-              <Feather name={volume > 0 ? "volume-2" : "volume-x"} size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={cyclePlaybackRate} style={styles.controlButton}>
-              <Text style={styles.speedText}>{playbackRate}x</Text>
-            </TouchableOpacity>
-          </View>
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Feather name="alert-circle" size={48} color="#ff6b6b" />
+          <Text style={styles.errorText}>{error}</Text>
         </View>
+      ) : (
+        <>
+          {isAudio && fullPosterUri && <Image source={{ uri: fullPosterUri }} style={styles.audioPoster} />}
+          <Video
+            ref={videoRef}
+            source={{ uri: fullUri }}
+            style={isAudio ? styles.audioPlayer : styles.videoPlayer}
+            resizeMode={ResizeMode.CONTAIN}
+            useNativeControls={!isAudio}
+            posterSource={fullPosterUri ? { uri: fullPosterUri } : undefined}
+            usePoster={!!fullPosterUri}
+            shouldPlay={true}
+            progressUpdateIntervalMillis={1000}
+            onError={handleVideoError}
+            onLoadStart={handleLoadStart}
+            onLoad={handleLoad}
+            onPlaybackStatusUpdate={isAudio ? handlePlaybackStatusUpdate : undefined}
+          />
+          {isAudio && (
+            <View style={styles.customControls}>
+              <Text style={styles.timeText}>
+                {formatTime(position)} / {formatTime(duration)}
+              </Text>
+              <View style={styles.controlButtons}>
+                <TouchableOpacity onPress={seekBackward} style={styles.controlButton}>
+                  <Feather name="rewind" size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
+                  <Feather name={isPlaying ? "pause" : "play"} size={32} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={seekForward} style={styles.controlButton}>
+                  <Feather name="fast-forward" size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={toggleVolume} style={styles.controlButton}>
+                  <Feather name={volume > 0 ? "volume-2" : "volume-x"} size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={cyclePlaybackRate} style={styles.controlButton}>
+                  <Text style={styles.speedText}>{playbackRate}x</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </>
       )}
-      {isLoadingMedia && (
+      {isLoadingMedia && !error && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.loadingText}>Loading media...</Text>
@@ -261,6 +273,19 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontFamily: 'Geist-Medium',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: hp(12),
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 16,
+    fontFamily: 'Geist-Medium',
+    textAlign: 'center',
+    paddingHorizontal: wp(20),
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
