@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Image,
   ScrollView,
   Share,
+  ImageBackground,
 } from 'react-native';
 import { Icon } from './icons/Icon';
 import { SystemPopup } from '../api/systemPopupApi';
@@ -27,6 +27,8 @@ const SystemPopupModal: React.FC<SystemPopupModalProps> = ({
   popup,
   onClose,
 }) => {
+  const [imageAspectRatio, setImageAspectRatio] = useState<number>(1);
+
   if (!popup) return null;
 
   const getImageUrl = (imagePath: string) => {
@@ -36,6 +38,13 @@ const SystemPopupModal: React.FC<SystemPopupModalProps> = ({
     }
     // Otherwise, construct the full URL
     return `${API_URL.replace('/api', '')}/storage/${imagePath}`;
+  };
+
+  const handleImageLoad = (event: any) => {
+    const { width: imgWidth, height: imgHeight } = event.nativeEvent.source;
+    if (imgWidth && imgHeight) {
+      setImageAspectRatio(imgHeight / imgWidth);
+    }
   };
 
   const handleShare = async () => {
@@ -61,6 +70,46 @@ const SystemPopupModal: React.FC<SystemPopupModalProps> = ({
     }
   };
 
+  // Render image popup with image as background
+  if (popup.type === 'image' && popup.image) {
+    const modalWidth = width - 40;
+    const calculatedHeight = modalWidth * imageAspectRatio;
+    // Ensure minimum height to accommodate button (at least 350px)
+    const imageHeight = Math.max(calculatedHeight || 400, 350);
+
+    return (
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={styles.overlay}>
+          <View style={[styles.imageModalContainer, { width: modalWidth }]}>
+            <ImageBackground
+              source={{ uri: getImageUrl(popup.image) }}
+              style={[styles.imageBackground, { height: imageHeight }]}
+              resizeMode="cover"
+              onLoad={handleImageLoad}
+            >
+              {/* Button at the bottom */}
+              <View style={styles.imageButtonContainer}>
+                <TouchableOpacity
+                  style={styles.imageButton}
+                  onPress={onClose}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.imageButtonText}>{popup.action_button_title}</Text>
+                </TouchableOpacity>
+              </View>
+            </ImageBackground>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  // Render text popup
   return (
     <Modal
       visible={visible}
@@ -75,38 +124,24 @@ const SystemPopupModal: React.FC<SystemPopupModalProps> = ({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.scrollContent}
             >
-              {popup.type === 'text' ? (
-                <>
-                  {/* Year Badge */}
-                  <View style={styles.yearBadge}>
-                    <Text style={styles.yearText}>{new Date().getFullYear()}</Text>
-                  </View>
+              {/* Year Badge */}
+              <View style={styles.yearBadge}>
+                <Text style={styles.yearText}>{new Date().getFullYear()}</Text>
+              </View>
 
-                  {popup.title && (
-                    <Text style={styles.title}>{popup.title}</Text>
-                  )}
+              {popup.title && (
+                <Text style={styles.title}>{popup.title}</Text>
+              )}
 
-                  {/* Quote Icon */}
-                  {popup.title && popup.text && (
-                    <View style={styles.quoteIconContainer}>
-                      <Icon name="quote" color="#0C154C" size={24} />
-                    </View>
-                  )}
+              {/* Quote Icon */}
+              {popup.title && popup.text && (
+                <View style={styles.quoteIconContainer}>
+                  <Icon name="quote" color="#0C154C" size={24} />
+                </View>
+              )}
 
-                  {popup.text && (
-                    <Text style={styles.text}>{popup.text}</Text>
-                  )}
-                </>
-              ) : (
-                popup.image && (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: getImageUrl(popup.image) }}
-                      style={styles.image}
-                      resizeMode="contain"
-                    />
-                  </View>
-                )
+              {popup.text && (
+                <Text style={styles.text}>{popup.text}</Text>
               )}
             </ScrollView>
 
@@ -146,7 +181,7 @@ const styles = StyleSheet.create({
     width: width - 40,
     maxWidth: 400,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -196,18 +231,43 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 8,
   },
-  imageContainer: {
-    width: '100%',
-    minHeight: 200,
-    maxHeight: 350,
-    marginBottom: 8,
+  imageModalContainer: {
+    maxWidth: 400,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#F8FAFC',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  image: {
+  imageBackground: {
     width: '100%',
-    height: '100%',
+    minHeight: 300,
+    justifyContent: 'flex-end',
+  },
+  imageButtonContainer: {
+    padding: 24,
+    paddingBottom: 32,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  imageButton: {
+    backgroundColor: '#4A90E2',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  imageButtonText: {
+    fontFamily: 'Geist-SemiBold',
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   decorativeLine: {
     width: 80,
