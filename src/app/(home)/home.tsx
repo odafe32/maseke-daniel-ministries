@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 import { scheduleDevotionalReminders } from '@/src/notifications';
 import { registerPushToken } from '@/src/notifications';
 import { useAuthStore } from '@/src/stores/authStore';
+import { useAdsStore } from '@/src/stores/adsStore';
 
 interface Notification {
   read: boolean;
@@ -16,6 +17,7 @@ interface Notification {
 
 export default function HomePage() {
   const router = useRouter();
+  const { fetchAds } = useAdsStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -92,6 +94,8 @@ export default function HomePage() {
           homeData.last_synced = new Date().toISOString();
           await HomeStorage.saveHomeData(homeData);
         }
+        // Refresh ads
+        await fetchAds();
       } catch (error) {
         console.error('Failed to refresh home data:', error);
       } finally {
@@ -101,7 +105,7 @@ export default function HomePage() {
     }, 1200);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [fetchAds]);
 
   const handleCardPress = (link: string) => {
     router.push(link);
