@@ -28,15 +28,17 @@ export interface DevotionalCache {
     lastUpdated: string;
     totalEntries: number;
   };
-  devotionals: Record<string, any>; // devotional_id -> devotional data
-  entries: Record<string, DevotionalEntry>; // entry_id -> entry data
-  dayIndex: Record<string, number>; // "devotional_id:day_number" -> entry_id
+  devotionals: Record<string, any>;
+  entries: Record<string, DevotionalEntry>;
+  dayIndex: Record<string, number>;
 }
 
 const PREFERENCES_KEY = '@devotional_preferences';
 const CACHE_KEY = '@devotional_cache';
+const THEME_KEY = '@devotional_theme'; // ← NEW: Dedicated theme storage
+const FONT_SIZE_KEY = '@devotional_font_size'; // ← NEW: Dedicated font size storage
 const CURRENT_VERSION = '1.0';
-const CACHE_EXPIRY_DAYS = 7; // Cache expires after 7 days
+const CACHE_EXPIRY_DAYS = 7;
 
 export const DEFAULT_PREFERENCES: DevotionalPreferences = {
   themeId: 'classic',
@@ -61,6 +63,101 @@ const createEmptyCache = (): DevotionalCache => ({
 });
 
 export class DevotionalStorage {
+  // ============================================
+  // THEME MANAGEMENT (DEDICATED STORAGE)
+  // ============================================
+
+  /**
+   * Get theme ID with instant access
+   * Uses dedicated storage for maximum speed and reliability
+   */
+  static async getTheme(): Promise<string> {
+    try {
+      // Try dedicated theme storage first (fastest)
+      const theme = await AsyncStorage.getItem(THEME_KEY);
+      if (theme) {
+        console.log('✅ Theme loaded from dedicated storage:', theme);
+        return theme;
+      }
+      
+      // Fallback to preferences
+      const prefs = await this.getPreferences();
+      const themeId = prefs.themeId || DEFAULT_PREFERENCES.themeId;
+      
+      // Save to dedicated storage for next time
+      await AsyncStorage.setItem(THEME_KEY, themeId);
+      console.log('✅ Theme loaded from preferences and cached:', themeId);
+      
+      return themeId;
+    } catch (error) {
+      console.error('❌ Failed to load theme:', error);
+      return DEFAULT_PREFERENCES.themeId;
+    }
+  }
+
+  /**
+   * Save theme with triple storage for maximum reliability
+   * 1. Dedicated theme storage (instant access)
+   * 2. Preferences (backup)
+   * 3. In-memory (runtime)
+   */
+  static async saveTheme(themeId: string): Promise<void> {
+    try {
+      // Save to all storage locations
+      const saveOperations = [
+        // 1. Dedicated theme storage (fastest)
+        AsyncStorage.setItem(THEME_KEY, themeId),
+        // 2. Update preferences (backup)
+        this.savePreferences({ themeId }),
+      ];
+      
+      await Promise.all(saveOperations);
+      
+      console.log('✅ Theme saved to all storage locations:', themeId);
+    } catch (error) {
+      console.error('❌ Failed to save theme:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get font size with instant access
+   */
+  static async getFontSize(): Promise<number> {
+    try {
+      const fontSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
+      if (fontSize) {
+        return parseInt(fontSize, 10);
+      }
+      
+      const prefs = await this.getPreferences();
+      const size = prefs.fontSize || DEFAULT_PREFERENCES.fontSize;
+      
+      await AsyncStorage.setItem(FONT_SIZE_KEY, size.toString());
+      return size;
+    } catch (error) {
+      console.error('❌ Failed to load font size:', error);
+      return DEFAULT_PREFERENCES.fontSize;
+    }
+  }
+
+  /**
+   * Save font size with dual storage
+   */
+  static async saveFontSize(fontSize: number): Promise<void> {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(FONT_SIZE_KEY, fontSize.toString()),
+        this.savePreferences({ fontSize }),
+      ]);
+      
+      console.log('✅ Font size saved:', fontSize);
+    } catch (error) {
+      console.error('❌ Failed to save font size:', error);
+      throw error;
+    }
+  }
+
   // ============================================
   // PREFERENCES MANAGEMENT
   // ============================================
@@ -96,20 +193,6 @@ export class DevotionalStorage {
   }
 
   /**
-   * Save theme preference
-   */
-  static async saveTheme(themeId: string): Promise<void> {
-    await this.savePreferences({ themeId });
-  }
-
-  /**
-   * Save font size preference
-   */
-  static async saveFontSize(fontSize: number): Promise<void> {
-    await this.savePreferences({ fontSize });
-  }
-
-  /**
    * Save last viewed devotional
    */
   static async saveLastViewed(
@@ -126,13 +209,12 @@ export class DevotionalStorage {
 
     const prefs = await this.getPreferences();
     
-    // Add to history, removing duplicates
     const updatedHistory = [
       lastViewed,
       ...prefs.viewingHistory.filter(
         item => !(item.devotionalId === devotionalId && item.dayNumber === dayNumber)
       ),
-    ].slice(0, 50); // Keep last 50 entries
+    ].slice(0, 50);
 
     await this.savePreferences({
       lastViewed,
@@ -171,7 +253,6 @@ export class DevotionalStorage {
       if (cacheJson) {
         const cache = JSON.parse(cacheJson);
         
-        // Check if cache is expired
         const lastUpdated = new Date(cache.metadata.lastUpdated);
         const now = new Date();
         const daysDiff = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24);
@@ -209,14 +290,11 @@ export class DevotionalStorage {
     try {
       const cache = await this.getCache();
       
-      // Save entry by ID
       cache.entries[entry.id.toString()] = entry;
       
-      // Update day index for quick lookup
       const indexKey = `${entry.devotional_id}:${entry.day_number}`;
       cache.dayIndex[indexKey] = entry.id;
       
-      // Update metadata
       cache.metadata.lastUpdated = new Date().toISOString();
       cache.metadata.totalEntries = Object.keys(cache.entries).length;
       
@@ -350,7 +428,7 @@ export class DevotionalStorage {
   }
 
   /**
-   * Clear all preferences
+   * Clear all preferences (but keep theme!)
    */
   static async clearPreferences(): Promise<void> {
     try {
@@ -362,11 +440,11 @@ export class DevotionalStorage {
   }
 
   /**
-   * Clear all data (cache + preferences)
+   * Clear all data (cache + preferences + theme)
    */
   static async clearAllData(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove([PREFERENCES_KEY, CACHE_KEY]);
+      await AsyncStorage.multiRemove([PREFERENCES_KEY, CACHE_KEY, THEME_KEY, FONT_SIZE_KEY]);
       console.log('✅ All devotional data cleared');
     } catch (error) {
       console.error('❌ Failed to clear all data:', error);
@@ -379,6 +457,7 @@ export class DevotionalStorage {
   static async getStorageInfo(): Promise<{
     preferencesSize: number;
     cacheSize: number;
+    themeSize: number;
     totalSize: number;
     cachedEntries: number;
     cachedDevotionals: number;
@@ -386,10 +465,12 @@ export class DevotionalStorage {
     try {
       const prefs = await AsyncStorage.getItem(PREFERENCES_KEY);
       const cache = await AsyncStorage.getItem(CACHE_KEY);
+      const theme = await AsyncStorage.getItem(THEME_KEY);
 
       const preferencesSize = prefs ? prefs.length : 0;
       const cacheSize = cache ? cache.length : 0;
-      const totalSize = preferencesSize + cacheSize;
+      const themeSize = theme ? theme.length : 0;
+      const totalSize = preferencesSize + cacheSize + themeSize;
 
       const cacheData = cache ? JSON.parse(cache) : createEmptyCache();
       const cachedEntries = Object.keys(cacheData.entries).length;
@@ -398,6 +479,7 @@ export class DevotionalStorage {
       return {
         preferencesSize,
         cacheSize,
+        themeSize,
         totalSize,
         cachedEntries,
         cachedDevotionals,
@@ -407,6 +489,7 @@ export class DevotionalStorage {
       return {
         preferencesSize: 0,
         cacheSize: 0,
+        themeSize: 0,
         totalSize: 0,
         cachedEntries: 0,
         cachedDevotionals: 0,
@@ -429,7 +512,7 @@ export class DevotionalStorage {
     totalEntries: number;
     oldestEntry: string | null;
     newestEntry: string | null;
-    cacheAge: number; // in days
+    cacheAge: number;
   }> {
     try {
       const cache = await this.getCache();
@@ -444,7 +527,6 @@ export class DevotionalStorage {
       let newestEntry: string | null = null;
       
       if (entries.length > 0) {
-        // Use the date field from entries if available
         const sorted = entries
           .filter(e => e.date)
           .sort((a, b) => 
@@ -471,6 +553,25 @@ export class DevotionalStorage {
         newestEntry: null,
         cacheAge: 0,
       };
+    }
+  }
+
+  /**
+   * Sync theme and font size to dedicated storage
+   * Call this on app start to ensure consistency
+   */
+  static async syncUISettings(): Promise<void> {
+    try {
+      const prefs = await this.getPreferences();
+      
+      await Promise.all([
+        AsyncStorage.setItem(THEME_KEY, prefs.themeId),
+        AsyncStorage.setItem(FONT_SIZE_KEY, prefs.fontSize.toString()),
+      ]);
+      
+      console.log('✅ UI settings synced to dedicated storage');
+    } catch (error) {
+      console.error('❌ Failed to sync UI settings:', error);
     }
   }
 }

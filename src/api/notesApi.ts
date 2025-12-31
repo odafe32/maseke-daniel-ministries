@@ -6,7 +6,7 @@ export interface Note {
     id: number;
     name: string;
     testament: string;
-  };
+  } | null;
   chapter: number;
   verses: number[];
   content?: string;

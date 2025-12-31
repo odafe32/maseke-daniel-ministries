@@ -3,20 +3,20 @@ import { BibleStorage } from '../utils/bibleStorage';
 import { bibleApi } from '../api/bibleApi';
 
 
-interface Testament {
+export interface Testament {
   id: number;
   name: string;
   books: Book[];
 }
 
-interface Book {
+export interface Book {
   id: number;
   name: string;
   testament_id: number;
   chapters_count: number;
 }
 
-interface BibleChapter {
+export interface BibleChapter {
   dateLabel: string;
   title: string;
   body: string;

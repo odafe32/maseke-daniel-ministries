@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { Platform } from 'react-native';
 import { API_URL } from '../env';
 import client from '../api/client';
 import { useSettingsStore } from './settingsStore';
@@ -98,7 +99,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
-      await axios.post(`${API_URL}/mobile/auth/push-token`, { push_token: pushToken }, {
+      await axios.post(`${API_URL}/mobile/auth/push-token`, { 
+        push_token: pushToken,
+        platform: Platform.OS 
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       set({ lastSyncedPushToken: pushToken });

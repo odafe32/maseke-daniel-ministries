@@ -68,7 +68,7 @@ export const Login = ({
 
       <SectionIntro
         title="Welcome home,"
-        subtitle="Log back into your Grace Dimension app and continue watching live sermons."
+        subtitle="Log back into your Maseke Danielapp and continue watching live sermons."
         actionLabel="Sign up"
         onActionPress={onSignupPress}
       />

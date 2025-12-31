@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect, useCallback, useState } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { Devotionals } from "@/src/screens/Home/Devotionals/Devotionals";
 import { DevotionalMonth, DevotionalsSidebar } from "@/src/screens/Home/Devotionals/DevotionalsSidebar";
 import { VideoIntro } from "@/src/screens/Home/Devotionals/VideoIntro";
@@ -114,15 +115,57 @@ export default function DevotionalsPage() {
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
   const [isProcessingNavigation, setIsProcessingNavigation] = useState(false);
 
+  const router = useRouter();
+
   const selectedTheme = useMemo(
     () => themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0],
     [selectedThemeId, themeOptions]
   );
 
-  // Load today's entry on mount
+  // Load last viewed entry on mount (or today's entry if none)
   useEffect(() => {
     const initLoad = async () => {
       try {
+        // Check if user has a last viewed entry
+        const prefs = await DevotionalStorage.getPreferences();
+        const lastViewed = prefs.lastViewed;
+        
+        if (lastViewed) {
+          console.log('📖 Restoring last viewed entry:', {
+            devotionalId: lastViewed.devotionalId,
+            dayNumber: lastViewed.dayNumber,
+          });
+          
+          // Restore the last viewed entry
+          setCurrentDevotionalId(lastViewed.devotionalId);
+          setCurrentDayNumber(lastViewed.dayNumber);
+          
+          // Load that entry
+          const restoredEntry = await loadEntryByDay(lastViewed.devotionalId, lastViewed.dayNumber);
+          
+          if (restoredEntry) {
+            setHasNoDevotional(false);
+            
+            // Check if video needs to be shown
+            const videoUrl = restoredEntry?.video_url ?? null;
+            const hasBeenViewed = restoredEntry?.viewed ?? false;
+            
+            if (videoUrl && !hasBeenViewed) {
+              setPendingVideoUrl(videoUrl);
+              incrementVideoKey();
+              setShowVideoIntro(true);
+            } else {
+              setIsLoadingEntry(false);
+            }
+            return;
+          }
+          
+          // If restore failed, fallback to today's entry
+          console.log('⚠️ Failed to restore last viewed entry, loading today instead');
+        }
+        
+        // No last viewed or restore failed - load today's entry
+        console.log('📅 Loading today\'s entry');
         const todayEntry = await loadTodayEntry();
         
         if (!todayEntry) {
@@ -151,13 +194,13 @@ export default function DevotionalsPage() {
           setIsLoadingEntry(false);
         }
       } catch (error) {
-        console.error('Failed to load today entry:', error);
+        console.error('Failed to load entry:', error);
         setHasNoDevotional(true);
         setIsLoadingEntry(false);
       }
     };
     initLoad();
-  }, [loadTodayEntry]);
+  }, [loadTodayEntry, loadEntryByDay]);
 
   // Load bookmarked paragraphs when entry changes
   useEffect(() => {
@@ -693,6 +736,10 @@ export default function DevotionalsPage() {
         surfaceColor={selectedTheme.sidebarBackground}
         textColor={selectedTheme.sidebarTextColor}
         accentColor={selectedTheme.accentColor}
+        onOpenNotes={() => {
+          router.push('/(home)/saved-notes');
+          setSidebarVisible(false);
+        }}
       />
 
       {/* Loading Overlay */}
@@ -707,15 +754,15 @@ export default function DevotionalsPage() {
 
       {/* Video Intro */}
       {showVideoIntro && (
-        <VideoIntro 
+        <VideoIntro
           key={`video-${videoKey}-${pendingVideoUrl}`}
-          onBeginDevotional={handleBeginDevotional} 
+          onBeginDevotional={handleBeginDevotional}
           videoUri={pendingVideoUrl || undefined}
           onBack={handleVideoBack}
         />
       )}
 
-      {/* Response Modal */}
+     {/* Response Modal */}
       {showResponseModal && (
         <ResponseModal
           visible={showResponseModal}

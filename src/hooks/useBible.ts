@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useBibleStore } from '@/src/stores/bibleStore';
-import { Book, BibleChapter } from '@/src/api/bibleApi';
+import type { Book, BibleChapter, Testament } from '@/src/stores/bibleStore';
+
+// Re-export types to resolve TypeScript naming issues
+export type { Book, BibleChapter, Testament } from '@/src/stores/bibleStore';
 
 export const useBible = () => {
   const bibleStore = useBibleStore();

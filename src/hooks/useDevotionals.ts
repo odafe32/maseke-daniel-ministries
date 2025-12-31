@@ -447,40 +447,152 @@ export const useDevotionalBookmarks = () => {
 
 export const useDevotionalPreferences = () => {
   const [preferences, setPreferences] = useState<DevotionalPreferences>(DEFAULT_PREFERENCES);
+  const [themeId, setThemeId] = useState<string>(DEFAULT_PREFERENCES.themeId);
+  const [fontSize, setFontSize] = useState<number>(DEFAULT_PREFERENCES.fontSize);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load all preferences on mount
   useEffect(() => {
     const loadPrefs = async () => {
-      const prefs = await DevotionalStorage.getPreferences();
-      setPreferences(prefs);
-      setIsLoading(false);
+      try {
+        // Load theme and fontSize from dedicated storage (instant)
+        const [loadedTheme, loadedFontSize, prefs] = await Promise.all([
+          DevotionalStorage.getTheme(),
+          DevotionalStorage.getFontSize(),
+          DevotionalStorage.getPreferences(),
+        ]);
+        
+        // Set individual states for instant UI updates
+        setThemeId(loadedTheme);
+        setFontSize(loadedFontSize);
+        
+        // Set full preferences
+        setPreferences({
+          ...prefs,
+          themeId: loadedTheme, // Ensure theme from dedicated storage
+          fontSize: loadedFontSize, // Ensure font size from dedicated storage
+        });
+        
+        console.log('✅ Preferences loaded:', {
+          theme: loadedTheme,
+          fontSize: loadedFontSize,
+        });
+      } catch (error) {
+        console.error('❌ Failed to load preferences:', error);
+        setPreferences(DEFAULT_PREFERENCES);
+        setThemeId(DEFAULT_PREFERENCES.themeId);
+        setFontSize(DEFAULT_PREFERENCES.fontSize);
+      } finally {
+        setIsLoading(false);
+      }
     };
+    
     loadPrefs();
   }, []);
 
-  const saveTheme = useCallback(async (themeId: string) => {
-    await DevotionalStorage.saveTheme(themeId);
-    setPreferences((prev: DevotionalPreferences) => ({ ...prev, themeId }));
+  /**
+   * Save theme with instant state update
+   * Uses dedicated storage for maximum reliability
+   */
+  const saveTheme = useCallback(async (newThemeId: string) => {
+    try {
+      // Update state immediately for instant UI change
+      setThemeId(newThemeId);
+      setPreferences((prev) => ({ ...prev, themeId: newThemeId }));
+      
+      // Save to storage (async, doesn't block UI)
+      await DevotionalStorage.saveTheme(newThemeId);
+      
+      console.log('✅ Theme saved and applied:', newThemeId);
+    } catch (error) {
+      console.error('❌ Failed to save theme:', error);
+      // Revert state on error
+      const prefs = await DevotionalStorage.getPreferences();
+      setThemeId(prefs.themeId);
+      setPreferences((prev) => ({ ...prev, themeId: prefs.themeId }));
+      throw error;
+    }
   }, []);
 
-  const saveFontSize = useCallback(async (fontSize: number) => {
-    await DevotionalStorage.saveFontSize(fontSize);
-    setPreferences((prev: DevotionalPreferences) => ({ ...prev, fontSize }));
+  /**
+   * Save font size with instant state update
+   */
+  const saveFontSize = useCallback(async (newFontSize: number) => {
+    try {
+      // Update state immediately
+      setFontSize(newFontSize);
+      setPreferences((prev) => ({ ...prev, fontSize: newFontSize }));
+      
+      // Save to storage
+      await DevotionalStorage.saveFontSize(newFontSize);
+      
+      console.log('✅ Font size saved and applied:', newFontSize);
+    } catch (error) {
+      console.error('❌ Failed to save font size:', error);
+      // Revert state on error
+      const prefs = await DevotionalStorage.getPreferences();
+      setFontSize(prefs.fontSize);
+      setPreferences((prev) => ({ ...prev, fontSize: prefs.fontSize }));
+      throw error;
+    }
   }, []);
 
+  /**
+   * Save app setting
+   */
   const saveAppSetting = useCallback(async (key: string, value: boolean) => {
-    await DevotionalStorage.saveAppSetting(key as any, value);
-    setPreferences((prev: DevotionalPreferences) => ({
-      ...prev,
-      appSettings: { ...prev.appSettings, [key]: value },
-    }));
+    try {
+      await DevotionalStorage.saveAppSetting(key as any, value);
+      setPreferences((prev) => ({
+        ...prev,
+        appSettings: { ...prev.appSettings, [key]: value },
+      }));
+      
+      console.log(`✅ App setting saved: ${key} = ${value}`);
+    } catch (error) {
+      console.error('❌ Failed to save app setting:', error);
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Reload all preferences from storage
+   */
+  const reloadPreferences = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [loadedTheme, loadedFontSize, prefs] = await Promise.all([
+        DevotionalStorage.getTheme(),
+        DevotionalStorage.getFontSize(),
+        DevotionalStorage.getPreferences(),
+      ]);
+      
+      setThemeId(loadedTheme);
+      setFontSize(loadedFontSize);
+      setPreferences({
+        ...prefs,
+        themeId: loadedTheme,
+        fontSize: loadedFontSize,
+      });
+      
+      console.log('✅ Preferences reloaded');
+    } catch (error) {
+      console.error('❌ Failed to reload preferences:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   return {
     preferences,
+    themeId, 
+    fontSize, 
     isLoading,
     saveTheme,
     saveFontSize,
     saveAppSetting,
+    reloadPreferences,
   };
 };
+

@@ -13,6 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemeText } from "@/src/components";
 import { wp } from "@/src/utils";
 import { useDevotionalList, useDevotionalDetail } from "@/src/hooks/useDevotionals";
+import { useRouter } from "expo-router";
 
 export type DevotionalMonth = {
   id: string;
@@ -42,6 +43,7 @@ export function DevotionalsSidebar({
   accentColor = "#EE8F5C",
   onOpenNotes,
 }: DevotionalsSidebarProps) {
+  const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState<DevotionalMonth | null>(null);
   const { devotionals, isLoading, loadDevotionals } = useDevotionalList();
   const { entries, isLoading: isLoadingEntries, loadDevotional } = useDevotionalDetail();
@@ -222,6 +224,21 @@ export function DevotionalsSidebar({
           </View>
 
           <ScrollView contentContainerStyle={styles.list}>{renderList()}</ScrollView>
+
+          <TouchableOpacity
+            onPress={() => {
+              router.push('/(home)/my-responses');
+              onClose();
+            }}
+            style={[styles.notesRow, { borderTopColor: `${textColor}10` }]}
+            activeOpacity={0.8}
+          >
+            <View style={styles.notesLeft}>
+              <Feather name="file-text" size={18} color={textColor} />
+              <Text style={[styles.notesLabel, { color: textColor }]}>My Reflections</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={textColor} />
+          </TouchableOpacity>
 
           {onOpenNotes && (
             <TouchableOpacity

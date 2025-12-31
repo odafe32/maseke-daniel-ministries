@@ -5,6 +5,10 @@ import { useRouter } from "expo-router";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { HomeStorage } from "@/src/utils/homeStorage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { scheduleDevotionalReminders } from '@/src/notifications';
+import { registerPushToken } from '@/src/notifications';
+import { useAuthStore } from '@/src/stores/authStore';
 
 interface Notification {
   read: boolean;
@@ -55,6 +59,26 @@ export default function HomePage() {
     };
 
     initializeHomeData();
+  }, []);
+
+  useEffect(() => {
+    const checkAndSchedule = async () => {
+      try {
+        const store = useSettingsStore.getState();
+        await store.loadSettings();
+        if (store.devotionalReminders) {
+          await scheduleDevotionalReminders();
+        }
+        // Register push token
+        const token = useAuthStore.getState().token;
+        if (token) {
+          registerPushToken(token);
+        }
+      } catch (error) {
+        console.error('Failed to check and schedule reminders:', error);
+      }
+    };
+    checkAndSchedule();
   }, []);
 
   const handleRefresh = useCallback(() => {
