@@ -5,6 +5,7 @@ import { createPassword, resetPassword } from "@/src/api/authAPi";
 import { showErrorToast, showSuccessToast } from "@/src/utils/toast";
 import { AuthPageWrapper } from "@/src/components/AuthPageWrapper";
 import { useAuthStore } from "@/src/stores/authStore";
+import { useLogin } from "@/src/hooks/auth";
 
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -12,11 +13,7 @@ const MIN_PASSWORD_LENGTH = 8;
 export default function CreatePasswordPage() {
   const { email, source } = useLocalSearchParams<{ email: string; source?: string }>();
   const { user } = useAuthStore();
-
-  if (user) {
-    router.replace('/home');
-    return null;
-  }
+  const { mutate: login } = useLogin();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,6 +22,13 @@ export default function CreatePasswordPage() {
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Redirect authenticated users to home
+    if (user) {
+      router.replace('/home');
+    }
+  }, [user]);
 
   const validatePassword = (value: string) => {
     if (!value.trim()) {
@@ -51,15 +55,26 @@ export default function CreatePasswordPage() {
     try {
       setIsLoading(true);
       if (source === "reset") {
-        await createPassword(email!, password, confirmPassword);
+        await resetPassword(email!, password, confirmPassword);
         showSuccessToast('Success', 'Password reset successfully. Please login with your new password.');
         console.log('Password reset successful');
+        router.replace('/login');
       } else {
         await createPassword(email!, password, confirmPassword);
-        showSuccessToast('Success', 'Account created successfully. Please login.');
+        showSuccessToast('Success', 'Account created successfully. Logging you in...');
         console.log('Password creation successful');
+
+        // Auto-login the user after successful account creation
+        try {
+          await login(email!, password);
+          console.log('Auto-login successful');
+          // Redirect will be handled by useEffect when user state updates
+        } catch (loginError) {
+          console.log('Auto-login failed:', loginError);
+          showErrorToast('Error', 'Account created but login failed. Please login manually.');
+          router.replace('/login');
+        }
       }
-      router.replace('/login');
     } catch (error: any) {
       console.log('Password error:', error);
       let errorMessage = source === "reset" ? 'Failed to reset password. Please try again.' : 'Failed to create account. Please try again.';
