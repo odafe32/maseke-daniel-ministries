@@ -231,9 +231,10 @@ function RootLayoutNav() {
   const { panResponder } = useInactivityLogout(pathname || undefined);
 
   if (!token) {
-    // Auth stack
+    // Auth stack - KEY ADDED TO FORCE REMOUNT ON AUTH CHANGES
     return (
       <Stack
+        key="auth-stack"
         screenOptions={{
           headerShown: false,
           contentStyle: {
@@ -245,6 +246,8 @@ function RootLayoutNav() {
           animationDuration: 250,
         }}
       >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/verify" options={{ headerShown: false }} />
@@ -254,10 +257,11 @@ function RootLayoutNav() {
     );
   }
 
-  // Main stack
+  // Main stack - KEY ADDED TO FORCE REMOUNT ON AUTH CHANGES
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
       <Stack
+        key="main-stack"
         screenOptions={{
           headerShown: false,
           contentStyle: {
@@ -289,6 +293,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(home)/live" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/sermon-detail" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/devotionals" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/reset-app" options={{ headerShown: false }} />
         {/* Add other main screens here */}
       </Stack>
       {showBottomMenu && <BottomMenu />}

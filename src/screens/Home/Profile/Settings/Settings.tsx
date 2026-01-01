@@ -17,6 +17,7 @@ interface SettingsProps {
   devotionalReminders: boolean;
   stayLoggedIn: boolean;
   onToggle: (id: string, value: boolean) => Promise<void>;
+    onResetApp: () => void; 
 }
 
 export function Settings({
@@ -25,8 +26,10 @@ export function Settings({
   sermonAlerts,
   devotionalReminders,
   stayLoggedIn,
-  onToggle
+  onToggle,
+  onResetApp, 
 }: SettingsProps) {
+
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
   const card1Anim = useRef(new Animated.Value(0)).current;
@@ -233,6 +236,26 @@ export function Settings({
             />
           </View>
         </Animated.View>
+
+        {/* RESET APP */}
+        {/* <View style={styles.card}>
+          <View style={styles.textContainer}>
+            <ThemeText variant="bodyBold" style={[styles.title, { color: '#DC2626' }]}>
+              Reset App
+            </ThemeText>
+            <ThemeText variant="body" style={styles.description}>
+              Clear all data and show onboarding again
+            </ThemeText>
+          </View>
+
+          <Switch
+            value={false}
+            onValueChange={onResetApp}
+            trackColor={{ false: '#DC2626', true: '#DC2626' }}
+            thumbColor="#ffffff"
+          />
+      </View> */}
+
       </View>
     </ScrollView>
   );

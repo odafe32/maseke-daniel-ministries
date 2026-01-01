@@ -19,28 +19,28 @@ export const onboardingData: OnboardingItem[] = [
     title: "Watch Live Sermons",
     description:
       "Catch up with old devotionals or watch our live sermons from the comfort of your home",
-    image: require("../assets/images/one.png"),
+    image: { uri: "https://res.cloudinary.com/dauoh9iyo/image/upload/v1767200105/IMG_0889_zqa2ie_thocxg.jpg" }, 
   },
   {
     id: "2",
-    title: "Privately Share Prayer Requests",
+    title: " Share Prayer Requests",
     description:
       "Securely share your requests with Daddy from your device.",
-    image: require("../assets/images/two.png"),
+    image: { uri: "https://res.cloudinary.com/dauoh9iyo/image/upload/v1767201518/IMG_6706_qhaicg_otqdjx.jpg" },
   },
   {
     id: "3",
     title: "Join The Community",
     description:
       "Fellowship with the lord and your brothers and sisters from anywhere ",
-    image: require("../assets/images/three.png"),
+     image: { uri: "https://res.cloudinary.com/dauoh9iyo/image/upload/v1767200105/IMG_0889_zqa2ie_thocxg.jpg" }, 
   },
   {
     id: "4",
     title: "Give Privately and Securely",
     description:
       "Fellowship with the lord and your brothers and sisters from anywhere ",
-    image: require("../assets/images/four.png"),
+   image: { uri: "https://res.cloudinary.com/dauoh9iyo/image/upload/v1767201861/20250209_085553_csgcwu_rjf1y4.jpg" },
   },
 ];
 
@@ -84,7 +84,6 @@ export const quickActions = [
     link: "/store",
   },
 ];
-
 
 export const profileActions = [
   { id: "notes", label: "Saved notes", icon: "archive", custom: true, link: "/saved-notes" },

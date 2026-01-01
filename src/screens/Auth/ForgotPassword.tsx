@@ -31,7 +31,7 @@ export function ForgotPassword({
         />
       }
     >
-      <BackHeader title="Grace Dimensions" onBackPress={onBack} />
+      <BackHeader title="Maseke Daniels Ministries s" onBackPress={onBack} />
 
       <SectionIntro
         title="Let’s get you back in"

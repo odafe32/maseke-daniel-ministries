@@ -28,7 +28,7 @@ export const Signup = ({
     <AuthWrapper
       onRefresh={onRefresh}
     >
-      <BackHeader title="Grace Dimensions" onBackPress={onBack} />
+      <BackHeader title="Maseke Daniels Ministries s" onBackPress={onBack} />
 
       <SectionIntro
         title="Join the Community of Grace"
@@ -70,12 +70,12 @@ export const Signup = ({
           onPress={onSubmit}
           loading={isLoading}
         />
-        <Button
+        {/* <Button
           title="Sign up with Google"
           variant="outline"
           onPress={onSignupWithGoogle}
           leftIcon={<FontAwesome name="google" size={18} color="#DB4437" />}
-        />
+        /> */}
       </View>
 
     </AuthWrapper>

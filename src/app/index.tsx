@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { images } from "@/src/constants/data";
 import { useAuthStore } from "../stores/authStore";
 
@@ -59,7 +60,15 @@ const Index = () => {
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      if (token) {
+      // ✅ Check AsyncStorage directly instead of relying on store
+      const hasSeenOnboardingStr = await AsyncStorage.getItem('hasSeenOnboarding');
+      const hasSeenOnboarding = hasSeenOnboardingStr === 'true';
+
+      console.log('Onboarding check:', { hasSeenOnboarding, token });
+
+      if (!hasSeenOnboarding) {
+        router.replace("/onboarding");
+      } else if (token) {
         router.replace("/home");
       } else {
         router.replace("/login");
@@ -75,9 +84,6 @@ const Index = () => {
   if (isLoading) {
     return (
       <View style={styles.container}>
-       
-  
-
         {/* Main logo in center */}
         <View style={styles.centerSection}>
           <Animated.View
@@ -122,7 +128,6 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
   },
-
 });
 
 export default Index;
