@@ -3,17 +3,14 @@
     "version": ">= 7.0.0"
   },
   "build": {
-    "production": {
+    "preview": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       }
-    }
-  },
-  "submit": {
+    },
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./path/to/service-account-key.json",
-        "track": "internal"
+        "buildType": "apk"
       }
     }
   }

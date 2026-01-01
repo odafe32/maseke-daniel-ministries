@@ -6,11 +6,13 @@ import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/src/components";
 import { useSettings } from '@/src/hooks/useSettings';
 import { showSuccessToast } from '@/src/utils/toast';
+import { useAuthStore } from '@/src/stores/authStore';
 
 export default function SettingsPage() {
   const router = useRouter();
   const wrapperRef = useRef<AuthPageWrapperRef>(null);
   const [loading, setLoading] = useState(true);
+const resetApp = useAuthStore(state => state.resetApp);
 
   const {
     notifications,
@@ -27,6 +29,10 @@ export default function SettingsPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleResetApp = async () => {
+  await resetApp();               
+  router.replace('/onboarding');   
+};
   const handleBack = () => {
     wrapperRef.current?.reverseAnimate(() => router.back());
   };
@@ -97,6 +103,7 @@ export default function SettingsPage() {
         devotionalReminders={devotionalReminders}
         stayLoggedIn={stayLoggedIn}
         onToggle={handleToggle}
+         onResetApp={handleResetApp} 
       />
     </AuthPageWrapper>
   );

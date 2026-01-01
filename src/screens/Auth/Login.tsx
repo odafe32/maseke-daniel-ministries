@@ -64,7 +64,7 @@ export const Login = ({
         </View>
       }
     >
-      <BackHeader title="Grace Dimensions" showBackButton={false} />
+      <BackHeader title="Maseke Daniels Ministries s" showBackButton={false} />
 
       <SectionIntro
         title="Welcome home,"

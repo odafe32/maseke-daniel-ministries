@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-// Define the type for your custom extra config
 export interface ExtraConfig {
   paystackPublicKey?: string;
   eas: {
@@ -11,9 +10,13 @@ export interface ExtraConfig {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "maseke",
+  name: "Maseke Daniel Ministries",
   slug: "maseke",
   version: "1.0.0",
+  icon: "./src/assets/logo.png",
+  userInterfaceStyle: "light",
+  scheme: "maseke-daniel-ministries",
+  newArchEnabled: true,  // ← Changed from false to true
   extra: {
     paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY,
     eas: {
@@ -21,8 +24,30 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     }
   } as ExtraConfig,
   plugins: [
+    "expo-media-library",
     "expo-font",
     "expo-router",
     "expo-web-browser",
   ],
+  splash: {
+    image: "./src/assets/logo.png",
+    resizeMode: "contain",
+    backgroundColor: "#ffffff"
+  },
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: "com.maseke.mobile"
+  },
+  android: {
+    adaptiveIcon: {
+      foregroundImage: "./src/assets/logo.png",
+      backgroundColor: "#ffffff"
+    },
+    edgeToEdgeEnabled: true,
+    package: "com.maseke.mobile",
+    versionCode: 2
+  },
+  web: {
+    favicon: "./src/assets/logo.png"
+  }
 });

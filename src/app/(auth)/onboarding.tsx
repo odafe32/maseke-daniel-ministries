@@ -239,7 +239,7 @@ const OnboardingScreen = () => {
             {/* Top Content */}
             <View style={styles.topContent}>
               <ThemeText variant="bodySmall" style={styles.brandText}>
-                Grace Dimensions
+                Maseke Daniels Ministries 
               </ThemeText>
             </View>
           </ImageBackground>
