@@ -7,12 +7,17 @@ import {
   RefreshControl,
   ActivityIndicator,
   StyleSheet,
+  Modal,
+  SafeAreaView,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDevotionalResponses } from '@/src/hooks/useDevotionalResponses';
 import { DevotionalResponse } from '@/src/api/devotionalResponsesApi';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+
+const { height } = Dimensions.get('window');
 
 export default function MyResponses() {
   const router = useRouter();
@@ -28,6 +33,10 @@ export default function MyResponses() {
 
   const [filter, setFilter] = useState<'all' | 'submitted' | 'draft'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Modal State
+  const [selectedResponse, setSelectedResponse] = useState<DevotionalResponse | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     loadResponses();
@@ -49,16 +58,15 @@ export default function MyResponses() {
     setRefreshing(false);
   };
 
+  // UPDATED: Open Modal instead of Navigation
   const handleResponsePress = (response: DevotionalResponse) => {
-    if (response.entry) {
-      router.push({
-        pathname: '/(home)/devotionals/[id]/day/[day]',
-        params: {
-          id: response.entry.devotional_id,
-          day: response.entry.day_number,
-        },
-      });
-    }
+    setSelectedResponse(response);
+    setIsModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setSelectedResponse(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -172,7 +180,7 @@ export default function MyResponses() {
                   style={styles.responseCard}
                   onPress={() => handleResponsePress(response)}
                 >
-                  {/* Header */}
+                  {/* Card Header */}
                   <View style={styles.responseHeader}>
                     <View style={styles.responseHeaderLeft}>
                       <Text style={styles.responseTitle} numberOfLines={1}>
@@ -229,7 +237,7 @@ export default function MyResponses() {
                     </View>
                   )}
 
-                  {/* Footer */}
+                  {/* Card Footer */}
                   <View style={styles.responseFooter}>
                     <View style={styles.responseFooterLeft}>
                       <Ionicons name="calendar-outline" size={14} color="#666" />
@@ -247,6 +255,99 @@ export default function MyResponses() {
           )}
         </ScrollView>
       )}
+
+      {/* Details Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            activeOpacity={1} 
+            onPress={closeModal} 
+          />
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeaderBar}>
+              <View style={styles.modalHandle} />
+            </View>
+            
+            <View style={styles.modalContentHeader}>
+              <Text style={styles.modalTitle}>Reflection Details</Text>
+              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedResponse && (
+              <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalScrollContent}>
+                
+                {/* Entry Info */}
+                <View style={styles.modalInfoCard}>
+                  <Text style={styles.modalEntryTitle}>{selectedResponse.entry?.title}</Text>
+                  <Text style={styles.modalDevotionalTitle}>
+                    {selectedResponse.entry?.devotional_title} • Day {selectedResponse.entry?.day_number}
+                  </Text>
+                  <View style={styles.modalDateRow}>
+                    <Ionicons name="calendar-outline" size={14} color="#666" />
+                    <Text style={styles.modalDateText}>
+                      Recorded on {formatDate(selectedResponse.created_at)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Status Badge */}
+                <View style={styles.modalStatusContainer}>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      selectedResponse.submitted
+                        ? styles.statusBadgeSubmitted
+                        : styles.statusBadgeDraft,
+                      { alignSelf: 'flex-start' }
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusText,
+                        selectedResponse.submitted
+                          ? styles.statusTextSubmitted
+                          : styles.statusTextDraft,
+                      ]}
+                    >
+                      {selectedResponse.submitted ? 'Submitted Response' : 'Draft Response'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Full Responses */}
+                <View style={styles.fullResponseContainer}>
+                  <Text style={styles.fullResponseLabel}>❤️ Heart Response</Text>
+                  <View style={styles.fullResponseBox}>
+                    <Text style={styles.fullResponseText}>
+                      {selectedResponse.heart_response || "No response recorded."}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.fullResponseContainer}>
+                  <Text style={styles.fullResponseLabel}>💡 Takeaway</Text>
+                  <View style={styles.fullResponseBox}>
+                    <Text style={styles.fullResponseText}>
+                      {selectedResponse.takeaway_response || "No response recorded."}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Spacer for bottom padding */}
+                <View style={{ height: 40 }} />
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -471,5 +572,114 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#8B5CF6',
+  },
+
+  /* Modal Styles */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: height * 0.85,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalHeaderBar: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  modalHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#e5e7eb',
+  },
+  modalContentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalScrollView: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    padding: 20,
+  },
+  modalInfoCard: {
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  modalEntryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0C154C',
+    marginBottom: 4,
+  },
+  modalDevotionalTitle: {
+    fontSize: 14,
+    color: '#4b5563',
+    marginBottom: 8,
+  },
+  modalDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  modalDateText: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  modalStatusContainer: {
+    marginBottom: 20,
+  },
+  fullResponseContainer: {
+    marginBottom: 24,
+  },
+  fullResponseLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 10,
+  },
+  fullResponseBox: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  fullResponseText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: '#1f2937',
   },
 });

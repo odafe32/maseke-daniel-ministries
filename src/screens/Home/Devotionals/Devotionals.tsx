@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { DevotionalMonth } from "./DevotionalsSidebar";
+import DevotionalBannerEnhanced from "./DevotionalBannerEnhanced";
 
 export interface DevotionalTheme {
   id: string;
@@ -225,23 +226,23 @@ export function Devotionals({
   const paragraphs = useMemo(() => {
     if (!content?.body) return [];
     
-    const byLine = content.body
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
+    // Return the entire content as a single paragraph - no splitting
+    const cleanedContent = content.body.trim();
     
-    const segments = byLine.length > 1 ? byLine : content.body.split(/(?<=[.!?])\s+/);
-    
-    return segments
-      .map((segment) => segment.trim())
-      .filter(Boolean)
-      .map((text, index) => ({ id: index + 1, text }));
+    return [{ id: 1, text: cleanedContent }];
   }, [content?.body]);
 
+  // Handle paragraph selection for both bookmarking and unbookmarking
   const toggleParagraphSelection = (id: number) => {
     setSelectedParagraphs((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
+  };
+
+  // Handle unbookmarking individual paragraphs via icon click
+  const handleUnbookmarkSingle = (id: number) => {
+    console.log(`🔖 Unbookmarking paragraph ${id} (icon click)`);
+    onUnbookmarkParagraphs?.([id]);
   };
 
   useEffect(() => {
@@ -350,10 +351,25 @@ export function Devotionals({
   };
 
   const handleBookmarkToggle = () => {
-    if (isSelectionMode && onBookmarkParagraphs) {
-      onBookmarkParagraphs(selectedParagraphs);
-      setSelectedParagraphs([]);
+    if (!isSelectionMode || selectedParagraphs.length === 0) return;
+    
+    // Check if selected paragraphs are bookmarked or not
+    const selectedBookmarked = selectedParagraphs.filter(id => bookmarkedParagraphs.includes(id));
+    const selectedUnbookmarked = selectedParagraphs.filter(id => !bookmarkedParagraphs.includes(id));
+    
+    if (selectedBookmarked.length > 0 && selectedUnbookmarked.length === 0) {
+      // All selected are bookmarked -> unbookmark them
+      console.log(`🔖 Unbookmarking selected paragraphs: ${selectedParagraphs.join(', ')}`);
+      onUnbookmarkParagraphs?.(selectedParagraphs);
+    } else {
+      // Some or all are unbookmarked -> bookmark the unbookmarked ones
+      console.log(`🔖 Bookmarking selected paragraphs: ${selectedUnbookmarked.join(', ')}`);
+      if (selectedUnbookmarked.length > 0 && onBookmarkParagraphs) {
+        onBookmarkParagraphs(selectedUnbookmarked);
+      }
     }
+    
+    setSelectedParagraphs([]);
   };
 
   const handleNextPage = () => {
@@ -397,9 +413,7 @@ export function Devotionals({
 
         {/* Action Buttons */}
         <View style={styles.headerActions}>
-    
-
-          {/* Bookmark Button - Shows badge when paragraphs selected */}
+          {/* Bookmark Button - Shows different states for bookmark/unbookmark */}
           <Pressable
             onPress={handleBookmarkToggle}
             disabled={isBookmarking || !isSelectionMode}
@@ -418,15 +432,38 @@ export function Devotionals({
               <ActivityIndicator size="small" color={selectedTheme?.textColor} />
             ) : (
               <View style={styles.bookmarkButtonContainer}>
-                <Feather
-                  name="bookmark"
-                  size={20}
-                  color={selectedTheme?.textColor}
-                  fill={isSelectionMode ? selectedTheme?.accentColor : "transparent"}
-                />
+                {(() => {
+                  // Check if selected paragraphs are bookmarked
+                  const selectedBookmarked = selectedParagraphs.filter(id => bookmarkedParagraphs.includes(id));
+                  const allSelectedAreBookmarked = selectedParagraphs.length > 0 && selectedBookmarked.length === selectedParagraphs.length;
+                  
+                  return (
+                    <Feather
+                      name="bookmark"
+                      size={20}
+                      color={selectedTheme?.textColor}
+                      fill={allSelectedAreBookmarked ? selectedTheme?.textColor : 
+                            isSelectionMode ? selectedTheme?.accentColor : "transparent"}
+                    />
+                  );
+                })()}
                 {isSelectionMode && selectedParagraphs.length > 0 && (
-                  <View style={[styles.selectionBadge, { backgroundColor: selectedTheme?.accentColor }]}>
-                    <Text style={styles.selectionBadgeText}>
+                  <View style={[
+                    styles.selectionBadge, 
+                    { 
+                      backgroundColor: selectedTheme?.id === 'classic' ? '#0C154C' :
+                                     selectedTheme?.id === 'midnight' ? '#1F5BFF' :
+                                     selectedTheme?.accentColor ?? '#0C154C'
+                    }
+                  ]}>
+                    <Text style={[
+                      styles.selectionBadgeText,
+                      { 
+                        color: selectedTheme?.id === 'classic' ? '#FFFFFF' :
+                               selectedTheme?.id === 'midnight' ? '#FFFFFF' :
+                               '#FFFFFF'
+                      }
+                    ]}>
                       {selectedParagraphs.length}
                     </Text>
                   </View>
@@ -459,6 +496,7 @@ export function Devotionals({
 
       {/* CONTENT */}
       <View style={styles.contentWrapper}>
+    
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.readingContent}
@@ -470,6 +508,13 @@ export function Devotionals({
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
+        <DevotionalBannerEnhanced
+        title="IN OUR SUFFERING, LORD BE NEAR:"
+        subtitle="A 5-DAY DEVOTIONAL"
+        scripture="The Lord is close to the brokenhearted and saves those who are crushed in spirit. - Psalm 34:18"
+        theme="sage"
+        height={220}
+      />
           <Text
             style={[
               styles.readingTitle,
@@ -490,7 +535,11 @@ export function Devotionals({
                     key={paragraph.id}
                     style={[
                       styles.verseLine,
-                      isBookmarked && { backgroundColor: bookmarkedBackgroundColor },
+                      isBookmarked && { 
+                        backgroundColor: bookmarkedBackgroundColor,
+                        borderLeftWidth: 3,
+                        borderLeftColor: selectedTheme?.accentColor ?? '#FFD700',
+                      },
                     ]}
                   >
                     <TouchableOpacity
@@ -517,19 +566,29 @@ export function Devotionals({
                       </Text>
                     </TouchableOpacity>
                     
+                    {/* Bookmark icon overlay in top-right corner - clickable for unbookmarking */}
                     {isBookmarked && (
                       <TouchableOpacity
-                        onPress={() => onUnbookmarkParagraphs?.([paragraph.id])}
-                        style={styles.paragraphBookmarkIcon}
+                        onPress={() => handleUnbookmarkSingle(paragraph.id)}
+                        style={styles.paragraphBookmarkOverlay}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         disabled={isBookmarking}
                       >
-                        <Feather
-                          name="bookmark"
-                          size={16}
-                          color={bookmarkIconColor}
-                          fill={bookmarkIconColor}
-                        />
+                        <View style={[
+                          styles.bookmarkIconContainer,
+                          { backgroundColor: selectedTheme?.backgroundColor ?? '#fff' }
+                        ]}>
+                          <Feather
+                            name="bookmark"
+                            size={14}
+                            color={selectedTheme?.id === 'classic' ? '#0C154C' : 
+                                   selectedTheme?.id === 'midnight' ? '#1F5BFF' : 
+                                   selectedTheme?.accentColor ?? '#FFD700'}
+                            fill={selectedTheme?.id === 'classic' ? '#0C154C' : 
+                                  selectedTheme?.id === 'midnight' ? '#1F5BFF' : 
+                                  selectedTheme?.accentColor ?? '#FFD700'}
+                          />
+                        </View>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -656,8 +715,6 @@ export function Devotionals({
           </TouchableOpacity>
         </View>
       </Animated.View>
-
-    
     </View>
   );
 }
@@ -684,9 +741,10 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Regular",
   },
   versesContainer: {
-    gap: 15,
+    gap: 4, // Minimal gap like a real devotional book
   },
   verseLine: {
+    position: 'relative', // Enable absolute positioning for overlay
     marginBottom: 0,
     borderRadius: 6,
     paddingHorizontal: 8,
@@ -706,11 +764,22 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Regular",
   },
   bookmarkedText: {
-    // Additional styling for bookmarked text if needed
+    fontWeight: '500',
   },
-  paragraphBookmarkIcon: {
-    marginLeft: 8,
+  paragraphBookmarkOverlay: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 10,
+  },
+  bookmarkIconContainer: {
+    borderRadius: 12,
     padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   settingsPanel: {
     position: "absolute",

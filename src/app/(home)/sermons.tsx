@@ -110,8 +110,8 @@ export default function SermonsPage() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
-      loadCategories(),
-      loadTapes({ refresh: true }),
+      loadCategories(true),  // Force refresh categories
+      loadTapes({ refresh: true, forceRefresh: true }),  // Force refresh tapes
       refetchLive(),
     ]);
     setRefreshing(false);
