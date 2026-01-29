@@ -14,6 +14,7 @@ import { ThemeText } from "@/src/components";
 import { wp } from "@/src/utils";
 import { useDevotionalList, useDevotionalDetail } from "@/src/hooks/useDevotionals";
 import { useRouter } from "expo-router";
+import { useDevotionalsStore } from "@/src/stores/devotionalsStore";
 
 export type DevotionalMonth = {
   id: string;
@@ -47,6 +48,7 @@ export function DevotionalsSidebar({
   const [selectedMonth, setSelectedMonth] = useState<DevotionalMonth | null>(null);
   const { devotionals, isLoading, loadDevotionals } = useDevotionalList();
   const { entries, isLoading: isLoadingEntries, loadDevotional } = useDevotionalDetail();
+  const { refreshTrigger } = useDevotionalsStore();
 
   useEffect(() => {
     if (visible && devotionals.length === 0) {
@@ -59,6 +61,16 @@ export function DevotionalsSidebar({
       loadDevotional(selectedMonth.devotionalId).catch(console.error);
     }
   }, [selectedMonth?.devotionalId, loadDevotional]);
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('🔄 Refreshing sidebar data...');
+      loadDevotionals().catch(console.error);
+      if (selectedMonth?.devotionalId) {
+        loadDevotional(selectedMonth.devotionalId).catch(console.error); 
+      }
+    }
+  }, [refreshTrigger, loadDevotionals, loadDevotional, selectedMonth?.devotionalId]);
 
   const handleBack = () => setSelectedMonth(null);
 
@@ -73,7 +85,6 @@ export function DevotionalsSidebar({
       );
     }
 
-    // Showing devotionals list
     if (!selectedMonth) {
       return devotionals.map((dev) => {
         const monthData: DevotionalMonth = {
@@ -97,7 +108,6 @@ export function DevotionalsSidebar({
       });
     }
 
-    // Loading days for selected devotional
     if (isLoadingEntries) {
       return (
         <View style={styles.loadingContainer}>
@@ -107,15 +117,12 @@ export function DevotionalsSidebar({
       );
     }
 
-    // Showing days as vertical list
-    const days = entries.length > 0
-      ? entries.map((e) => e.day_number)
-      : Array.from({ length: selectedMonth.days }, (_, i) => i + 1);
+    // ALWAYS show all days based on duration_days, not based on entries
+    const days = Array.from({ length: selectedMonth.days }, (_, i) => i + 1);
 
     console.log('📅 Total days:', days.length);
     console.log('📅 Selected month start_date:', selectedMonth.start_date);
 
-    // Get today's date at midnight in local timezone
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayTime = today.getTime();

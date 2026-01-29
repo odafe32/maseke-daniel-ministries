@@ -19,6 +19,7 @@ import { useUser } from "../../hooks/useUser";
 import { useAdsStore } from "../../stores/adsStore";
 import { HomeImageSection } from "./HomeImageSection";
 import Feather from "@expo/vector-icons/Feather";
+import { ScriptureBanner } from "./ScriptureBanner/ScriptureBanner";
 
 interface LocalUser {
   full_name: string;
@@ -205,7 +206,20 @@ export const Home = ({
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
+            {/* Scripture Banner */}
+        <ScriptureBanner 
+          scripture="Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight."
+          reference="Proverbs 3:5-6"
+          theme="sage"
+          height={230}
+          loves={42}
+          comments={15}
+          shares={8}
+        />
+        
         <HomeImageSection imageUris={imageUris} durations={durations} loading={adsLoading} />
+        
+    
         {loading ? (
           <View style={styles.cardsWrapper}>
             {Array.from({ length: 6 }).map((_, index) => (
@@ -298,8 +312,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardImage: {
-    height: hp(160),
-    borderRadius: 1,
+    height: hp(150),
+    borderRadius: 10,
     overflow: "hidden",
   },
   cardImageInner: {

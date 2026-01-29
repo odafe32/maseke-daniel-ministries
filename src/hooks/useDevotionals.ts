@@ -63,17 +63,20 @@ export const useDevotionalDetail = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDevotional = useCallback(async (devotionalId: number | string) => {
+  const loadDevotional = useCallback(async (devotionalId: number | string, forceRefresh = false) => {
     setIsLoading(true);
     setError(null);
     try {
-      const cached = await DevotionalStorage.getDevotional(Number(devotionalId));
-      if (cached) {
-        console.log('📦 Using cached devotional data');
-        setDevotional(cached);
-        setEntries(cached.entries || []);
-        setIsLoading(false);
-        return;
+      // Only use cache if not forcing refresh
+      if (!forceRefresh) {
+        const cached = await DevotionalStorage.getDevotional(Number(devotionalId));
+        if (cached) {
+          console.log('📦 Using cached devotional data');
+          setDevotional(cached);
+          setEntries(cached.entries || []);
+          setIsLoading(false);
+          return;
+        }
       }
 
       console.log('🌐 Fetching devotional from API');
@@ -178,13 +181,96 @@ export const useDevotionalEntry = () => {
     setIsCached(false);
     
     try {
-      // Try to get from cache first
+      // Check if we should use cache or fetch fresh data
+      const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+      const shouldRefresh = await DevotionalStorage.shouldRefreshEntry(Number(devotionalId), ONE_HOUR);
+      
+      // Try to get from cache first (only if within threshold)
       const cachedEntry = await DevotionalStorage.getEntry(Number(devotionalId), dayNumber);
       
-      if (cachedEntry) {
-        console.log(`📦 Using cached entry: Devotional ${devotionalId}, Day ${dayNumber}`);
+      // ALWAYS fetch from backend if:
+      // 1. No cache exists
+      // 2. Cache is older than 1 hour
+      // 3. This is a manual refresh
+      if (!cachedEntry || shouldRefresh) {
+        console.log(`🌐 Fetching fresh entry from backend: Devotional ${devotionalId}, Day ${dayNumber}`);
         
-        // ===== CRITICAL FIX: VALIDATE DATE EVEN FOR CACHED ENTRIES =====
+        try {
+          const data = await devotionApi.getEntryByDay(devotionalId, dayNumber);
+          
+          if (!data) {
+            // Clear cache if backend returns no data
+            await DevotionalStorage.clearEntry(Number(devotionalId), dayNumber);
+            setEntry(null);
+            return null;
+          }
+          
+          const entryWithDefaults: DevotionalEntry = {
+            ...data,
+            bookmarked: data.bookmarked ?? false,
+            liked: data.liked ?? false,
+            like_count: data.like_count ?? 0,
+            viewed: data.viewed ?? false,
+            has_submitted_response: data.has_submitted_response ?? false,
+          };
+          
+          // Save fresh data to cache
+          await DevotionalStorage.saveEntry(entryWithDefaults);
+          await DevotionalStorage.markEntryRefreshed(entryWithDefaults.id);
+          
+          await DevotionalStorage.saveLastViewed(
+            Number(devotionalId),
+            dayNumber,
+            entryWithDefaults.id
+          );
+          
+          setEntry(entryWithDefaults);
+          console.log('✅ Fresh entry loaded from backend');
+          return entryWithDefaults;
+          
+        } catch (apiError: any) {
+          // Handle 404 - devotional doesn't exist anymore
+          if (apiError?.response?.status === 404) {
+            console.log('🗑️ Entry not found (404) - clearing cache');
+            await DevotionalStorage.clearEntry(Number(devotionalId), dayNumber);
+            throw apiError;
+          }
+          
+          // For other errors (network issues), fall back to cache if available
+          if (cachedEntry) {
+            console.warn('⚠️ Backend unavailable, using cached data as fallback');
+            
+            const entryWithDefaults: DevotionalEntry = {
+              ...cachedEntry,
+              bookmarked: cachedEntry.bookmarked ?? false,
+              liked: cachedEntry.liked ?? false,
+              like_count: cachedEntry.like_count ?? 0,
+              viewed: cachedEntry.viewed ?? false,
+              has_submitted_response: cachedEntry.has_submitted_response ?? false,
+            };
+            
+            setEntry(entryWithDefaults);
+            setIsCached(true);
+            
+            await DevotionalStorage.saveLastViewed(
+              Number(devotionalId),
+              dayNumber,
+              entryWithDefaults.id
+            );
+            
+            return entryWithDefaults;
+          }
+          
+          // No cache available, throw error
+          throw apiError;
+        }
+      }
+      
+      // Use cache (within 1 hour threshold)
+      if (cachedEntry) {
+        console.log(`📦 Using cached entry (fresh): Devotional ${devotionalId}, Day ${dayNumber}`);
+        
+        // Validate date even for cached entries
         if (cachedEntry.date && isFutureDate(cachedEntry.date)) {
           const entryDate = new Date(cachedEntry.date + 'T00:00:00');
           const message = `This devotional is not available yet. Please check back on ${entryDate.toLocaleDateString('en-US', { 
@@ -196,7 +282,6 @@ export const useDevotionalEntry = () => {
           
           console.log('🔒 CACHED entry is in the future - blocking access');
           
-          // Throw 403 error to match backend behavior
           const error: any = new Error(message);
           error.response = {
             status: 403,
@@ -204,101 +289,37 @@ export const useDevotionalEntry = () => {
           };
           throw error;
         }
-        // ===== END CRITICAL FIX =====
         
-        // ===== NEW: ALWAYS FETCH FRESH RESPONSE STATUS =====
-        // We use cached content but get fresh interaction status from API
-        console.log('🔄 Fetching fresh response status for cached entry...');
-        try {
-          const freshEntry = await devotionApi.getEntryByDay(devotionalId, dayNumber);
-          
-          // Use cached content but with fresh status flags
-          const entryWithFreshStatus: DevotionalEntry = {
-            ...cachedEntry,
-            bookmarked: freshEntry.bookmarked ?? false,
-            liked: freshEntry.liked ?? false,
-            like_count: freshEntry.like_count ?? 0,
-            viewed: freshEntry.viewed ?? false,
-            has_submitted_response: freshEntry.has_submitted_response ?? false, // ← CRITICAL!
-          };
-          
-          console.log(`✅ Fresh status applied: viewed=${entryWithFreshStatus.viewed}, submitted=${entryWithFreshStatus.has_submitted_response}`);
-          
-          // Update cache with fresh status
-          await DevotionalStorage.saveEntry(entryWithFreshStatus);
-          
-          setEntry(entryWithFreshStatus);
-          setIsCached(true);
-          setIsLoading(false);
-          
-          await DevotionalStorage.saveLastViewed(
-            Number(devotionalId),
-            dayNumber,
-            entryWithFreshStatus.id
-          );
-          
-          return entryWithFreshStatus;
-        } catch (apiError: any) {
-          // If API fails (network error, etc), fall back to cached entry
-          // but warn that status might be stale
-          console.warn('⚠️ Failed to fetch fresh status, using cached data:', apiError.message);
-          
-          const entryWithDefaults: DevotionalEntry = {
-            ...cachedEntry,
-            bookmarked: cachedEntry.bookmarked ?? false,
-            liked: cachedEntry.liked ?? false,
-            like_count: cachedEntry.like_count ?? 0,
-            viewed: cachedEntry.viewed ?? false,
-            has_submitted_response: cachedEntry.has_submitted_response ?? false,
-          };
-          
-          setEntry(entryWithDefaults);
-          setIsCached(true);
-          setIsLoading(false);
-          
-          await DevotionalStorage.saveLastViewed(
-            Number(devotionalId),
-            dayNumber,
-            entryWithDefaults.id
-          );
-          
-          return entryWithDefaults;
-        }
-        // ===== END NEW CODE =====
+        const entryWithDefaults: DevotionalEntry = {
+          ...cachedEntry,
+          bookmarked: cachedEntry.bookmarked ?? false,
+          liked: cachedEntry.liked ?? false,
+          like_count: cachedEntry.like_count ?? 0,
+          viewed: cachedEntry.viewed ?? false,
+          has_submitted_response: cachedEntry.has_submitted_response ?? false,
+        };
+        
+        setEntry(entryWithDefaults);
+        setIsCached(true);
+        
+        await DevotionalStorage.saveLastViewed(
+          Number(devotionalId),
+          dayNumber,
+          entryWithDefaults.id
+        );
+        
+        return entryWithDefaults;
       }
       
-      // Fetch from API if not cached
-      console.log(`🌐 Fetching entry from API: Devotional ${devotionalId}, Day ${dayNumber}`);
-      const data = await devotionApi.getEntryByDay(devotionalId, dayNumber);
+      // Should never reach here, but handle it
+      setEntry(null);
+      return null;
       
-      if (!data) {
-        setEntry(null);
-        return null;
-      }
-      
-      const entryWithDefaults: DevotionalEntry = {
-        ...data,
-        bookmarked: data.bookmarked ?? false,
-        liked: data.liked ?? false,
-        like_count: data.like_count ?? 0,
-        viewed: data.viewed ?? false,
-      };
-      
-      await DevotionalStorage.saveEntry(entryWithDefaults);
-      
-      await DevotionalStorage.saveLastViewed(
-        Number(devotionalId),
-        dayNumber,
-        entryWithDefaults.id
-      );
-      
-      setEntry(entryWithDefaults);
-      return entryWithDefaults;
     } catch (err: any) {
       const message = err instanceof Error ? err.message : 'Unable to load entry';
       setError(message);
       
-      // Re-throw the error so the component can handle it (especially 403s)
+      // Re-throw the error so the component can handle it (especially 403s and 404s)
       throw err;
     } finally {
       setIsLoading(false);
@@ -595,4 +616,3 @@ export const useDevotionalPreferences = () => {
     reloadPreferences,
   };
 };
-

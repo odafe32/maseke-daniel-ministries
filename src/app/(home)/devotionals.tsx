@@ -18,7 +18,7 @@ const cleanDevotionalContent = (html: string): string => {
   
   let text = html;
   
-  // First, handle HTML tags
+  // First, handle HTML tags - preserve paragraph structure
   text = text.replace(/<\/p>/gi, '\n\n');
   text = text.replace(/<br\s*\/?>/gi, '\n');
   text = text.replace(/<\/div>/gi, '\n');
@@ -53,14 +53,14 @@ const cleanDevotionalContent = (html: string): string => {
   // Remove standalone bullets at start of line
   text = text.replace(/^\s*•\s*/gm, '');
   
-  // Clean up multiple spaces
+  // Clean up multiple spaces on same line
   text = text.replace(/[ \t]+/g, ' ');
   
-  // Clean up multiple newlines (max 2)
-  text = text.replace(/\n{3,}/g, '\n\n');
-  
-  // Trim each line
+  // Trim each line to remove leading/trailing spaces
   text = text.split('\n').map(line => line.trim()).join('\n');
+  
+  // Remove excessive empty lines (more than 2 newlines = 1 blank line between paragraphs)
+  text = text.replace(/\n{3,}/g, '\n\n');
   
   // Remove empty lines at start/end
   text = text.replace(/^\n+/, '').replace(/\n+$/, '');
@@ -68,7 +68,26 @@ const cleanDevotionalContent = (html: string): string => {
   return text.trim();
 };
 
-export default function DevotionalsPage() {
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontFamily: 'DMSans-Medium',
+  },
+});
+
+function DevotionalsPage() {
   const {
     sidebarVisible,
     setSidebarVisible,
@@ -97,6 +116,9 @@ export default function DevotionalsPage() {
     showCompletion,
     setShowCompletion,
     themeOptions,
+    triggerRefresh,
+    isRefreshing,
+    setIsRefreshing,
   } = useDevotionalsStore();
 
   const { 
@@ -122,6 +144,60 @@ export default function DevotionalsPage() {
     [selectedThemeId, themeOptions]
   );
 
+  // Load theme and font size from storage on mount
+  useEffect(() => {
+    const loadUISettings = async () => {
+      try {
+        const [savedTheme, savedFontSize] = await Promise.all([
+          DevotionalStorage.getTheme(),
+          DevotionalStorage.getFontSize(),
+        ]);
+        
+        if (savedTheme && savedTheme !== selectedThemeId) {
+          setSelectedThemeId(savedTheme);
+          console.log('✅ Theme restored from storage:', savedTheme);
+        }
+        
+        if (savedFontSize && savedFontSize !== fontSize) {
+          setFontSize(savedFontSize);
+          console.log('✅ Font size restored from storage:', savedFontSize);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load UI settings:', error);
+      }
+    };
+    
+    loadUISettings();
+  }, []);
+
+  // Save theme to storage when it changes
+  useEffect(() => {
+    const saveTheme = async () => {
+      try {
+        await DevotionalStorage.saveTheme(selectedThemeId);
+        console.log('✅ Theme saved to storage:', selectedThemeId);
+      } catch (error) {
+        console.error('❌ Failed to save theme:', error);
+      }
+    };
+    
+    saveTheme();
+  }, [selectedThemeId]);
+
+  // Save font size to storage when it changes
+  useEffect(() => {
+    const saveFontSize = async () => {
+      try {
+        await DevotionalStorage.saveFontSize(fontSize);
+        console.log('✅ Font size saved to storage:', fontSize);
+      } catch (error) {
+        console.error('❌ Failed to save font size:', error);
+      }
+    };
+    
+    saveFontSize();
+  }, [fontSize]);
+
   // Load last viewed entry on mount (or today's entry if none)
   useEffect(() => {
     const initLoad = async () => {
@@ -136,32 +212,42 @@ export default function DevotionalsPage() {
             dayNumber: lastViewed.dayNumber,
           });
           
-          // Restore the last viewed entry
-          setCurrentDevotionalId(lastViewed.devotionalId);
-          setCurrentDayNumber(lastViewed.dayNumber);
-          
-          // Load that entry
-          const restoredEntry = await loadEntryByDay(lastViewed.devotionalId, lastViewed.dayNumber);
-          
-          if (restoredEntry) {
-            setHasNoDevotional(false);
+          try {
+            // Restore the last viewed entry
+            setCurrentDevotionalId(lastViewed.devotionalId);
+            setCurrentDayNumber(lastViewed.dayNumber);
             
-            // Check if video needs to be shown
-            const videoUrl = restoredEntry?.video_url ?? null;
-            const hasBeenViewed = restoredEntry?.viewed ?? false;
+            // Load that entry
+            const restoredEntry = await loadEntryByDay(lastViewed.devotionalId, lastViewed.dayNumber);
             
-            if (videoUrl && !hasBeenViewed) {
-              setPendingVideoUrl(videoUrl);
-              incrementVideoKey();
-              setShowVideoIntro(true);
-            } else {
-              setIsLoadingEntry(false);
+            if (restoredEntry) {
+              setHasNoDevotional(false);
+              
+              // Check if video needs to be shown
+              const videoUrl = restoredEntry?.video_url ?? null;
+              const hasBeenViewed = restoredEntry?.viewed ?? false;
+              
+              if (videoUrl && !hasBeenViewed) {
+                setPendingVideoUrl(videoUrl);
+                incrementVideoKey();
+                setShowVideoIntro(true);
+              } else {
+                setIsLoadingEntry(false);
+              }
+              return;
             }
-            return;
+          } catch (error: any) {
+            // If 404, the devotional no longer exists - clear cache and load today's entry
+            if (error?.response?.status === 404) {
+            
+              await DevotionalStorage.clearCache();
+            } else {
+            //  
+            }
           }
           
           // If restore failed, fallback to today's entry
-          console.log('⚠️ Failed to restore last viewed entry, loading today instead');
+          console.log('📅 Loading today\'s entry instead');
         }
         
         // No last viewed or restore failed - load today's entry
@@ -234,17 +320,48 @@ export default function DevotionalsPage() {
         title: "Welcome to Devotionals",
         body: "Loading today's devotional...",
         dateLabel: undefined,
+        isHtml: false,
       };
     }
     
-    const cleanedContent = cleanDevotionalContent(entry.content);
-    
+    // Pass raw HTML content directly to react-native-render-html
     return {
       title: entry.title,
-      body: cleanedContent,
+      body: entry.content,
       dateLabel: entry.date || undefined,
+      isHtml: true,
     };
   }, [entry]);
+
+  const handleRefresh = useCallback(async () => {
+    console.log('🔄 Pull-to-refresh triggered');
+    setIsRefreshing(true);
+    
+    try {
+      // Reload current entry
+      const devotionalId = entry?.devotional_id || currentDevotionalId;
+      const dayNumber = entry?.day_number || currentDayNumber;
+      
+      if (devotionalId && dayNumber) {
+        console.log('🔄 Reloading entry:', { devotionalId, dayNumber });
+        await loadEntryByDay(devotionalId, dayNumber);
+      }
+      
+      // Trigger sidebar refresh
+      triggerRefresh();
+      
+      console.log('✅ Refresh completed');
+    } catch (error) {
+      console.error('❌ Refresh failed:', error);
+      showToast({
+        type: 'error',
+        title: 'Refresh Failed',
+        message: 'Unable to refresh data. Please try again.',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [entry, currentDevotionalId, currentDayNumber, loadEntryByDay, triggerRefresh, setIsRefreshing]);
 
   const navigateToDay = useCallback(async (devotionalId: number, dayNumber: number) => {
     console.log('🔄 Navigating to:', { devotionalId, dayNumber });
@@ -314,8 +431,30 @@ export default function DevotionalsPage() {
         return null;
       }
       
+      // Handle 404 - Devotional not found in database
+      if (error?.response?.status === 404) {
+        const message = error?.response?.data?.message || error?.message || 'This devotional entry was not found';
+        console.log('🗑️ Devotional not found (404):', message);
+        
+        showToast({
+          type: 'error',
+          title: 'Not Found',
+          message: message,
+        });
+        
+        setHasNoDevotional(true);
+        setIsLoadingEntry(false);
+        setIsNavigating(false);
+        return null;
+      }
+      
       // Other errors
       console.error('Unexpected error:', error?.response?.status);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: error?.message || 'Unable to load devotional. Please try again.',
+      });
       setHasNoDevotional(true);
       setIsLoadingEntry(false);
       return null;
@@ -518,11 +657,43 @@ export default function DevotionalsPage() {
   };
 
   const handleBookmarkParagraphs = async (paragraphIds: number[]) => {
-    if (!entry || paragraphIds.length === 0) {
-      console.warn('No entry loaded or no paragraphs selected');
+    if (!entry) {
+      console.warn('No entry loaded');
       return;
     }
 
+    // Handle entry-level bookmarking (empty array means bookmark entire entry)
+    if (paragraphIds.length === 0) {
+      setIsBookmarking(true);
+
+      try {
+        const result = await devotionApi.bookmarkParagraphs(entry.id, {
+          paragraph_ids: [],
+          paragraph_texts: [],
+        });
+
+        // Update the entry bookmark status using the API response
+        setEntry(prev => prev ? { ...prev, bookmarked: result.bookmarked } : prev);
+
+        showToast({
+          type: 'success',
+          title: result.bookmarked ? 'Bookmarked' : 'Unbookmarked',
+          message: result.message || `Entry ${result.bookmarked ? 'bookmarked' : 'unbookmarked'}`,
+        });
+      } catch (error) {
+        console.error('Failed to toggle entry bookmark:', error);
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to toggle bookmark',
+        });
+      } finally {
+        setIsBookmarking(false);
+      }
+      return;
+    }
+
+    // Handle paragraph-level bookmarking (existing logic)
     setIsBookmarking(true);
 
     try {
@@ -532,7 +703,7 @@ export default function DevotionalsPage() {
         .filter(Boolean);
 
       const selectedTexts = paragraphIds
-        .map(id => paragraphs[id - 1])
+        .map((id: number) => paragraphs[id - 1])
         .filter(Boolean);
 
       const result = await devotionApi.bookmarkParagraphs(entry.id, {
@@ -540,7 +711,7 @@ export default function DevotionalsPage() {
         paragraph_texts: selectedTexts,
       });
 
-      setBookmarkedParagraphs(prev => {
+      setBookmarkedParagraphs((prev: number[]) => {
         const newBookmarks = new Set([...prev, ...paragraphIds]);
         return Array.from(newBookmarks);
       });
@@ -630,22 +801,21 @@ export default function DevotionalsPage() {
     // Video will show on entry load if not viewed, but user can skip it
     // and still navigate. If they come back later without watching,
     // video shows again (handled in entry loading logic).
-    
     // Check if user should reflect first (ONLY if they haven't submitted yet)
     if (entry && !entry.has_submitted_response && !showResponseModal) {
-      console.log('📝 Prompting user to reflect before continuing');
+      console.log(' Prompting user to reflect before continuing');
       setShowResponseModal(true);
       return;
     }
     
     // If modal is already showing, don't proceed
     if (showResponseModal) {
-      console.log('⚠️ Modal is open, waiting for user action');
+      console.log(' Modal is open, waiting for user action');
       return;
     }
     
     // All checks passed - proceed to next day
-    console.log('✅ Proceeding to next day');
+    console.log(' Proceeding to next day');
     const newDay = currentDayNumber + 1;
     await navigateToDay(devotionalId, newDay);
   }, [currentDayNumber, entry, currentDevotionalId, currentMonth, navigateToDay, isNavigating, isProcessingNavigation, showResponseModal]);
@@ -721,10 +891,14 @@ export default function DevotionalsPage() {
           onBookmarkParagraphs={handleBookmarkParagraphs}
           onUnbookmarkParagraphs={handleUnbookmarkParagraphs}
           isBookmarking={isBookmarking}
+          setIsBookmarking={setIsBookmarking}
+          isEntryBookmarked={entry?.bookmarked || false}
           hasSubmittedResponse={entry?.has_submitted_response || false}
           currentMonth={currentMonth}
           onShowSettings={() => setSettingsVisible(true)}
           onHideSettings={() => setSettingsVisible(false)}
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
         />
       )}
 
@@ -762,7 +936,7 @@ export default function DevotionalsPage() {
         />
       )}
 
-     {/* Response Modal */}
+      {/* Response Modal */}
       {showResponseModal && (
         <ResponseModal
           visible={showResponseModal}
@@ -777,21 +951,4 @@ export default function DevotionalsPage() {
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontFamily: 'DMSans-Medium',
-  },
-});
+export default DevotionalsPage;
