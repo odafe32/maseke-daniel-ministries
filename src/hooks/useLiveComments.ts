@@ -11,12 +11,12 @@ import {
 export const useLiveComments = (liveStreamId: number | null, enabled: boolean = true) => {
   const queryClient = useQueryClient();
 
-  // Fetch comments with 3s polling
+  // Fetch comments with 60s polling
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['liveComments', liveStreamId],
     queryFn: () => getLiveComments(liveStreamId!),
     enabled: enabled && !!liveStreamId,
-    refetchInterval: 3000,
+    refetchInterval: 120000,
     refetchIntervalInBackground: true,
   });
 

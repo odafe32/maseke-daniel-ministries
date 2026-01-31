@@ -14,6 +14,8 @@ export const useDevotionalResponses = () => {
     isLoadingResponses: store.isLoadingResponses,
     isLoadingRecent: store.isLoadingRecent,
     isLoadingEntry: store.isLoadingEntry,
+    isUpdatingResponse: store.isUpdatingResponse,
+    isDeletingResponse: store.isDeletingResponse,
 
     // Error state
     error: store.error,
@@ -22,6 +24,8 @@ export const useDevotionalResponses = () => {
     fetchResponses: store.fetchResponses,
     fetchRecentResponses: store.fetchRecentResponses,
     fetchResponseForEntry: store.fetchResponseForEntry,
+    updateResponse: store.updateResponse,
+    deleteResponse: store.deleteResponse,
     clearError: store.clearError,
     clearSelectedResponse: store.clearSelectedResponse,
 

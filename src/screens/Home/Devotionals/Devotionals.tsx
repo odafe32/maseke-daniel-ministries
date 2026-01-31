@@ -10,12 +10,16 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   ActivityIndicator,
+  RefreshControl,
+  useWindowDimensions,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import RenderHtml from "react-native-render-html";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { DevotionalMonth } from "./DevotionalsSidebar";
+import DevotionalBannerEnhanced from "./DevotionalBannerEnhanced";
 
 export interface DevotionalTheme {
   id: string;
@@ -33,7 +37,7 @@ export interface DevotionalTheme {
 
 interface DevotionalsProps {
   onOpenSidebar: () => void;
-  content: { title: string; body: string; dateLabel?: string };
+  content: { title: string; body: string; dateLabel?: string; isHtml?: boolean; scripture?: string; verse?: string };
   currentMonth: DevotionalMonth | null;
   currentDayNumber: number;
   settingsVisible: boolean;
@@ -54,6 +58,8 @@ interface DevotionalsProps {
   onBookmarkParagraphs?: (paragraphIds: number[]) => void;
   onUnbookmarkParagraphs?: (paragraphIds: number[]) => void;
   isBookmarking?: boolean;
+  setIsBookmarking?: (bookmarking: boolean) => void;
+  isEntryBookmarked?: boolean;
   isLiked?: boolean;
   likeCount?: number;
   onToggleLike?: () => void;
@@ -61,6 +67,8 @@ interface DevotionalsProps {
   onSaveResponse?: (heart: string, takeaway: string) => Promise<void>;
   isSubmittingResponse?: boolean;
   hasSubmittedResponse?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -157,6 +165,8 @@ export function Devotionals({
   onBookmarkParagraphs,
   onUnbookmarkParagraphs,
   isBookmarking = false,
+  setIsBookmarking,
+  isEntryBookmarked = false,
   isLiked = false,
   likeCount = 0,
   onToggleLike,
@@ -164,9 +174,12 @@ export function Devotionals({
   onSaveResponse,
   isSubmittingResponse = false,
   hasSubmittedResponse = false,
+  refreshing = false,
+  onRefresh,
 }: DevotionalsProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const selectedTheme = themeOptions.find((t) => t.id === selectedThemeId) ?? themeOptions[0];
   const [selectedParagraphs, setSelectedParagraphs] = useState<number[]>([]);
   const [panelHeight, setPanelHeight] = useState(0);
@@ -181,13 +194,83 @@ export function Devotionals({
 
   const readingBodyLineHeight = Math.max(26, fontSize * 1.6);
 
+  const htmlStyles = useMemo(() => ({
+    p: {
+      marginBottom: -4,
+      lineHeight: readingBodyLineHeight,
+      fontSize,
+      color: selectedTheme?.textColor,
+      fontFamily: 'DMSans-Regular',
+    },
+    strong: {
+      fontSize: fontSize + 2,
+      fontFamily: 'DMSans-Bold',
+      color: selectedTheme?.textColor,
+    },
+    b: {
+      fontSize: fontSize + 2,
+      fontFamily: 'DMSans-Bold',
+      color: selectedTheme?.textColor,
+    },
+    h1: { 
+      fontSize: fontSize + 4, 
+      fontFamily: 'DMSans-Bold', 
+      marginBottom: 0, 
+      color: selectedTheme?.textColor 
+    },
+    h2: { 
+      fontSize: fontSize + 3, 
+      fontFamily: 'DMSans-Bold', 
+      fontWeight: 'bold' as const,
+      marginBottom: 0, 
+      color: selectedTheme?.textColor 
+    },
+    h3: { 
+      fontSize: fontSize + 2, 
+      fontFamily: 'DMSans-Bold', 
+      fontWeight: 'bold' as const,
+      marginBottom: 0, 
+      color: selectedTheme?.textColor 
+    },
+   
+    h4: { 
+      fontSize: fontSize + 1, 
+      fontFamily: 'DMSans-Bold', 
+      fontWeight: 'bold' as const,
+      marginBottom: 0, 
+      color: selectedTheme?.textColor 
+    },
+    h5: { 
+      fontSize: fontSize + 1, 
+      fontFamily: 'DMSans-Bold', 
+      fontWeight: 'bold' as const,
+      marginBottom: 0, 
+      color: selectedTheme?.textColor 
+    },
+    h6: { 
+      fontSize: fontSize, 
+      fontFamily: 'DMSans-Bold', 
+      fontWeight: 'bold' as const,
+      marginBottom: 0, 
+      color: selectedTheme?.textColor 
+    },
+  }), [fontSize, readingBodyLineHeight, selectedTheme?.textColor]);
+
   const headerTitle = useMemo(() => {
     return formatDateLabel(content.dateLabel);
   }, [content.dateLabel]);
 
   const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
-  const statusBarBackground = selectedTheme?.backgroundColor ?? "#fff";
-  const statusBarStyle = isHexDark(statusBarBackground) ? "light" : "dark";
+  const statusBarStyle = "dark";
+  const bookmarkIconColor = selectedTheme?.textColor ?? "#0C154C";
+
+  console.log('🎨 StatusBar Debug:', {
+    selectedThemeId,
+    backgroundColor: selectedTheme?.backgroundColor,
+    statusBarStyle,
+    isDark: isHexDark(selectedTheme?.backgroundColor ?? "#fff")
+  });
+
   const isDarkPanel = isHexDark(selectedTheme?.panelBackground);
   const dividerColor = "#cccccc";
   const controlBorderColor = isDarkPanel
@@ -218,30 +301,33 @@ export function Devotionals({
 
   const isDarkTheme = isHexDark(selectedTheme?.backgroundColor);
   const bookmarkedBackgroundColor = isDarkTheme ? 'rgba(255, 249, 196, 0.2)' : '#FFF9C4';
-  const bookmarkIconColor = isDarkTheme ? '#FFFFFF' : (selectedTheme?.accentColor ?? selectedTheme?.textColor);
 
   const isSelectionMode = selectedParagraphs.length > 0;
 
   const paragraphs = useMemo(() => {
     if (!content?.body) return [];
     
-    const byLine = content.body
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
+    // Split content by double newlines (paragraph breaks) and create paragraph objects
+    const cleanedContent = content.body.trim();
+    const paragraphTexts = cleanedContent.split(/\n\n+/).filter(text => text.trim().length > 0);
     
-    const segments = byLine.length > 1 ? byLine : content.body.split(/(?<=[.!?])\s+/);
-    
-    return segments
-      .map((segment) => segment.trim())
-      .filter(Boolean)
-      .map((text, index) => ({ id: index + 1, text }));
+    return paragraphTexts.map((text, index) => ({
+      id: index + 1,
+      text: text.trim(),
+    }));
   }, [content?.body]);
 
+  // Handle paragraph selection for both bookmarking and unbookmarking
   const toggleParagraphSelection = (id: number) => {
     setSelectedParagraphs((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
+  };
+
+  // Handle unbookmarking individual paragraphs via icon click
+  const handleUnbookmarkSingle = (id: number) => {
+    console.log(` Unbookmarking paragraph ${id} (icon click)`);
+    onUnbookmarkParagraphs?.([id]);
   };
 
   useEffect(() => {
@@ -349,10 +435,19 @@ export function Devotionals({
     }
   };
 
-  const handleBookmarkToggle = () => {
-    if (isSelectionMode && onBookmarkParagraphs) {
-      onBookmarkParagraphs(selectedParagraphs);
-      setSelectedParagraphs([]);
+  const handleBookmarkToggle = async () => {
+    if (!devotionalEntryId || isBookmarking) return;
+
+    setIsBookmarking?.(true);
+    try {
+      // Toggle bookmark for the entire entry
+      if (onBookmarkParagraphs) {
+        await onBookmarkParagraphs([]); // Empty array means bookmark entire entry
+      }
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+    } finally {
+      setIsBookmarking?.(false);
     }
   };
 
@@ -361,8 +456,8 @@ export function Devotionals({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: statusBarBackground }]}>
-      <StatusBar backgroundColor={statusBarBackground} style={statusBarStyle} animated />
+    <View style={[styles.container, { backgroundColor: selectedTheme?.backgroundColor }]}>
+      <StatusBar backgroundColor={selectedTheme?.backgroundColor || '#FFFFFF'} style={statusBarStyle} animated translucent={false} />
       
       {/* HEADER - Original Layout */}
       <View style={styles.headerRow}>
@@ -397,45 +492,44 @@ export function Devotionals({
 
         {/* Action Buttons */}
         <View style={styles.headerActions}>
-    
-
-          {/* Bookmark Button - Shows badge when paragraphs selected */}
+          {/* Bookmark Button - Shows different states for bookmark/unbookmark */}
           <Pressable
             onPress={handleBookmarkToggle}
-            disabled={isBookmarking || !isSelectionMode}
+            disabled={isBookmarking}
             style={[
               styles.headerButton,
               {
                 borderColor: headerButtonBorderColor,
                 borderWidth: headerButtonBorderWidth,
                 backgroundColor: headerButtonBackground,
-                opacity: isSelectionMode ? 1 : 0.5,
               },
             ]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             {isBookmarking ? (
-              <ActivityIndicator size="small" color={selectedTheme?.textColor} />
+              <ActivityIndicator size="small" color={bookmarkIconColor} />
             ) : (
-              <View style={styles.bookmarkButtonContainer}>
-                <Feather
-                  name="bookmark"
-                  size={20}
-                  color={selectedTheme?.textColor}
-                  fill={isSelectionMode ? selectedTheme?.accentColor : "transparent"}
-                />
-                {isSelectionMode && selectedParagraphs.length > 0 && (
-                  <View style={[styles.selectionBadge, { backgroundColor: selectedTheme?.accentColor }]}>
-                    <Text style={styles.selectionBadgeText}>
-                      {selectedParagraphs.length}
-                    </Text>
-                  </View>
+              <View style={[
+                styles.bookmarkButtonContainer,
+              ]}>
+                {isEntryBookmarked ? (
+                  <MaterialIcons
+                    name="bookmark"
+                    size={20}
+                    color={isDarkTheme ? '#FFFFFF' : (isHexWhite(selectedTheme?.backgroundColor) ? '#000000' : (selectedTheme?.accentColor ?? "#0C154C"))}
+                  />
+                ) : (
+                  <Feather
+                    name="bookmark"
+                    size={20}
+                    color={bookmarkIconColor}
+                  />
                 )}
-              </View>
-            )}
-          </Pressable>
+            </View>
+          )}
+        </Pressable>
 
-          {/* Menu Button */}
+        {/* Menu Button */}
           <Pressable
             onPress={onOpenSidebar}
             style={[
@@ -469,7 +563,30 @@ export function Devotionals({
           onMomentumScrollEnd={handleMomentumScrollEnd}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={selectedTheme?.textColor}
+              />
+            ) : undefined
+          }
         >
+          <DevotionalBannerEnhanced
+            title={content.title}
+            subtitle={currentMonth?.name}
+            scripture={content.scripture}
+            verse={content.verse}
+            dayNumber={currentDayNumber}
+            totalDays={totalDays}
+            theme={(() => {
+              const themes = ['sage', 'deep', 'warm', 'classic', 'royal', 'dawn'] as const;
+              const randomIndex = Math.floor(Math.random() * themes.length);
+              return themes[randomIndex];
+            })()}
+            height={200}
+          />
           <Text
             style={[
               styles.readingTitle,
@@ -479,63 +596,28 @@ export function Devotionals({
             {content.title}
           </Text>
           
-          {paragraphs.length > 0 ? (
-            <View style={styles.versesContainer}>
-              {paragraphs.map((paragraph) => {
-                const isSelected = selectedParagraphs.includes(paragraph.id);
-                const isBookmarked = bookmarkedParagraphs.includes(paragraph.id);
-                
-                return (
-                  <View
-                    key={paragraph.id}
-                    style={[
-                      styles.verseLine,
-                      isBookmarked && { backgroundColor: bookmarkedBackgroundColor },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => toggleParagraphSelection(paragraph.id)}
-                      style={styles.verseTextContainer}
-                    >
-                      <Text
-                        style={[
-                          styles.verseText,
-                          {
-                            color: selectedTheme?.textColor,
-                            fontSize,
-                            lineHeight: readingBodyLineHeight,
-                          },
-                          isBookmarked && styles.bookmarkedText,
-                          isSelected && {
-                            textDecorationLine: "underline",
-                            textDecorationColor: selectedTheme?.accentColor ?? selectedTheme?.textColor,
-                          },
-                        ]}
-                      >
-                        {paragraph.text}
-                      </Text>
-                    </TouchableOpacity>
-                    
-                    {isBookmarked && (
-                      <TouchableOpacity
-                        onPress={() => onUnbookmarkParagraphs?.([paragraph.id])}
-                        style={styles.paragraphBookmarkIcon}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        disabled={isBookmarking}
-                      >
-                        <Feather
-                          name="bookmark"
-                          size={16}
-                          color={bookmarkIconColor}
-                          fill={bookmarkIconColor}
-                        />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
+          {content.isHtml ? (
+            <>
+              {(() => {
+                console.log(' HTML Rendering Debug:');
+                console.log(' Content:', content.body?.substring(0, 500));
+                console.log(' isHtml flag:', content.isHtml);
+                console.log(' Styles:', htmlStyles);
+                return null;
+              })()}
+              <RenderHtml
+                contentWidth={width - 32}
+                source={{ html: `<div>${content.body}</div>` }}
+                tagsStyles={htmlStyles}
+                baseStyle={{
+                  color: selectedTheme?.textColor,
+                  fontFamily: 'DMSans-Regular',
+                  fontSize,
+                  lineHeight: readingBodyLineHeight,
+                }}
+                systemFonts={['DMSans-Regular', 'DMSans-Bold']}
+              />
+            </>
           ) : (
             <Text
               style={[
@@ -656,8 +738,6 @@ export function Devotionals({
           </TouchableOpacity>
         </View>
       </Animated.View>
-
-    
     </View>
   );
 }
@@ -684,9 +764,10 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Regular",
   },
   versesContainer: {
-    gap: 15,
+    gap: 4, // Minimal gap like a real devotional book
   },
   verseLine: {
+    position: 'relative', // Enable absolute positioning for overlay
     marginBottom: 0,
     borderRadius: 6,
     paddingHorizontal: 8,
@@ -706,11 +787,22 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Regular",
   },
   bookmarkedText: {
-    // Additional styling for bookmarked text if needed
+    fontWeight: '500',
   },
-  paragraphBookmarkIcon: {
-    marginLeft: 8,
+  paragraphBookmarkOverlay: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 10,
+  },
+  bookmarkIconContainer: {
+    borderRadius: 12,
     padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   settingsPanel: {
     position: "absolute",

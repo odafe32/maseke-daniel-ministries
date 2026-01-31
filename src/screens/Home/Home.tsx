@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { ThemeText } from "@/src/components";
 import { fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
@@ -18,6 +18,7 @@ import { avatarUri } from "@/src/constants/data";
 import { useUser } from "../../hooks/useUser";
 import { HomeImageSection } from "./HomeImageSection";
 import Feather from "@expo/vector-icons/Feather";
+import { ScriptureBanner } from "./ScriptureBanner/ScriptureBanner";
 
 interface LocalUser {
   full_name: string;
@@ -50,6 +51,7 @@ export const Home = ({
   const [localUser, setLocalUser] = useState<LocalUser | null>(null);
   const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const dynamicStyles = {
     notificationBadge: {
@@ -98,6 +100,11 @@ export const Home = ({
   const handleNotificationPress = () => {
     onNotificationPress();
   };
+
+  const handleRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+    onRefresh();
+  }, [onRefresh]);
 
   // const getCurrentDayAndTime = () => {
   //   const now = new Date();
@@ -202,10 +209,23 @@ export const Home = ({
         contentContainerStyle={styles.scrollableContentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
+        {/* <ScriptureBanner 
+          height={230}
+          loves={42}
+          comments={15}
+          shares={8}
+          refreshing={refreshing}
+          onRefresh={() => {
+          }}
+          refreshTrigger={refreshTrigger}
+        /> */}
+        
         <HomeImageSection imageUris={imageUris} durations={durations} loading={adsLoading} />
+        
+    
         {loading ? (
           <View style={styles.cardsWrapper}>
             {Array.from({ length: 6 }).map((_, index) => (
@@ -298,8 +318,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardImage: {
-    height: hp(160),
-    borderRadius: 1,
+    height: hp(150),
+    borderRadius: 10,
     overflow: "hidden",
   },
   cardImageInner: {

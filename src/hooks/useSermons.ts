@@ -1,17 +1,83 @@
 import { useState, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sermonApi, SermonTape, SermonCategory } from '../api/sermonApi';
+
+// Cache keys
+const CATEGORIES_CACHE_KEY = 'sermon_categories_cache';
+const TAPES_CACHE_KEY = 'sermon_tapes_cache';
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
+
+interface CacheData<T> {
+  data: T;
+  timestamp: number;
+}
+
+const isCacheValid = (timestamp: number): boolean => {
+  return Date.now() - timestamp < CACHE_DURATION;
+};
+
+const getCachedData = async <T>(key: string): Promise<T | null> => {
+  try {
+    const cached = await AsyncStorage.getItem(key);
+    if (cached) {
+      const { data, timestamp }: CacheData<T> = JSON.parse(cached);
+      if (isCacheValid(timestamp)) {
+        return data;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedData = async <T>(key: string, data: T): Promise<void> => {
+  try {
+    const cacheData: CacheData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+    await AsyncStorage.setItem(key, JSON.stringify(cacheData));
+  } catch {
+    // Silently fail if caching fails
+  }
+};
+
+// Function to clear cache (useful for debugging or forced refresh)
+export const clearSermonCache = async (): Promise<void> => {
+  try {
+    await AsyncStorage.multiRemove([CATEGORIES_CACHE_KEY, TAPES_CACHE_KEY]);
+  } catch {
+    // Silently fail if cache clearing fails
+  }
+};
 
 export const useSermonCategories = () => {
   const [categories, setCategories] = useState<SermonCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCategories = useCallback(async () => {
+  const loadCategories = useCallback(async (forceRefresh: boolean = false) => {
     setIsLoading(true);
     setError(null);
+    
     try {
+      // Try to get from cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cachedCategories = await getCachedData<SermonCategory[]>(CATEGORIES_CACHE_KEY);
+        if (cachedCategories) {
+          setCategories(cachedCategories);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Fetch from backend
       const categoriesData = await sermonApi.getCategories();
       setCategories(categoriesData);
+      
+      // Cache the data
+      await setCachedData(CATEGORIES_CACHE_KEY, categoriesData);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load categories';
       setError(errorMessage);
@@ -43,14 +109,37 @@ export const useSermonTapes = () => {
     per_page?: number;
     page?: number;
     refresh?: boolean;
+    forceRefresh?: boolean; // New parameter for bypassing cache
   } = {}) => {
     setIsLoading(true);
     setError(null);
+    
     try {
+      // For initial load (no params or just refresh), try cache first
+      const isInitialLoad = !params.series_id && !params.category_id && 
+                           !params.media_type && !params.search && 
+                           !params.page && !params.per_page;
+      
+      if (isInitialLoad && !params.forceRefresh) {
+        const cachedTapes = await getCachedData<SermonTape[]>(TAPES_CACHE_KEY);
+        if (cachedTapes) {
+          setTapes(cachedTapes);
+          setHasMore(false); // We don't store pagination in cache, assume no more for now
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Fetch from backend
       const response = await sermonApi.getTapes(params);
       
       if (params.refresh || params.page === 1) {
         setTapes(response.data);
+        
+        // Cache only initial loads (no filters)
+        if (isInitialLoad) {
+          await setCachedData(TAPES_CACHE_KEY, response.data);
+        }
       } else {
         setTapes(prev => [...prev, ...response.data]);
       }

@@ -10,7 +10,7 @@ export interface ExtraConfig {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "Maseke Daniel Ministries",
+  name: "Maseke DanielsMinistries",
   slug: "maseke",
   version: "1.0.0",
   icon: "./src/assets/logo.png",

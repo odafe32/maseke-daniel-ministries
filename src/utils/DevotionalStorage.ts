@@ -19,6 +19,8 @@ export interface DevotionalPreferences {
   appSettings: {
     autoPlayVideo: boolean;
     showVideoIntro: boolean;
+    enableAutoRefresh: boolean; // ← NEW: Auto-refresh setting
+    refreshInterval: number; // ← NEW: Custom refresh interval
   };
 }
 
@@ -27,18 +29,34 @@ export interface DevotionalCache {
     version: string;
     lastUpdated: string;
     totalEntries: number;
+    lastRefresh?: string; // ← NEW: Track last refresh
   };
   devotionals: Record<string, any>;
   entries: Record<string, DevotionalEntry>;
   dayIndex: Record<string, number>;
 }
 
+export interface RefreshTimestamps {
+  devotionals: string | null;
+  entries: Record<string, string>; // entryId -> timestamp
+  bookmarks: string | null;
+  lastAutoRefresh: string | null;
+}
+
 const PREFERENCES_KEY = '@devotional_preferences';
 const CACHE_KEY = '@devotional_cache';
-const THEME_KEY = '@devotional_theme'; // ← NEW: Dedicated theme storage
-const FONT_SIZE_KEY = '@devotional_font_size'; // ← NEW: Dedicated font size storage
+const THEME_KEY = '@devotional_theme';
+const FONT_SIZE_KEY = '@devotional_font_size';
+const REFRESH_TIMESTAMPS_KEY = '@devotional_refresh_timestamps';
 const CURRENT_VERSION = '1.0';
 const CACHE_EXPIRY_DAYS = 7;
+
+// Refresh configuration
+export const REFRESH_CONFIG = {
+  AUTO_REFRESH_INTERVAL: 5 * 60 * 1000, // 5 minutes
+  BACKGROUND_REFRESH_INTERVAL: 30 * 60 * 1000, // 30 minutes
+  FORCE_REFRESH_THRESHOLD: 60 * 60 * 1000, // 1 hour - force refresh if older
+};
 
 export const DEFAULT_PREFERENCES: DevotionalPreferences = {
   themeId: 'classic',
@@ -48,6 +66,8 @@ export const DEFAULT_PREFERENCES: DevotionalPreferences = {
   appSettings: {
     autoPlayVideo: true,
     showVideoIntro: true,
+    enableAutoRefresh: true,
+    refreshInterval: REFRESH_CONFIG.AUTO_REFRESH_INTERVAL,
   },
 };
 
@@ -56,13 +76,113 @@ const createEmptyCache = (): DevotionalCache => ({
     version: CURRENT_VERSION,
     lastUpdated: new Date().toISOString(),
     totalEntries: 0,
+    lastRefresh: new Date().toISOString(),
   },
   devotionals: {},
   entries: {},
   dayIndex: {},
 });
 
+const createEmptyRefreshTimestamps = (): RefreshTimestamps => ({
+  devotionals: null,
+  entries: {},
+  bookmarks: null,
+  lastAutoRefresh: null,
+});
+
 export class DevotionalStorage {
+  // ============================================
+  // REFRESH TIMESTAMP MANAGEMENT
+  // ============================================
+
+  /**
+   * Get refresh timestamps
+   */
+  static async getRefreshTimestamps(): Promise<RefreshTimestamps> {
+    try {
+      const timestampsJson = await AsyncStorage.getItem(REFRESH_TIMESTAMPS_KEY);
+      if (timestampsJson) {
+        return { ...createEmptyRefreshTimestamps(), ...JSON.parse(timestampsJson) };
+      }
+    } catch (error) {
+      console.error('❌ Failed to load refresh timestamps:', error);
+    }
+    return createEmptyRefreshTimestamps();
+  }
+
+  /**
+   * Save refresh timestamps
+   */
+  static async saveRefreshTimestamps(timestamps: Partial<RefreshTimestamps>): Promise<void> {
+    try {
+      const current = await this.getRefreshTimestamps();
+      const updated = { ...current, ...timestamps };
+      await AsyncStorage.setItem(REFRESH_TIMESTAMPS_KEY, JSON.stringify(updated));
+    } catch (error) {
+      console.error('❌ Failed to save refresh timestamps:', error);
+    }
+  }
+
+  /**
+   * Mark entry as refreshed
+   */
+  static async markEntryRefreshed(entryId: number): Promise<void> {
+    const timestamp = new Date().toISOString();
+    const current = await this.getRefreshTimestamps();
+    
+    await this.saveRefreshTimestamps({
+      entries: { ...current.entries, [entryId.toString()]: timestamp },
+      lastAutoRefresh: timestamp,
+    });
+    
+    console.log(`✅ Entry ${entryId} marked as refreshed at ${timestamp}`);
+  }
+
+  /**
+   * Check if entry needs refresh
+   */
+  static async shouldRefreshEntry(entryId: number, forceThreshold = REFRESH_CONFIG.FORCE_REFRESH_THRESHOLD): Promise<boolean> {
+    try {
+      const timestamps = await this.getRefreshTimestamps();
+      const lastRefresh = timestamps.entries[entryId.toString()];
+      
+      if (!lastRefresh) {
+        console.log(`⏰ Entry ${entryId} never refreshed - should refresh`);
+        return true;
+      }
+      
+      const lastRefreshTime = new Date(lastRefresh).getTime();
+      const now = new Date().getTime();
+      const timeSinceRefresh = now - lastRefreshTime;
+      
+      const shouldRefresh = timeSinceRefresh > forceThreshold;
+      console.log(`⏰ Entry ${entryId} last refreshed ${Math.floor(timeSinceRefresh / 60000)}min ago - ${shouldRefresh ? 'should refresh' : 'still fresh'}`);
+      
+      return shouldRefresh;
+    } catch (error) {
+      console.error('❌ Failed to check refresh status:', error);
+      return true; // Default to refresh on error
+    }
+  }
+
+  /**
+   * Mark devotionals list as refreshed
+   */
+  static async markDevotionalsRefreshed(): Promise<void> {
+    const timestamp = new Date().toISOString();
+    await this.saveRefreshTimestamps({ devotionals: timestamp });
+    console.log(`✅ Devotionals list marked as refreshed at ${timestamp}`);
+  }
+
+  /**
+   * Mark bookmarks as refreshed
+   */
+  static async markBookmarksRefreshed(): Promise<void> {
+    const timestamp = new Date().toISOString();
+    await this.saveRefreshTimestamps({ bookmarks: timestamp });
+    console.log(`✅ Bookmarks marked as refreshed at ${timestamp}`);
+  }
+
   // ============================================
   // THEME MANAGEMENT (DEDICATED STORAGE)
   // ============================================
@@ -229,7 +349,7 @@ export class DevotionalStorage {
    */
   static async saveAppSetting(
     key: keyof DevotionalPreferences['appSettings'],
-    value: boolean
+    value: boolean | number
   ): Promise<void> {
     const prefs = await this.getPreferences();
     await this.savePreferences({
@@ -296,9 +416,13 @@ export class DevotionalStorage {
       cache.dayIndex[indexKey] = entry.id;
       
       cache.metadata.lastUpdated = new Date().toISOString();
+      cache.metadata.lastRefresh = new Date().toISOString();
       cache.metadata.totalEntries = Object.keys(cache.entries).length;
       
       await this.saveCache(cache);
+      
+      // Mark entry as refreshed
+      await this.markEntryRefreshed(entry.id);
       
       console.log(`✅ Cached entry: Devotional ${entry.devotional_id}, Day ${entry.day_number}`);
     } catch (error) {
@@ -320,9 +444,24 @@ export class DevotionalStorage {
       }
       
       cache.metadata.lastUpdated = new Date().toISOString();
+      cache.metadata.lastRefresh = new Date().toISOString();
       cache.metadata.totalEntries = Object.keys(cache.entries).length;
       
       await this.saveCache(cache);
+      
+      // Mark all entries as refreshed
+      const timestamp = new Date().toISOString();
+      const refreshTimestamps = await this.getRefreshTimestamps();
+      const updatedEntryTimestamps = { ...refreshTimestamps.entries };
+      
+      for (const entry of entries) {
+        updatedEntryTimestamps[entry.id.toString()] = timestamp;
+      }
+      
+      await this.saveRefreshTimestamps({
+        entries: updatedEntryTimestamps,
+        lastAutoRefresh: timestamp,
+      });
       
       console.log(`✅ Cached ${entries.length} entries`);
     } catch (error) {
@@ -356,6 +495,38 @@ export class DevotionalStorage {
   }
 
   /**
+   * Clear specific entry from cache (used when backend returns 404)
+   */
+  static async clearEntry(devotionalId: number, dayNumber: number): Promise<void> {
+    try {
+      const cache = await this.getCache();
+      const indexKey = `${devotionalId}:${dayNumber}`;
+      const entryId = cache.dayIndex[indexKey];
+      
+      if (entryId) {
+        // Remove entry from cache
+        delete cache.entries[entryId.toString()];
+        delete cache.dayIndex[indexKey];
+        
+        // Update metadata
+        cache.metadata.lastUpdated = new Date().toISOString();
+        cache.metadata.totalEntries = Object.keys(cache.entries).length;
+        
+        await this.saveCache(cache);
+        
+        // Clear refresh timestamp
+        const timestamps = await this.getRefreshTimestamps();
+        delete timestamps.entries[entryId.toString()];
+        await this.saveRefreshTimestamps(timestamps);
+        
+        console.log(`🗑️ Cleared cache for: Devotional ${devotionalId}, Day ${dayNumber}`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to clear entry:', error);
+    }
+  }
+
+  /**
    * Get entry by entry ID
    */
   static async getEntryById(entryId: number): Promise<DevotionalEntry | null> {
@@ -377,11 +548,22 @@ export class DevotionalStorage {
   }
 
   /**
-   * Check if entry is cached
+   * Check if entry is cached and fresh
    */
   static async hasEntry(devotionalId: number, dayNumber: number): Promise<boolean> {
     const entry = await this.getEntry(devotionalId, dayNumber);
     return entry !== null;
+  }
+
+  /**
+   * Check if entry is cached and fresh (not needing refresh)
+   */
+  static async hasEntryAndFresh(devotionalId: number, dayNumber: number): Promise<boolean> {
+    const entry = await this.getEntry(devotionalId, dayNumber);
+    if (!entry) return false;
+    
+    const needsRefresh = await this.shouldRefreshEntry(entry.id);
+    return !needsRefresh;
   }
 
   /**
@@ -391,6 +573,7 @@ export class DevotionalStorage {
     try {
       const cache = await this.getCache();
       cache.devotionals[devotionalId.toString()] = devotionalData;
+      cache.metadata.lastRefresh = new Date().toISOString();
       await this.saveCache(cache);
       console.log(`✅ Cached devotional: ${devotionalId}`);
     } catch (error) {
@@ -421,7 +604,8 @@ export class DevotionalStorage {
   static async clearCache(): Promise<void> {
     try {
       await AsyncStorage.removeItem(CACHE_KEY);
-      console.log('✅ Cache cleared');
+      await AsyncStorage.removeItem(REFRESH_TIMESTAMPS_KEY);
+      console.log('✅ Cache and refresh timestamps cleared');
     } catch (error) {
       console.error('❌ Failed to clear cache:', error);
     }
@@ -440,11 +624,17 @@ export class DevotionalStorage {
   }
 
   /**
-   * Clear all data (cache + preferences + theme)
+   * Clear all data (cache + preferences + theme + timestamps)
    */
   static async clearAllData(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove([PREFERENCES_KEY, CACHE_KEY, THEME_KEY, FONT_SIZE_KEY]);
+      await AsyncStorage.multiRemove([
+        PREFERENCES_KEY, 
+        CACHE_KEY, 
+        THEME_KEY, 
+        FONT_SIZE_KEY,
+        REFRESH_TIMESTAMPS_KEY
+      ]);
       console.log('✅ All devotional data cleared');
     } catch (error) {
       console.error('❌ Failed to clear all data:', error);
@@ -458,21 +648,28 @@ export class DevotionalStorage {
     preferencesSize: number;
     cacheSize: number;
     themeSize: number;
+    refreshTimestampsSize: number;
     totalSize: number;
     cachedEntries: number;
     cachedDevotionals: number;
+    lastAutoRefresh: string | null;
   }> {
     try {
-      const prefs = await AsyncStorage.getItem(PREFERENCES_KEY);
-      const cache = await AsyncStorage.getItem(CACHE_KEY);
-      const theme = await AsyncStorage.getItem(THEME_KEY);
+      const [prefs, cache, theme, timestamps] = await Promise.all([
+        AsyncStorage.getItem(PREFERENCES_KEY),
+        AsyncStorage.getItem(CACHE_KEY),
+        AsyncStorage.getItem(THEME_KEY),
+        AsyncStorage.getItem(REFRESH_TIMESTAMPS_KEY),
+      ]);
 
       const preferencesSize = prefs ? prefs.length : 0;
       const cacheSize = cache ? cache.length : 0;
       const themeSize = theme ? theme.length : 0;
-      const totalSize = preferencesSize + cacheSize + themeSize;
+      const refreshTimestampsSize = timestamps ? timestamps.length : 0;
+      const totalSize = preferencesSize + cacheSize + themeSize + refreshTimestampsSize;
 
       const cacheData = cache ? JSON.parse(cache) : createEmptyCache();
+      const timestampData = timestamps ? JSON.parse(timestamps) : createEmptyRefreshTimestamps();
       const cachedEntries = Object.keys(cacheData.entries).length;
       const cachedDevotionals = Object.keys(cacheData.devotionals).length;
 
@@ -480,9 +677,11 @@ export class DevotionalStorage {
         preferencesSize,
         cacheSize,
         themeSize,
+        refreshTimestampsSize,
         totalSize,
         cachedEntries,
         cachedDevotionals,
+        lastAutoRefresh: timestampData.lastAutoRefresh,
       };
     } catch (error) {
       console.error('❌ Failed to get storage info:', error);
@@ -490,9 +689,11 @@ export class DevotionalStorage {
         preferencesSize: 0,
         cacheSize: 0,
         themeSize: 0,
+        refreshTimestampsSize: 0,
         totalSize: 0,
         cachedEntries: 0,
         cachedDevotionals: 0,
+        lastAutoRefresh: null,
       };
     }
   }
@@ -506,13 +707,15 @@ export class DevotionalStorage {
   }
 
   /**
-   * Get cache statistics
+   * Get cache statistics with refresh info
    */
   static async getCacheStats(): Promise<{
     totalEntries: number;
     oldestEntry: string | null;
     newestEntry: string | null;
     cacheAge: number;
+    lastRefresh: string | null;
+    refreshAge: number;
   }> {
     try {
       const cache = await this.getCache();
@@ -520,8 +723,11 @@ export class DevotionalStorage {
       
       const totalEntries = entries.length;
       const lastUpdated = new Date(cache.metadata.lastUpdated);
+      const lastRefresh = cache.metadata.lastRefresh ? new Date(cache.metadata.lastRefresh) : null;
       const now = new Date();
+      
       const cacheAge = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24);
+      const refreshAge = lastRefresh ? (now.getTime() - lastRefresh.getTime()) / (1000 * 60 * 60 * 24) : -1;
       
       let oldestEntry: string | null = null;
       let newestEntry: string | null = null;
@@ -544,6 +750,8 @@ export class DevotionalStorage {
         oldestEntry,
         newestEntry,
         cacheAge: Math.floor(cacheAge),
+        lastRefresh: cache.metadata.lastRefresh || null,
+        refreshAge: Math.floor(refreshAge),
       };
     } catch (error) {
       console.error('❌ Failed to get cache stats:', error);
@@ -552,6 +760,8 @@ export class DevotionalStorage {
         oldestEntry: null,
         newestEntry: null,
         cacheAge: 0,
+        lastRefresh: null,
+        refreshAge: -1,
       };
     }
   }
@@ -572,6 +782,55 @@ export class DevotionalStorage {
       console.log('✅ UI settings synced to dedicated storage');
     } catch (error) {
       console.error('❌ Failed to sync UI settings:', error);
+    }
+  }
+
+  /**
+   * Force refresh all cached data
+   */
+  static async forceRefreshAll(): Promise<void> {
+    try {
+      // Clear refresh timestamps to force refresh
+      await AsyncStorage.removeItem(REFRESH_TIMESTAMPS_KEY);
+      console.log('✅ Forced refresh - all timestamps cleared');
+    } catch (error) {
+      console.error('❌ Failed to force refresh:', error);
+    }
+  }
+
+  /**
+   * Get entries that need refreshing
+   */
+  static async getStaleEntries(thresholdMs = REFRESH_CONFIG.FORCE_REFRESH_THRESHOLD): Promise<number[]> {
+    try {
+      const timestamps = await this.getRefreshTimestamps();
+      const now = new Date().getTime();
+      const staleEntryIds: number[] = [];
+      
+      // Check all cached entries
+      const cache = await this.getCache();
+      
+      for (const entryIdStr of Object.keys(cache.entries)) {
+        const entryId = parseInt(entryIdStr, 10);
+        const lastRefresh = timestamps.entries[entryIdStr];
+        
+        if (!lastRefresh) {
+          staleEntryIds.push(entryId);
+          continue;
+        }
+        
+        const lastRefreshTime = new Date(lastRefresh).getTime();
+        const timeSinceRefresh = now - lastRefreshTime;
+        
+        if (timeSinceRefresh > thresholdMs) {
+          staleEntryIds.push(entryId);
+        }
+      }
+      
+      return staleEntryIds;
+    } catch (error) {
+      console.error('❌ Failed to get stale entries:', error);
+      return [];
     }
   }
 }

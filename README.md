@@ -1,6 +1,6 @@
-# Maseke Daniel Ministries Mobile App
+# Maseke DanielsMinistries Mobile App
 
-A React Native mobile application built with Expo for Maseke Daniel Ministries, providing users with an intuitive onboarding experience and seamless navigation.
+A React Native mobile application built with Expo for Maseke DanielsMinistries, providing users with an intuitive onboarding experience and seamless navigation.
 
 ## 🚀 Features
 
@@ -217,4 +217,4 @@ For support and questions:
 
 ---
 
-**Built By Kagayki with ❤️ for Maseke Daniel Ministries**
+**Built By Kagayki with ❤️ for Maseke DanielsMinistries**

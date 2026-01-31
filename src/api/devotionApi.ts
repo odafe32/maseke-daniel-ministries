@@ -16,6 +16,24 @@ export interface DevotionalSummary {
   entries_count?: number;
 }
 
+export interface TextSelectionBookmark {
+  text: string;
+  start_index: number;
+  end_index: number;
+}
+
+export interface BookmarkedTextResponse {
+  id: string;
+  text: string;
+  startIndex: number;
+  endIndex: number;
+  entryId: number;
+  createdAt: string;
+  entryTitle?: string;
+  entryDate?: string;
+  devotionalTitle?: string;
+}
+
 export interface DevotionalEntry {
   id: number;
   devotional_id: number;
@@ -23,6 +41,8 @@ export interface DevotionalEntry {
   day_number: number;
   date?: string;
   title: string;
+  scripture?: string;
+  verse?: string;
   content: string;
   video_url?: string | null;
   like_count: number;
@@ -185,4 +205,6 @@ export const devotionApi = {
     const response = await client.get<ApiResponse<DevotionalBookmark[]>>('/mobile/devotionals/bookmarks');
     return response.data.data;
   },
+
+  
 };
