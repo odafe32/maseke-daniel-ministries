@@ -37,7 +37,7 @@ export interface DevotionalTheme {
 
 interface DevotionalsProps {
   onOpenSidebar: () => void;
-  content: { title: string; body: string; dateLabel?: string; isHtml?: boolean };
+  content: { title: string; body: string; dateLabel?: string; isHtml?: boolean; scripture?: string; verse?: string };
   currentMonth: DevotionalMonth | null;
   currentDayNumber: number;
   settingsVisible: boolean;
@@ -261,7 +261,7 @@ export function Devotionals({
   }, [content.dateLabel]);
 
   const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
-  const statusBarStyle = isHexDark(selectedTheme?.backgroundColor ?? "#fff") ? "light" : "dark";
+  const statusBarStyle = "dark";
   const bookmarkIconColor = selectedTheme?.textColor ?? "#0C154C";
 
   console.log('🎨 StatusBar Debug:', {
@@ -457,7 +457,7 @@ export function Devotionals({
 
   return (
     <View style={[styles.container, { backgroundColor: selectedTheme?.backgroundColor }]}>
-      <StatusBar backgroundColor={selectedTheme?.accentColor || '#000'} style={statusBarStyle} animated translucent={false} />
+      <StatusBar backgroundColor={selectedTheme?.backgroundColor || '#FFFFFF'} style={statusBarStyle} animated translucent={false} />
       
       {/* HEADER - Original Layout */}
       <View style={styles.headerRow}>
@@ -574,11 +574,18 @@ export function Devotionals({
           }
         >
           <DevotionalBannerEnhanced
-            title="IN OUR SUFFERING, LORD BE NEAR:"
-            subtitle="A 5-DAY DEVOTIONAL"
-            scripture="The Lord is close to the brokenhearted and saves those who are crushed in spirit. - Psalm 34:18"
-            theme="sage"
-            height={220}
+            title={content.title}
+            subtitle={currentMonth?.name}
+            scripture={content.scripture}
+            verse={content.verse}
+            dayNumber={currentDayNumber}
+            totalDays={totalDays}
+            theme={(() => {
+              const themes = ['sage', 'deep', 'warm', 'classic', 'royal', 'dawn'] as const;
+              const randomIndex = Math.floor(Math.random() * themes.length);
+              return themes[randomIndex];
+            })()}
+            height={200}
           />
           <Text
             style={[

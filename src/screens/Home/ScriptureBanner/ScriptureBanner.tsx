@@ -9,6 +9,8 @@ import {
   Modal,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { 
@@ -19,20 +21,23 @@ import Svg, {
   Circle,
   G 
 } from 'react-native-svg';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CommentBottomSheet } from './CommentBottomSheet';
+import { useDailyScripture } from '@/src/hooks/useDailyScripture';
+import { useScriptureInteractionsStore } from '@/src/stores/scriptureInteractionsStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface ScriptureBannerProps {
-  scripture?: string;
-  reference?: string;
-  theme?: 'sage' | 'deep' | 'warm' | 'classic' | 'royal' | 'dawn' | 'ocean' | 'sunset' | 'forest' | 'lavender' | 'gold' | 'rose' | 'black';
+  devotionalEntryId?: number;
   height?: number;
   animated?: boolean;
   loves?: number;
   comments?: number;
   shares?: number;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  refreshTrigger?: number;
 }
 
 type ThemeConfig = {
@@ -136,6 +141,26 @@ const THEME_CONFIGS: Record<string, ThemeConfig> = {
     accentColor: '#FFFFFF',
   },
 } as const;
+
+// Get daily random theme based on current date (only calm themes)
+const getDailyTheme = (): keyof typeof THEME_CONFIGS => {
+  const today = new Date();
+  const dateString = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  
+  // Use date string to generate consistent random theme for the day
+  let hash = 0;
+  for (let i = 0; i < dateString.length; i++) {
+    const char = dateString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Only calm themes that match app's primary colors
+  const calmThemes = ['sage', 'black', 'deep', 'classic', 'forest'] as const;
+  const randomIndex = Math.abs(hash) % calmThemes.length;
+  
+  return calmThemes[randomIndex];
+};
 
 // Animated decorative flow component
 const AnimatedDecorativeFlow: React.FC<{ 
@@ -292,41 +317,132 @@ const FloatingElements: React.FC<{
   );
 };
 
+// Skeleton loader component for scripture
+const ScriptureSkeleton: React.FC<{ theme: keyof typeof THEME_CONFIGS; height: number }> = ({ theme, height }) => {
+  const themeConfig = THEME_CONFIGS[theme] || THEME_CONFIGS.classic;
+  
+  return (
+    <View style={[styles.bannerContainer, { height }]}>
+      <LinearGradient
+        colors={themeConfig.colors}
+        style={styles.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {/* Animated decorative elements */}
+        <AnimatedDecorativeFlow
+          color={themeConfig.decorativeColor}
+          style={styles.decorativeFlow}
+          animated={false}
+        />
+        
+        <FloatingElements
+          color={themeConfig.accentColor}
+          animated={false}
+        />
+
+        {/* Skeleton content */}
+        <View style={styles.content}>
+          <View style={styles.textContainer}>
+            {/* Scripture skeleton */}
+            <View style={[styles.skeletonText, { backgroundColor: 'rgba(255, 255, 255, 0.2)', width: '85%' }]} />
+            <View style={[styles.skeletonText, { backgroundColor: 'rgba(255, 255, 255, 0.2)', width: '60%' }]} />
+            <View style={[styles.skeletonText, { backgroundColor: 'rgba(255, 255, 255, 0.2)', width: '75%' }]} />
+            
+            {/* Reference skeleton */}
+            <View style={[styles.skeletonReference, { backgroundColor: 'rgba(255, 255, 255, 0.15)', width: '40%' }]} />
+          </View>
+          
+          <View style={styles.tapIndicator}>
+            <Feather name="maximize-2" size={16} color={themeConfig.textColor} opacity={0.7} />
+          </View>
+          
+          {/* Action Icons Skeleton */}
+          <View style={styles.actionIcons}>
+            <View style={[styles.iconButton, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+            <View style={[styles.iconButton, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+            <View style={[styles.iconButton, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+};
+
 export const ScriptureBanner: React.FC<ScriptureBannerProps> = ({
-  scripture = "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.",
-  reference = "Jeremiah 29:11",
-  theme = 'classic',
+  devotionalEntryId,
   height = 120,
   animated = true,
   loves = 0,
   comments = 0,
   shares = 0,
+  refreshing = false,
+  onRefresh,
+  refreshTrigger,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [commentsList, setCommentsList] = useState([
-    {
-      id: '1',
-      author: 'Sarah M.',
-      text: 'This verse has been so comforting during difficult times. Trusting God\'s plan is everything.',
-      timestamp: '2 hours ago',
-      likes: 12,
-    },
-    {
-      id: '2',
-      author: 'John D.',
-      text: 'A powerful reminder that God has a purpose for our lives, even when we can\'t see it.',
-      timestamp: '5 hours ago',
-      likes: 8,
-    },
-  ]);
-  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
-  const [isLiked, setIsLiked] = useState(false);
-  const [currentLoves, setCurrentLoves] = useState(loves);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   
+  const { scripture: dailyScripture, isLoading: isLoadingEntry, loadToday } = useDailyScripture(refreshTrigger);
+  
+  // Scripture interactions store
+  const {
+    stats,
+    comments: commentsData,
+    loadStats,
+    loadComments,
+    toggleLike,
+    addComment,
+    toggleCommentLike,
+    recordShare,
+    isLiking,
+  } = useScriptureInteractionsStore();
+
+  const entryId = dailyScripture?.id;
+  const currentStats = entryId ? stats[entryId] : null;
+  const commentsList = entryId ? (commentsData[entryId] || []) : [];
+  
+  // Extract scripture from daily scripture or use default
+  const scripture = dailyScripture?.scripture || "";
+  const reference = dailyScripture?.verse || "";
+  
+  // Use daily random theme
+  const theme: keyof typeof THEME_CONFIGS = getDailyTheme();
   const themeConfig = THEME_CONFIGS[theme];
+
+  // Debug logging
+  useEffect(() => {
+    console.log('📖 ScriptureBanner State:', {
+      isLoadingEntry,
+      hasScripture: !!dailyScripture,
+      scripture: dailyScripture?.scripture,
+      verse: dailyScripture?.verse,
+      refreshing,
+    });
+  }, [isLoadingEntry, dailyScripture, refreshing]);
+
+  // Load today's scripture on mount
+  useEffect(() => {
+    console.log('🔄 Loading today\'s scripture...');
+    loadToday();
+  }, [loadToday]);
+
+  // Load stats when entry is available
+  useEffect(() => {
+    if (entryId) {
+      loadStats(entryId);
+    }
+  }, [entryId, loadStats]);
+
+  // Handle refresh when refreshing prop is true
+  useEffect(() => {
+    if (refreshing) {
+      console.log('🔄 Refreshing scripture banner...');
+      loadToday();
+    }
+  }, [refreshing, loadToday]);
 
   useEffect(() => {
     if (animated) {
@@ -356,11 +472,15 @@ export const ScriptureBanner: React.FC<ScriptureBannerProps> = ({
   };
 
   const handleLikeScripture = () => {
-    setIsLiked(!isLiked);
-    setCurrentLoves(isLiked ? currentLoves - 1 : currentLoves + 1);
+    if (entryId) {
+      toggleLike(entryId);
+    }
   };
 
   const handleCommentPress = () => {
+    if (entryId) {
+      loadComments(entryId);
+    }
     setShowComments(true);
   };
 
@@ -369,37 +489,47 @@ export const ScriptureBanner: React.FC<ScriptureBannerProps> = ({
   };
 
   const handleAddComment = (text: string) => {
-    const newComment = {
-      id: Date.now().toString(),
-      author: 'You',
-      text,
-      timestamp: 'Just now',
-      likes: 0,
-    };
-    setCommentsList([newComment, ...commentsList]);
+    if (entryId) {
+      addComment(entryId, text);
+    }
   };
 
-  const handleLikeComment = (commentId: string) => {
-    setCommentsList(commentsList.map(comment => {
-      if (comment.id === commentId) {
-        const isLiked = likedComments.has(commentId);
-        return {
-          ...comment,
-          likes: isLiked ? comment.likes - 1 : comment.likes + 1
-        };
+  const handleLikeComment = (commentId: number) => {
+    if (entryId) {
+      toggleCommentLike(entryId, commentId);
+    }
+  };
+
+  const handleShare = async (platform?: string) => {
+    if (!entryId) return;
+
+    try {
+      const shareUrl = `https://masekedanielsministries.org/scripture/${entryId}`;
+      const shareMessage = `"${scripture}"\n\n${reference}\n\nShared from Maseke Daniel Ministries\n${shareUrl}`;
+
+      const result = await Share.share({
+        message: shareMessage,
+        url: shareUrl, // iOS only
+        title: 'Daily Scripture',
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // Shared with activity type of result.activityType
+          console.log('Shared with activity:', result.activityType);
+        } else {
+          // Shared
+          console.log('Shared successfully');
+        }
+        // Record the share in backend
+        await recordShare(entryId, platform || 'native');
+      } else if (result.action === Share.dismissedAction) {
+        // Dismissed
+        console.log('Share dismissed');
       }
-      return comment;
-    }));
-    
-    setLikedComments(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(commentId)) {
-        newSet.delete(commentId);
-      } else {
-        newSet.add(commentId);
-      }
-      return newSet;
-    });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
   };
 
   const BannerContent = ({ isFull = false }) => (
@@ -460,35 +590,43 @@ export const ScriptureBanner: React.FC<ScriptureBannerProps> = ({
           
           {/* Action Icons */}
           <View style={styles.actionIcons}>
-            <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={handleLikeScripture}>
-              <Feather 
-                name="heart" 
-                size={20} 
-                color={isLiked ? '#EF4444' : themeConfig.textColor} 
-                fill={isLiked ? '#EF4444' : 'transparent'}
-              />
-              {currentLoves > 0 && (
+            <TouchableOpacity 
+              style={styles.iconButton} 
+              activeOpacity={0.7} 
+              onPress={handleLikeScripture}
+              disabled={isLiking[entryId || 0]}
+            >
+              {isLiking[entryId || 0] ? (
+                <ActivityIndicator size="small" color={themeConfig.textColor} />
+              ) : (
+                <MaterialCommunityIcons 
+                  name="heart" 
+                  size={20} 
+                  color={currentStats?.liked ? '#EF4444' : themeConfig.textColor} 
+                />
+              )}
+              {(currentStats?.likes || 0) > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: themeConfig.accentColor }]}>
-                  <Text style={[styles.countText, { color: theme === 'black' ? '#000000' : '#FFFFFF' }]}>{currentLoves}</Text>
+                  <Text style={[styles.countText, { color: theme === 'black' ? '#000000' : '#FFFFFF' }]}>{currentStats?.likes}</Text>
                 </View>
               )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={handleCommentPress}>
               <Feather name="message-circle" size={20} color={themeConfig.textColor} />
-              {comments > 0 && (
+              {(currentStats?.comments || 0) > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: themeConfig.accentColor }]}>
-                  <Text style={[styles.countText, { color: theme === 'black' ? '#000000' : '#FFFFFF' }]}>{comments}</Text>
+                  <Text style={[styles.countText, { color: theme === 'black' ? '#000000' : '#FFFFFF' }]}>{currentStats?.comments}</Text>
                 </View>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+            {/* <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={() => handleShare()}>
               <Feather name="share-2" size={20} color={themeConfig.textColor} />
-              {shares > 0 && (
+              {(currentStats?.shares || 0) > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: themeConfig.accentColor }]}>
-                  <Text style={[styles.countText, { color: theme === 'black' ? '#000000' : '#FFFFFF' }]}>{shares}</Text>
+                  <Text style={[styles.countText, { color: theme === 'black' ? '#000000' : '#FFFFFF' }]}>{currentStats?.shares}</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
 
@@ -531,11 +669,17 @@ export const ScriptureBanner: React.FC<ScriptureBannerProps> = ({
         onClose={handleCloseComments}
         scripture={scripture}
         reference={reference}
-        comments={commentsList}
-        likedComments={likedComments}
+        comments={commentsList.map(c => ({
+          id: c.id.toString(),
+          author: c.author,
+          text: c.text,
+          timestamp: c.timestamp,
+          likes: c.likes,
+        }))}
+        likedComments={new Set(commentsList.filter(c => c.liked).map(c => c.id.toString()))}
         onAddComment={handleAddComment}
-        onLikeComment={handleLikeComment}
-        theme={theme}
+        onLikeComment={(commentId: string) => handleLikeComment(Number(commentId))}
+        theme={theme as 'sage' | 'deep' | 'warm' | 'classic' | 'royal' | 'dawn' | 'ocean' | 'sunset' | 'forest' | 'lavender' | 'gold' | 'rose' | 'black'}
       />
     </TouchableOpacity>
   );
@@ -597,7 +741,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   reference: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Geist-SemiBold',
     opacity: 0.9,
   },
@@ -613,7 +757,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 12,
     flexDirection: 'row',
-    gap: 20,
+    gap: 30,
   },
   iconButton: {
     width: 40,
@@ -693,5 +837,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  skeletonText: {
+    height: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  skeletonReference: {
+    height: 14,
+    borderRadius: 7,
+    marginTop: 12,
+    alignSelf: 'center',
   },
 });

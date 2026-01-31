@@ -10,6 +10,7 @@ import {
   Animated,
   Modal,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -65,20 +66,40 @@ export const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
 }) => {
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
   
   const themeConfig = THEME_CONFIGS[theme];
 
   const handleSubmitComment = async () => {
     if (newComment.trim() && !isSubmitting) {
       setIsSubmitting(true);
-      await onAddComment(newComment.trim());
-      setNewComment('');
-      setIsSubmitting(false);
+      try {
+        await onAddComment(newComment.trim());
+        setNewComment('');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const renderComment = ({ item }: { item: Comment }) => {
     const isLiked = likedComments.has(item.id);
+    const isLiking = likingComments.has(item.id);
+    
+    const handleLikeComment = async () => {
+      if (isLiking) return;
+      
+      setLikingComments(prev => new Set(prev).add(item.id));
+      try {
+        await onLikeComment(item.id);
+      } finally {
+        setLikingComments(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(item.id);
+          return newSet;
+        });
+      }
+    };
     
     return (
       <View style={styles.commentItem}>
@@ -90,15 +111,20 @@ export const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
         <View style={styles.commentActions}>
           <TouchableOpacity
             style={styles.likeButton}
-            onPress={() => onLikeComment(item.id)}
+            onPress={handleLikeComment}
             activeOpacity={0.7}
+            disabled={isLiking}
           >
-            <Feather 
-              name="heart" 
-              size={14} 
-              color={isLiked ? '#EF4444' : '#9CA3AF'} 
-              fill={isLiked ? '#EF4444' : 'transparent'}
-            />
+            {isLiking ? (
+              <ActivityIndicator size="small" color="#9CA3AF" />
+            ) : (
+              <Feather 
+                name="heart" 
+                size={14} 
+                color={isLiked ? '#EF4444' : '#9CA3AF'} 
+                fill={isLiked ? '#EF4444' : 'transparent'}
+              />
+            )}
             <Text style={styles.likeCount}>{item.likes}</Text>
           </TouchableOpacity>
         </View>
@@ -180,11 +206,15 @@ export const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
             disabled={!newComment.trim() || isSubmitting}
             activeOpacity={0.8}
           >
-            <Feather 
-              name="send" 
-              size={18} 
-              color={newComment.trim() ? themeConfig.text : '#9CA3AF'} 
-            />
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={newComment.trim() ? themeConfig.text : '#9CA3AF'} />
+            ) : (
+              <Feather 
+                name="send" 
+                size={18} 
+                color={newComment.trim() ? themeConfig.text : '#9CA3AF'} 
+              />
+            )}
           </TouchableOpacity>
         </View>
       </View>

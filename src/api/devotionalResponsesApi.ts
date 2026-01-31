@@ -75,4 +75,29 @@ export const devotionalResponsesApi = {
     );
     return response.data.data;
   },
+
+  /**
+   * Update a devotional response
+   * @param id - The response ID to update
+   * @param data - The updated response data
+   */
+  async updateResponse(id: number, data: {
+    heart_response?: string;
+    takeaway_response?: string;
+    submitted?: boolean;
+  }): Promise<DevotionalResponse> {
+    const response = await client.put<ApiResponse<DevotionalResponse>>(
+      `/mobile/devotional-responses/${id}`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Delete a devotional response
+   * @param id - The response ID to delete
+   */
+  async deleteResponse(id: number): Promise<void> {
+    await client.delete(`/mobile/devotional-responses/${id}`);
+  },
 };

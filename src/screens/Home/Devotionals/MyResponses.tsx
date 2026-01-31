@@ -9,13 +9,16 @@ import {
   StyleSheet,
   Modal,
   SafeAreaView,
-  Dimensions
+  Dimensions,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDevotionalResponses } from '@/src/hooks/useDevotionalResponses';
 import { DevotionalResponse } from '@/src/api/devotionalResponsesApi';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { showToast } from '@/src/utils/toast';
 
 const { height } = Dimensions.get('window');
 
@@ -29,6 +32,10 @@ export default function MyResponses() {
     clearError,
     submittedCount,
     draftCount,
+    updateResponse,
+    deleteResponse,
+    isUpdatingResponse,
+    isDeletingResponse,
   } = useDevotionalResponses();
 
   const [filter, setFilter] = useState<'all' | 'submitted' | 'draft'>('all');
@@ -37,6 +44,14 @@ export default function MyResponses() {
   // Modal State
   const [selectedResponse, setSelectedResponse] = useState<DevotionalResponse | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // Edit Modal State
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingHeartResponse, setEditingHeartResponse] = useState('');
+  const [editingTakeawayResponse, setEditingTakeawayResponse] = useState('');
+
+  // Delete Modal State
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
   useEffect(() => {
     loadResponses();
@@ -67,6 +82,88 @@ export default function MyResponses() {
   const closeModal = () => {
     setIsModalVisible(false);
     setSelectedResponse(null);
+  };
+
+  const handleEditResponse = () => {
+    if (!selectedResponse) {
+      console.log('No selected response for editing');
+      return;
+    }
+    console.log('Editing response:', selectedResponse);
+    console.log('Heart response:', selectedResponse.heart_response);
+    console.log('Takeaway response:', selectedResponse.takeaway_response);
+
+    setEditingHeartResponse(selectedResponse.heart_response || '');
+    setEditingTakeawayResponse(selectedResponse.takeaway_response || '');
+    setIsEditModalVisible(true);
+  };
+
+  const handleDeleteResponse = () => {
+    if (!selectedResponse) return;
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedResponse) return;
+    
+    try {
+      await deleteResponse(selectedResponse.id);
+      
+      // Close all modals after successful deletion
+      setIsDeleteModalVisible(false);
+      setIsModalVisible(false);
+      setSelectedResponse(null);
+      
+      // Refresh the responses list
+      await loadResponses();
+      
+      showToast({
+        type: 'success',
+        title: 'Reflection Deleted',
+        message: 'Your reflection has been permanently deleted',
+      });
+    } catch (error) {
+      // Error is handled by the store
+    }
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalVisible(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedResponse) return;
+    
+    try {
+      await updateResponse(selectedResponse.id, {
+        heart_response: editingHeartResponse.trim() || undefined,
+        takeaway_response: editingTakeawayResponse.trim() || undefined,
+      });
+      
+      // Force a refresh to ensure all UI shows updated data
+      await loadResponses();
+      
+      // Close both modals after saving
+      setIsEditModalVisible(false);
+      setIsModalVisible(false);
+      setSelectedResponse(null);
+      
+      showToast({
+        type: 'success',
+        title: 'Reflection Updated',
+        message: 'Your changes have been saved successfully',
+      });
+      
+      // The UI will show updated data since we refreshed the responses
+    } catch (error) {
+      // Error is handled by the store
+    }
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalVisible(false);
+    setEditingHeartResponse('');
+    setEditingTakeawayResponse('');
   };
 
   const formatDate = (dateString: string) => {
@@ -276,9 +373,17 @@ export default function MyResponses() {
             
             <View style={styles.modalContentHeader}>
               <Text style={styles.modalTitle}>Reflection Details</Text>
-              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color="#6b7280" />
-              </TouchableOpacity>
+              <View style={styles.modalActions}>
+                <TouchableOpacity onPress={handleEditResponse} style={styles.modalActionButton}>
+                  <Ionicons name="pencil" size={20} color="#6b7280" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleDeleteResponse} style={styles.modalActionButton}>
+                  <Ionicons name="trash" size={20} color="#ef4444" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {selectedResponse && (
@@ -348,6 +453,131 @@ export default function MyResponses() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isEditModalVisible}
+        onRequestClose={closeEditModal}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            activeOpacity={1} 
+            onPress={closeEditModal} 
+          />
+          <View style={[styles.modalContainer, { height: height * 0.7 }]}>
+            <View style={styles.modalHeaderBar}>
+              <View style={styles.modalHandle} />
+            </View>
+            
+            <View style={styles.modalContentHeader}>
+              <Text style={styles.modalTitle}>Edit Reflection</Text>
+              <TouchableOpacity onPress={closeEditModal} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalScrollContent}>
+              <View style={styles.editForm}>
+                <View style={styles.editField}>
+                  <Text style={styles.editFieldLabel}>❤️ Heart Response</Text>
+                  <TextInput
+                    style={[styles.editTextInput, !editingHeartResponse && styles.editTextInputEmpty]}
+                    value={editingHeartResponse}
+                    onChangeText={setEditingHeartResponse}
+                    placeholder="Share what's on your heart..."
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.editField}>
+                  <Text style={styles.editFieldLabel}>💡 Takeaway</Text>
+                  <TextInput
+                    style={[styles.editTextInput, !editingTakeawayResponse && styles.editTextInputEmpty]}
+                    value={editingTakeawayResponse}
+                    onChangeText={setEditingTakeawayResponse}
+                    placeholder="What did you learn or take away from this..."
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.editActions}>
+                <TouchableOpacity
+                  style={[styles.editButton, styles.cancelButton]}
+                  onPress={closeEditModal}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.editButton, styles.saveButton]}
+                  onPress={handleSaveEdit}
+                  disabled={isUpdatingResponse}
+                >
+                  {isUpdatingResponse ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isDeleteModalVisible}
+        onRequestClose={closeDeleteModal}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContainer}>
+            <View style={styles.deleteModalContent}>
+              <View style={styles.deleteIconContainer}>
+                <Ionicons name="trash" size={48} color="#ef4444" />
+              </View>
+              
+              <Text style={styles.deleteModalTitle}>Delete Reflection</Text>
+              
+              <Text style={styles.deleteModalMessage}>
+                Are you sure you want to delete this reflection? This action cannot be undone.
+              </Text>
+              
+              <View style={styles.deleteModalActions}>
+                <TouchableOpacity
+                  style={[styles.deleteModalButton, styles.deleteCancelButton]}
+                  onPress={closeDeleteModal}
+                  disabled={isDeletingResponse}
+                >
+                  <Text style={styles.deleteCancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.deleteModalButton, styles.deleteConfirmButton]}
+                  onPress={handleConfirmDelete}
+                  disabled={isDeletingResponse}
+                >
+                  {isDeletingResponse ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.deleteConfirmButtonText}>Delete</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -626,6 +856,14 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
+  modalActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalActionButton: {
+    padding: 8,
+  },
   modalScrollView: {
     flex: 1,
   },
@@ -681,5 +919,137 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
     color: '#1f2937',
+  },
+  editForm: {
+    gap: 20,
+  },
+  editField: {
+    gap: 8,
+  },
+  editFieldLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  editTextInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    fontSize: 15,
+    lineHeight: 24,
+    color: '#1f2937',
+    minHeight: 120,
+  },
+  editTextInputEmpty: {
+    borderColor: '#ef4444',
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  editButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  saveButton: {
+    backgroundColor: '#0C154C',
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  /* Delete Modal Styles */
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  deleteModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  deleteModalContent: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  deleteIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fef2f2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  deleteModalMessage: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  deleteModalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteCancelButton: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  deleteCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  deleteConfirmButton: {
+    backgroundColor: '#ef4444',
+  },
+  deleteConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });

@@ -41,6 +41,8 @@ export interface DevotionalEntry {
   day_number: number;
   date?: string;
   title: string;
+  scripture?: string;
+  verse?: string;
   content: string;
   video_url?: string | null;
   like_count: number;

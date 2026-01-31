@@ -297,6 +297,22 @@ const styles = StyleSheet.create({
     color: '#B42318',
     fontFamily: 'Geist-SemiBold',
   },
+  viewButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E6F0FF',
+    backgroundColor: '#F8F9FA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  viewButtonText: {
+    color: '#3B4897',
+    fontFamily: 'Geist-SemiBold',
+  },
   modalDateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -397,6 +413,7 @@ interface SavedNotesProps {
   formatDate: (dateString: string | undefined) => string;
   getDisplayDate: (note: Note) => string;
   onDeleteNote: (noteId: number) => Promise<boolean>;
+  onViewNote: (note: Note) => void;
   getVerseText: (note: Note) => string;
 }
 
@@ -415,6 +432,7 @@ export function SavedNotes({
   formatDate,
   getDisplayDate,
   onDeleteNote,
+  onViewNote,
   getVerseText,
 }: SavedNotesProps) {
 
@@ -680,6 +698,22 @@ export function SavedNotes({
                   </View>
                 </View>
               </View>
+
+              <TouchableOpacity
+                style={styles.viewButton}
+                activeOpacity={0.8}
+                onPress={() => {
+                  if (selectedNote) {
+                    onCloseModal();
+                    onViewNote(selectedNote);
+                  }
+                }}
+              >
+                <Feather name="eye" size={16} color="#3B4897" />
+                <ThemeText variant="body" style={styles.viewButtonText}>
+                  View {getNoteTypeLabel(selectedNote)}
+                </ThemeText>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.removeButton}

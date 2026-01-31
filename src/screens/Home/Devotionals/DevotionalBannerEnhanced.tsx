@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,22 +7,27 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { 
-  Path, 
-  Defs, 
-  LinearGradient as SvgLinearGradient, 
-  Stop, 
+import Svg, {
+  Path,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
   Circle,
-  G 
+  G
 } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const BANNER_THEME_CACHE_KEY = '@devotional_banner_theme';
+const BANNER_THEME_CACHE_DURATION = 60 * 60 * 1000; 
 
 interface DevotionalBannerProps {
   title: string;
   subtitle?: string;
   scripture?: string;
+  verse?: string;
   dayNumber?: number;
   totalDays?: number;
   theme?: 'sage' | 'deep' | 'warm' | 'classic' | 'royal' | 'dawn';
@@ -81,7 +86,42 @@ const THEME_CONFIGS: Record<string, ThemeConfig> = {
     overlayColor: 'rgba(234, 88, 12, 0.12)',
     accentColor: '#FB923C',
   },
-} as const;
+  } as const;
+// Helper function to get cached theme or select new one
+const getBannerTheme = async (): Promise<string> => {
+  try {
+    const cachedData = await AsyncStorage.getItem(BANNER_THEME_CACHE_KEY);
+    if (cachedData) {
+      const { theme, timestamp } = JSON.parse(cachedData);
+      const now = Date.now();
+      const timeDiff = now - timestamp;
+
+      // If less than 1 hour has passed, return cached theme
+      if (timeDiff < BANNER_THEME_CACHE_DURATION) {
+        console.log('🎨 Using cached banner theme:', theme);
+        return theme;
+      }
+    }
+  } catch (error) {
+    console.warn('❌ Failed to read banner theme cache:', error);
+  }
+
+  // Select new random theme and cache it
+  const themes = Object.keys(THEME_CONFIGS);
+  const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+
+  try {
+    const cacheData = {
+      theme: randomTheme,
+      timestamp: Date.now(),
+    };
+    await AsyncStorage.setItem(BANNER_THEME_CACHE_KEY, JSON.stringify(cacheData));
+  } catch (error) {
+    console.warn('❌ Failed to cache banner theme:', error);
+  }
+
+  return randomTheme;
+};
 
 // Simple animated decorative flow with consistent driver usage
 const AnimatedDecorativeFlow: React.FC<{ 
@@ -295,14 +335,53 @@ export const DevotionalBannerEnhanced: React.FC<DevotionalBannerProps> = ({
   title,
   subtitle,
   scripture,
+  verse,
   dayNumber,
   totalDays,
-  theme = 'sage',
-  height = 220,
+  theme: propTheme,
+  height = 200,
   animated = true,
 }) => {
-  const config = THEME_CONFIGS[theme] || THEME_CONFIGS.sage;
+  const [selectedTheme, setSelectedTheme] = useState<string>('sage');
+  const config = THEME_CONFIGS[selectedTheme] || THEME_CONFIGS.sage;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Initialize theme on component mount
+  useEffect(() => {
+    const initializeTheme = async () => {
+      if (propTheme && propTheme !== 'sage') {
+        // If a specific theme is passed as prop, use it (but still cache for consistency)
+        setSelectedTheme(propTheme);
+        try {
+          const cacheData = {
+            theme: propTheme,
+            timestamp: Date.now(),
+          };
+          await AsyncStorage.setItem(BANNER_THEME_CACHE_KEY, JSON.stringify(cacheData));
+        } catch (error) {
+          console.warn('❌ Failed to cache prop theme:', error);
+        }
+      } else {
+        // Use cached theme selection logic
+        const cachedTheme = await getBannerTheme();
+        setSelectedTheme(cachedTheme);
+      }
+    };
+
+    initializeTheme();
+  }, [propTheme]);
+
+  console.log('🎯 DevotionalBannerEnhanced props:', {
+    title,
+    subtitle,
+    scripture,
+    verse,
+    hasVerse: !!verse,
+    verseLength: verse?.length,
+    dayNumber,
+    totalDays,
+    selectedTheme,
+  });
 
   useEffect(() => {
     if (animated) {
@@ -342,28 +421,14 @@ export const DevotionalBannerEnhanced: React.FC<DevotionalBannerProps> = ({
         animated={animated}
       />
 
-      {/* Floating Decorative Elements */}
-      <FloatingElements color={config.decorativeColor} animated={animated} />
-
-      {/* Subtle texture overlay */}
-      <View style={[styles.overlay, { backgroundColor: config.overlayColor }]} />
-
       {/* Content */}
       <View style={styles.content}>
-        {/* Progress Indicator */}
-        {dayNumber && totalDays && (
-          <ProgressIndicator 
-            current={dayNumber} 
-            total={totalDays} 
-            color={config.accentColor}
-            animated={animated}
-          />
-        )}
-
-        {/* Main Title */}
-        <Text style={[styles.title, { color: config.textColor }]}>
-          {title}
-        </Text>
+        {/* Reflections Indicator */}
+        <View style={styles.progressContainer}>
+          <Text style={[styles.progressText, { color: config.accentColor }]}>
+            Reflections
+          </Text>
+        </View>
 
         {/* Subtitle */}
         {subtitle && (
@@ -372,11 +437,20 @@ export const DevotionalBannerEnhanced: React.FC<DevotionalBannerProps> = ({
           </Text>
         )}
 
-        {/* Scripture Verse - Perfectly Centered */}
+        {/* Scripture Reference */}
         {scripture && (
           <View style={styles.scriptureContainer}>
-            <Text style={[styles.scripture, { color: config.textColor }]}>
-              "{scripture}"
+            <Text style={[styles.scriptureReference, { color: config.textColor }]}>
+              {scripture}
+            </Text>
+          </View>
+        )}
+
+        {/* Verse Text */}
+        {verse && (
+          <View style={styles.verseContainer}>
+            <Text style={[styles.verseText, { color: config.textColor }]}>
+              "{verse}"
             </Text>
           </View>
         )}
@@ -478,8 +552,33 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 1,
+    paddingHorizontal: 10,
+  },
+  scriptureReference: {
+    fontSize: 18,
+    fontFamily: 'DMSans-SemiBold',
+    lineHeight: 20,
+    opacity: 0.95,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  verseContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
     paddingHorizontal: 20,
+  },
+  verseText: {
+    fontSize: 18,
+    fontFamily: 'DMSans-Regular',
+    fontStyle: 'italic',
+    lineHeight: 23,
+    opacity: 0.9,
+    textAlign: 'center',
+    paddingHorizontal: 12,
+    flexWrap: 'wrap',
   },
   scripture: {
     fontSize: 15,

@@ -139,24 +139,21 @@ function DevotionalsPage() {
 
   const router = useRouter();
 
+  // Initialize store from storage on mount
+  useEffect(() => {
+    useDevotionalsStore.getState().initializeFromStorage();
+  }, []);
+
   const selectedTheme = useMemo(
     () => themeOptions.find((theme) => theme.id === selectedThemeId) ?? themeOptions[0],
     [selectedThemeId, themeOptions]
   );
 
-  // Load theme and font size from storage on mount
+  // Load font size from storage on mount
   useEffect(() => {
     const loadUISettings = async () => {
       try {
-        const [savedTheme, savedFontSize] = await Promise.all([
-          DevotionalStorage.getTheme(),
-          DevotionalStorage.getFontSize(),
-        ]);
-        
-        if (savedTheme && savedTheme !== selectedThemeId) {
-          setSelectedThemeId(savedTheme);
-          console.log('✅ Theme restored from storage:', savedTheme);
-        }
+        const savedFontSize = await DevotionalStorage.getFontSize();
         
         if (savedFontSize && savedFontSize !== fontSize) {
           setFontSize(savedFontSize);
@@ -315,22 +312,45 @@ function DevotionalsPage() {
   }, [entry?.id]);
 
   const content = useMemo(() => {
+    console.log('🔍 Entry object from API:', {
+      entryId: entry?.id,
+      entryTitle: entry?.title,
+      entryScripture: entry?.scripture,
+      entryVerse: entry?.verse,
+      hasEntry: !!entry,
+      entryKeys: entry ? Object.keys(entry) : []
+    });
+    
     if (!entry) {
       return {
         title: "Welcome to Devotionals",
         body: "Loading today's devotional...",
         dateLabel: undefined,
         isHtml: false,
+        scripture: undefined,
+        verse: undefined,
       };
     }
     
     // Pass raw HTML content directly to react-native-render-html
-    return {
+    const contentData = {
       title: entry.title,
       body: entry.content,
       dateLabel: entry.date || undefined,
       isHtml: true,
+      scripture: entry.scripture,
+      verse: entry.verse,
     };
+    
+    console.log('🔍 Devotionals content data:', {
+      title: contentData.title,
+      scripture: contentData.scripture,
+      verse: contentData.verse,
+      hasVerse: !!contentData.verse,
+      verseLength: contentData.verse?.length
+    });
+    
+    return contentData;
   }, [entry]);
 
   const handleRefresh = useCallback(async () => {
@@ -942,6 +962,7 @@ function DevotionalsPage() {
           visible={showResponseModal}
           onSave={handleSaveResponse}
           onSkip={handleSkipResponse}
+          onClose={() => setShowResponseModal(false)}
           theme={selectedTheme}
           isSubmitting={isSubmittingResponse}
           dateLabel={content.dateLabel}

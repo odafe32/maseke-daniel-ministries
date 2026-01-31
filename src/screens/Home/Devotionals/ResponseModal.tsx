@@ -19,6 +19,7 @@ interface ResponseModalProps {
   visible: boolean;
   onSave: (heart: string, takeaway: string) => void;
   onSkip: () => void;
+  onClose?: () => void; // Optional close handler for dismissing without skipping
   theme: DevotionalTheme;
   isSubmitting?: boolean;
   dateLabel?: string;
@@ -40,6 +41,7 @@ export function ResponseModal({
   visible,
   onSave,
   onSkip,
+  onClose,
   theme,
   isSubmitting = false,
   dateLabel,
@@ -55,6 +57,13 @@ export function ResponseModal({
     }
   }, [visible]);
 
+
+  const handleClose = () => {
+    // Just close the modal without skipping - user must explicitly choose skip or save
+    if (onClose) {
+      onClose();
+    }
+  };
 
   const handleSave = () => {
     onSave(heart, takeaway);
@@ -84,7 +93,7 @@ export function ResponseModal({
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={handleSkip}
+      onRequestClose={() => {}}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -99,7 +108,7 @@ export function ResponseModal({
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={handleSkip} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Feather name="x" size={24} color={theme.textColor} />
             </TouchableOpacity>
           </View>

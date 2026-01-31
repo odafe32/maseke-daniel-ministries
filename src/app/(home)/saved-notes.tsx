@@ -6,6 +6,7 @@ import { Note } from "@/src/api/notesApi";
 import { AuthPageWrapper, AuthPageWrapperRef } from "@/src/components/AuthPageWrapper";
 import { useNotes } from "@/src/hooks/useNotes";
 import { showSuccessToast } from "@/src/utils/toast";
+import { devotionApi, DevotionalEntry } from "@/src/api/devotionApi";
 
 type NoteFilter = "all" | "bible" | "devotional";
 
@@ -111,6 +112,74 @@ export default function SavedNotesPage() {
       });
   };
 
+  const handleViewNote = async (note: Note) => {
+    const isDevotionalNote = Boolean(note.content && note.content.trim().length);
+    
+    if (isDevotionalNote) {
+      try {
+        const devotionals = await devotionApi.getDevotionals();
+        
+        // Find entries from devotionals that match the note's creation date
+        let targetEntry: DevotionalEntry | null = null;
+        const noteDate = new Date(note.created_at);
+        
+        for (const devotional of devotionals) {
+          try {
+            const devotionalDetail = await devotionApi.getDevotional(devotional.id);
+            
+            // Find the entry closest to the note's creation date
+            for (const entry of devotionalDetail.entries) {
+              const entryDate = entry.date ? new Date(entry.date) : null;
+              
+              if (entryDate) {
+                const timeDiff = Math.abs(entryDate.getTime() - noteDate.getTime());
+                // If within 24 hours, consider it a match
+                if (timeDiff < 24 * 60 * 60 * 1000) {
+                  targetEntry = entry;
+                  break;
+                }
+              }
+            }
+            
+            if (targetEntry) break;
+          } catch (error) {
+            // Continue to next devotional if this one fails
+            continue;
+          }
+        }
+        
+        if (targetEntry) {
+          // Navigate to the specific devotional entry
+          router.push({
+            pathname: '/(home)/devotionals',
+            params: {
+              devotionalId: targetEntry.devotional_id,
+              dayNumber: targetEntry.day_number,
+            }
+          });
+        } else {
+          // Fallback to general devotionals screen
+          router.push('/(home)/devotionals');
+        }
+      } catch (error) {
+        console.error('Failed to find specific devotional entry:', error);
+        // Fallback to general devotionals screen
+        router.push('/(home)/devotionals');
+      }
+    } else {
+      // Navigate to bible screen with specific book and chapter
+      // Use search params to pass the book ID and chapter
+      router.push({
+        pathname: '/(home)/bible',
+        params: {
+          bookId: note.book?.id,
+          chapter: note.chapter,
+          verses: note.verses?.join(',') || ''
+        }
+      });
+    }
+  };
+
   return (
     <AuthPageWrapper ref={wrapperRef} disableLottieLoading={true}>
       <SavedNotes 
@@ -128,6 +197,7 @@ export default function SavedNotesPage() {
         formatDate={formatDate}
         getDisplayDate={getDisplayDate}
         onDeleteNote={handleDeleteNote}
+        onViewNote={handleViewNote}
         getVerseText={getVerseTextForNote}
       />
     </AuthPageWrapper>

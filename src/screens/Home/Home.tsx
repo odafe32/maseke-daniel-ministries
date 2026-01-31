@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { ThemeText } from "@/src/components";
 import { fs, getColor, hp, wp } from "@/src/utils";
 import { HomeProps } from "@/src/utils/types";
@@ -46,6 +46,7 @@ export const Home = ({
   const [localUser, setLocalUser] = useState<LocalUser | null>(null);
   const [localQuickActions, setLocalQuickActions] = useState(propQuickActions);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const dynamicStyles = {
     notificationBadge: {
@@ -94,6 +95,11 @@ export const Home = ({
   const handleNotificationPress = () => {
     onNotificationPress();
   };
+
+  const handleRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+    onRefresh();
+  }, [onRefresh]);
 
   // const getCurrentDayAndTime = () => {
   //   const now = new Date();
@@ -203,19 +209,19 @@ export const Home = ({
         contentContainerStyle={styles.scrollableContentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
-            {/* Scripture Banner */}
-        <ScriptureBanner 
-          scripture="Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight."
-          reference="Proverbs 3:5-6"
-          theme="sage"
+        {/* <ScriptureBanner 
           height={230}
           loves={42}
           comments={15}
           shares={8}
-        />
+          refreshing={refreshing}
+          onRefresh={() => {
+          }}
+          refreshTrigger={refreshTrigger}
+        /> */}
         
         <HomeImageSection imageUris={imageUris} durations={durations} loading={adsLoading} />
         

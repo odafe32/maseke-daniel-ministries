@@ -11,6 +11,8 @@ interface DevotionalResponsesState {
   isLoadingResponses: boolean;
   isLoadingRecent: boolean;
   isLoadingEntry: boolean;
+  isUpdatingResponse: boolean;
+  isDeletingResponse: boolean;
 
   // Error states
   error: string | null;
@@ -19,6 +21,8 @@ interface DevotionalResponsesState {
   fetchResponses: (submitted?: boolean, limit?: number) => Promise<void>;
   fetchRecentResponses: (limit?: number) => Promise<void>;
   fetchResponseForEntry: (entryId: number) => Promise<DevotionalResponse | null>;
+  updateResponse: (id: number, data: { heart_response?: string; takeaway_response?: string; submitted?: boolean }) => Promise<void>;
+  deleteResponse: (id: number) => Promise<void>;
   clearError: () => void;
   clearSelectedResponse: () => void;
 }
@@ -32,10 +36,11 @@ export const useDevotionalResponsesStore = create<DevotionalResponsesState>((set
   isLoadingResponses: false,
   isLoadingRecent: false,
   isLoadingEntry: false,
+  isUpdatingResponse: false,
+  isDeletingResponse: false,
 
   error: null,
 
-  // Fetch all responses for the user
   fetchResponses: async (submitted?: boolean, limit: number = 50) => {
     set({ isLoadingResponses: true, error: null });
 
@@ -54,7 +59,6 @@ export const useDevotionalResponsesStore = create<DevotionalResponsesState>((set
     }
   },
 
-  // Fetch recent submitted responses
   fetchRecentResponses: async (limit: number = 10) => {
     set({ isLoadingRecent: true, error: null });
 
@@ -73,7 +77,6 @@ export const useDevotionalResponsesStore = create<DevotionalResponsesState>((set
     }
   },
 
-  // Fetch response for a specific entry
   fetchResponseForEntry: async (entryId: number): Promise<DevotionalResponse | null> => {
     set({ isLoadingEntry: true, error: null });
 
@@ -94,12 +97,56 @@ export const useDevotionalResponsesStore = create<DevotionalResponsesState>((set
     }
   },
 
-  // Clear error
+  updateResponse: async (id: number, data: { heart_response?: string; takeaway_response?: string; submitted?: boolean }) => {
+    set({ isUpdatingResponse: true, error: null });
+
+    try {
+      const updatedResponse = await devotionalResponsesApi.updateResponse(id, data);
+
+      set((state) => ({
+        responses: state.responses.map((response) =>
+          response.id === id ? updatedResponse : response
+        ),
+        recentResponses: state.recentResponses.map((response) =>
+          response.id === id ? updatedResponse : response
+        ),
+        selectedResponse: state.selectedResponse?.id === id ? updatedResponse : state.selectedResponse,
+        isUpdatingResponse: false,
+      }));
+    } catch (error: any) {
+      console.error('Failed to update response:', error);
+      set({
+        isUpdatingResponse: false,
+        error: error.response?.data?.message || 'Failed to update response',
+      });
+    }
+  },
+
+  deleteResponse: async (id: number) => {
+    set({ isDeletingResponse: true, error: null });
+
+    try {
+      await devotionalResponsesApi.deleteResponse(id);
+
+      set((state) => ({
+        responses: state.responses.filter((response) => response.id !== id),
+        recentResponses: state.recentResponses.filter((response) => response.id !== id),
+        selectedResponse: state.selectedResponse?.id === id ? null : state.selectedResponse,
+        isDeletingResponse: false,
+      }));
+    } catch (error: any) {
+      console.error('Failed to delete response:', error);
+      set({
+        isDeletingResponse: false,
+        error: error.response?.data?.message || 'Failed to delete response',
+      });
+    }
+  },
+
   clearError: () => {
     set({ error: null });
   },
 
-  // Clear selected response
   clearSelectedResponse: () => {
     set({ selectedResponse: null });
   },
