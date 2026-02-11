@@ -9,16 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  RefreshControl,
+  
   Image,
   Keyboard,
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { hp } from '@/src/utils';
+import { fs, hp, wp } from '@/src/utils';
 import { LiveStream } from '@/src/api/liveApi';
 import { BackHeader } from '@/src/components/ui/BackHeader';
 import { useLiveComments } from '@/src/hooks/useLiveComments';
@@ -27,6 +26,16 @@ import { EditCommentModal } from '@/src/components/ui/EditCommentModal';
 import { MenuModal } from '@/src/components/ui/MenuModal';
 import { ConfirmModal } from '@/src/components/ui/ConfirmModal';
 import { useLiveStatus } from '@/src/hooks/useLiveStatus';
+import Constants from 'expo-constants';
+import { RefreshControl } from 'react-native-gesture-handler';
+
+// Lazy-load expo-notifications to avoid crash in Expo Go (SDK 53+)
+let Notifications: typeof import('expo-notifications') | null = null;
+if (Constants.appOwnership !== 'expo') {
+  Notifications = require('expo-notifications');
+}
+
+const isExpoGo = Constants.appOwnership === 'expo';
 
 interface LiveProps {
   onBack?: () => void;
@@ -140,6 +149,10 @@ export const Live = ({ onBack, liveStream }: LiveProps) => {
   }, [activeLiveStream?.is_active, activeLiveStream]);
 
   const showLocalNotification = async (stream: LiveStream) => {
+    if (isExpoGo || !Notifications) {
+      console.log('Notifications not supported in Expo Go');
+      return;
+    }
     try {
       const stored = await AsyncStorage.getItem('shown_notifications');
       const shownNotifications = stored ? JSON.parse(stored) : [];
@@ -444,19 +457,19 @@ const renderChatMessage = ({ item }: { item: LiveComment }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 12 },
+  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: wp(12) },
   videoWrapper: { width: '100%', backgroundColor: '#000', minHeight: hp(230) },
   loaderContainer: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
-  chatHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  chatHeaderText: { fontSize: 15, fontWeight: '700' },
-  liveIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#edfff0ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 5 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#0eab00ff', marginRight: 5 },
-  viewerCount: { color: '#0eab00ff', fontSize: 11, fontWeight: '800' },
+  chatHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: wp(15), backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  chatHeaderText: { fontSize: fs(15), fontWeight: '700' },
+  liveIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#edfff0ff', paddingHorizontal: wp(8), paddingVertical: wp(4), borderRadius: wp(5)},
+  dot: { width: wp(6), height: hp(6), borderRadius: wp(3), backgroundColor: '#0eab00ff', marginRight: hp(5) },
+  viewerCount: { color: '#0eab00ff', fontSize: fs(11), fontWeight: '800' },
 
 
   messageContainer: {
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: wp(6),
+    paddingHorizontal: wp(4),
     width: '100%',
   },
   messageRow: {
@@ -464,27 +477,27 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start', 
   },
   inlineAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 14,
-    marginRight: 10,
-    marginTop: 2,
+    width: wp(30),
+    height: hp(30),
+    borderRadius: wp(14),
+    marginRight: hp(10),
+    marginTop: hp(2),
   },
   textContent: {
     flex: 1,
     flexDirection: 'column',
   },
   messageTextLine: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: fs(14),
+    lineHeight: hp(20),
   },
   inlineUserName: {
     fontWeight: '800',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   inlineMessageBody: {
     color: '#000000',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   inlineReplyIndicator: {
     flexDirection: 'row',
@@ -492,32 +505,32 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   inlineReplyText: {
-    fontSize: 11,
+    fontSize: fs(11),
     color: '#888',
     fontStyle: 'italic',
   },
   inlineEditedLabel: {
-    fontSize: 10,
+    fontSize: fs(10),
     color: '#AAA',
     fontStyle: 'italic',
   },
   inlineMenuButton: {
-    paddingLeft: 8,
-    paddingRight: 4,
+    paddingLeft: wp(8),
+    paddingRight: wp(4),
     justifyContent: 'center',
-    height: 20,
+    height: hp(20),
   },
   
   chatListContent: {
-    padding: 10,
-    paddingBottom: 30,
+    padding: wp(10),
+    paddingBottom: wp(30),
   },
   chatContainer: { 
     flex: 1, 
     backgroundColor: '#FFFFFF',
   },
   inputRow: { 
-    padding: 12, 
+    padding: wp(12), 
     backgroundColor: '#FFF', 
     borderTopWidth: 1, 
     borderTopColor: '#EEE' 
@@ -526,20 +539,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#F1F3F5', 
-    borderRadius: 25, 
-    paddingLeft: 15, 
-    paddingRight: 5 
+    borderRadius: wp(25), 
+    paddingLeft: wp(15), 
+    paddingRight: wp(5) 
   },
   input: { 
     flex: 1, 
-    height: 45, 
-    fontSize: 14,
+    height: hp(45), 
+    fontSize: fs(14),
     color: '#000'
   },
   sendButton: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 18, 
+    width: wp(36), 
+    height: hp(36), 
+    borderRadius: wp(18), 
     backgroundColor: '#4F6BFF', 
     justifyContent: 'center', 
     alignItems: 'center' 
@@ -550,19 +563,19 @@ const styles = StyleSheet.create({
   
   replyBar: { 
     flexDirection: 'row', 
-    padding: 12, 
+    padding: wp(12), 
     backgroundColor: '#E9ECEF', 
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#DEE2E6'
   },
   replyBarUser: { 
-    fontSize: 12, 
+    fontSize: fs(12), 
     fontWeight: '700', 
     color: '#4F6BFF' 
   },
   replyBarText: { 
-    fontSize: 13, 
+    fontSize: fs(13), 
     color: '#495057' 
   },
   noLiveContainer: { 
@@ -571,14 +584,14 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   noLiveText: { 
-    fontSize: 16, 
+    fontSize: fs(16), 
     color: '#999', 
-    marginTop: 10 
+    marginTop: wp(10) 
   },
   emptyText: { 
     textAlign: 'center', 
     color: '#ADB5BD', 
-    marginTop: 20 
+    marginTop: wp(20) 
   },
   center: {
     flex: 1,

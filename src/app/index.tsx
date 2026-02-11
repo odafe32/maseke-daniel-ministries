@@ -60,22 +60,22 @@ const Index = () => {
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      // ✅ Check AsyncStorage directly instead of relying on store
+      // Check AsyncStorage directly instead of relying on store
       const hasSeenOnboardingStr = await AsyncStorage.getItem('hasSeenOnboarding');
       const hasSeenOnboarding = hasSeenOnboardingStr === 'true';
 
       console.log('Onboarding check:', { hasSeenOnboarding, token });
 
       if (!hasSeenOnboarding) {
-        router.replace("/onboarding");
+        router.replace("/(auth)/onboarding");
       } else if (token) {
-        router.replace("/home");
+        router.replace("/(home)/home");
       } else {
-        router.replace("/login");
+        router.replace("/(auth)/login");
       }
     } catch (error) {
       console.error("Error checking auth status:", error);
-      router.replace("/login");
+      router.replace("/(auth)/login");
     } finally {
       setIsLoading(false);
     }

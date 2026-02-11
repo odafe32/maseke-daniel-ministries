@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Feather } from '@expo/vector-icons'
 import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Modal, Alert, Clipboard, ToastAndroid, Platform, FlatList, Image } from 'react-native'
-import { hp, wp } from '@/src/utils'
+import { fs, hp, wp } from '@/src/utils'
 import type { SermonItem } from './Sermons'
 import { BackHeader, MediaPlayer } from '@/src/components'
 import * as Linking from 'expo-linking'
@@ -320,10 +320,10 @@ export const SermonDetail = ({ sermon, onClose, onRefresh, refreshing, onPressSe
               <Feather name="download-cloud" size={20} color="#4F6BFF" />
               <Text style={styles.shareOptionText}>Download for Offline</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.shareOption} onPress={handleDownloadToPhone}>
+            {/* <TouchableOpacity style={styles.shareOption} onPress={handleDownloadToPhone}>
               <Feather name="download" size={20} color="#4F6BFF" />
               <Text style={styles.shareOptionText}>Download to Phone</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7F8FC',
-    paddingHorizontal: 7,
+    paddingHorizontal: wp(7),
   },
   content: {
     paddingHorizontal: wp(16),
@@ -378,34 +378,34 @@ const styles = StyleSheet.create({
     gap: wp(6),
   },
   actionText: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Medium',
     color: '#38445D',
   },
 
   detailTitle: {
-    fontSize: 22,
+    fontSize: fs(22),
     fontFamily: 'Geist-Bold',
     color: '#0C154C',
   },
   detailCategory: {
-    fontSize: 13,
+    fontSize: fs(13),
     fontFamily: 'Geist-Medium',
     color: '#4F6BFF',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   detailPreacher: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: '#38445D',
     marginTop: hp(4),
   },
   detailDescription: {
-    fontSize: 15,
+    fontSize: fs(15),
     fontFamily: 'Geist-Regular',
     color: '#38445D',
-    lineHeight: 22,
+    lineHeight: fs(22),
   },
 
   shareButton: {
@@ -419,13 +419,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(79,107,255,0.1)',
   },
   shareButtonText: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Medium',
     color: '#4F6BFF',
   },
 
   recommendationsTitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Bold',
     color: '#0C154C',
     marginBottom: hp(12),
@@ -443,13 +443,13 @@ const styles = StyleSheet.create({
     borderRadius: wp(8),
   },
   recommendationTitle: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-SemiBold',
     color: '#1C2437',
     marginTop: hp(6),
   },
   recommendationPreacher: {
-    fontSize: 11,
+    fontSize: fs(11),
     fontFamily: 'Geist-Regular',
     color: '#4F6BFF',
     marginTop: hp(2),
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareModalTitle: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontFamily: 'Geist-Bold',
     color: '#0C154C',
     marginBottom: hp(16),
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   shareOptionText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Medium',
     color: '#38445D',
   },
@@ -498,34 +498,34 @@ const styles = StyleSheet.create({
   },
   progressModal: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: wp(10),
+    padding: wp(20),
     alignItems: 'center',
     width: '80%',
   },
   progressTitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Bold',
-    marginBottom: 10,
+    marginBottom: hp(10),
     textAlign: 'center',
   },
   progressBarContainer: {
     width: '100%',
-    height: 20,
+    height: hp(20),
     backgroundColor: '#e0e0e0',
-    borderRadius: 10,
-    marginTop: 10,
+    borderRadius: wp(10),
+    marginTop: hp(10),
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#4F6BFF',
-    borderRadius: 10,
+    borderRadius: wp(10),
   },
   progressText: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Medium',
-    marginTop: 10,
+    marginTop: hp(10),
   },
   offlineBadge: {
     position: 'absolute',
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   },
   offlineBadgeText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-Medium',
     marginLeft: wp(4),
   },

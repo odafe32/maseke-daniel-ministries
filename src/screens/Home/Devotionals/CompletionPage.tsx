@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { fs, hp, wp } from '@/src/utils';
 
 interface CompletionPageProps {
   onBack: () => void;
@@ -34,42 +35,42 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    padding: 40,
+    padding: wp(40),
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: wp(20),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
-    maxWidth: 300,
+    maxWidth: wp(300),
   },
   icon: {
-    marginBottom: 20,
+    marginBottom: wp(20),
   },
   title: {
-    fontSize: 28,
+    fontSize: fs(28),
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: wp(10),
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: '600',
-    marginBottom: 15,
+    marginBottom: wp(15),
     textAlign: 'center',
   },
   message: {
-    fontSize: 16,
+    fontSize: fs(16),
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 30,
+    lineHeight: hp(22),
+    marginBottom: wp(30),
   },
   button: {
     backgroundColor: '#0C154C',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
+    paddingVertical: wp(12),
+    paddingHorizontal: wp(30),
+    borderRadius: wp(25),
     shadowColor: '#0C154C',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: 'bold',
   },
 });

@@ -38,7 +38,7 @@ export const CreatePassword = ({
         />
       }
     >
-      <BackHeader title="Maseke Daniels Ministries s" onBackPress={onBack} />
+      <BackHeader title="Maseke Daniels Ministries " onBackPress={onBack} />
 
       <SectionIntro
         title="Create your password"

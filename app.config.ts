@@ -8,27 +8,33 @@ export interface ExtraConfig {
   };
 }
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
+export default ({ config }: ConfigContext): any => ({
   ...config,
-  name: "Maseke DanielsMinistries",
+  name: "Maseke Daniels Ministries",
   slug: "maseke",
   version: "1.0.0",
   icon: "./src/assets/logo.png",
   userInterfaceStyle: "light",
   scheme: "maseke-daniel-ministries",
-  newArchEnabled: true,  // ← Changed from false to true
+  newArchEnabled: true,  
   extra: {
     paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY,
     eas: {
       projectId: "36a3c62a-c2e6-4941-836d-f7bb175e9353"
     }
   } as ExtraConfig,
+  cli: {
+    appVersionSource: "remote"
+  },
   plugins: [
+    "expo-router",
     "expo-media-library",
     "expo-font",
-    "expo-router",
     "expo-web-browser",
   ],
+  "expo-router": {
+    "appDir": "src/app"
+  },
   splash: {
     image: "./src/assets/logo.png",
     resizeMode: "contain",
@@ -36,16 +42,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.maseke.mobile"
+    bundleIdentifier: "org.maseke.mobile"
   },
   android: {
     adaptiveIcon: {
       foregroundImage: "./src/assets/logo.png",
       backgroundColor: "#ffffff"
     },
-    edgeToEdgeEnabled: true,
-    package: "com.maseke.mobile",
-    versionCode: 2
+    package: "org.masekedaniel.ministries",
+    versionCode: 3
   },
   web: {
     favicon: "./src/assets/logo.png"

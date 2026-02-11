@@ -119,6 +119,7 @@ export const useDevotionalResponsesStore = create<DevotionalResponsesState>((set
         isUpdatingResponse: false,
         error: error.response?.data?.message || 'Failed to update response',
       });
+      throw error;
     }
   },
 
@@ -140,6 +141,7 @@ export const useDevotionalResponsesStore = create<DevotionalResponsesState>((set
         isDeletingResponse: false,
         error: error.response?.data?.message || 'Failed to delete response',
       });
+      throw error;
     }
   },
 

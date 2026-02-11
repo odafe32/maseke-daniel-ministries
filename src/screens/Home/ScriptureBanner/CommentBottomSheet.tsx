@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fs, hp, wp } from '@/src/utils';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -228,8 +229,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    padding: 20,
-    paddingTop: 40, // Account for status bar
+    padding: wp(20),
+    paddingTop: hp(40), // Account for status bar
   },
   headerContent: {
     flexDirection: 'row',
@@ -238,23 +239,23 @@ const styles = StyleSheet.create({
   },
   scriptureInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: wp(16),
   },
   scriptureText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Medium',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   referenceText: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: 'rgba(255, 255, 255, 0.8)',
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: wp(32),
+    height: wp(32),
+    borderRadius: wp(16),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -265,10 +266,10 @@ const styles = StyleSheet.create({
   },
   commentsList: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: wp(20),
   },
   commentItem: {
-    paddingVertical: 16,
+    paddingVertical: hp(16),
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
@@ -276,25 +277,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: hp(8),
   },
   commentAuthor: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-SemiBold',
     color: '#1F2937',
     fontWeight: '600',
   },
   commentTimestamp: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-Regular',
     color: '#9CA3AF',
   },
   commentText: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: '#374151',
-    lineHeight: 20,
-    marginBottom: 8,
+    lineHeight: fs(20),
+    marginBottom: hp(8),
   },
   commentActions: {
     flexDirection: 'row',
@@ -303,10 +304,10 @@ const styles = StyleSheet.create({
   likeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: wp(4),
   },
   likeCount: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-Regular',
     color: '#6B7280',
   },
@@ -314,46 +315,46 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: hp(60),
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Medium',
     color: '#6B7280',
-    marginTop: 12,
+    marginTop: hp(12),
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: '#9CA3AF',
-    marginTop: 4,
+    marginTop: hp(4),
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 16,
+    padding: wp(16),
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    gap: 12,
+    gap: wp(12),
   },
   textInput: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
+    borderRadius: wp(20),
+    paddingHorizontal: wp(16),
+    paddingVertical: hp(12),
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: '#1F2937',
-    maxHeight: 100,
-    minHeight: 44,
+    maxHeight: hp(100),
+    minHeight: hp(44),
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: wp(44),
+    height: wp(44),
+    borderRadius: wp(22),
     alignItems: 'center',
     justifyContent: 'center',
   },

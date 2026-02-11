@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { ThemeText } from './ThemeText';
+import { fs, hp, wp } from '@/src/utils';
 
 interface DropdownOption {
   label: string;
@@ -138,11 +139,11 @@ const styles = StyleSheet.create({
   container: {
   },
   dropdownButton: {
-    borderWidth: 1,
+    borderWidth: wp(1),
     borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: wp(12),
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(12),
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Geist-Regular',
     color: '#121116',
-    fontSize: 16,
+    fontSize: fs(16),
   },
   placeholderText: {
     color: '#999',
@@ -165,22 +166,22 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   arrow: {
-    fontSize: 12,
+    fontSize: fs(12),
     color: '#666',
   },
   dropdownContainer: {
     position: 'absolute',
     top: '100%',
-    left: 0,
-    right: 0,
+    left: wp(0),
+    right: wp(0),
     zIndex: 10000,
-    marginTop: 4,
+    marginTop: hp(4),
   },
   dropdownList: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: wp(1),
     borderColor: '#E5E7EB',
-    borderRadius: 12,
+    borderRadius: wp(12),
     overflow: 'hidden',
     elevation: 3,
     shadowColor: '#000',
@@ -189,9 +190,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   option: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(12),
+    borderBottomWidth: wp(1),
     borderBottomColor: '#F3F4F6',
   },
   selectedOption: {
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontFamily: 'Geist-Regular',
     color: '#121116',
-    fontSize: 16,
+    fontSize: fs(16),
   },
   selectedOptionText: {
     fontFamily: 'Geist-SemiBold',

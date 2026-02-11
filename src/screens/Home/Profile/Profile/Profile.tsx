@@ -13,7 +13,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { BackHeader, ThemeText, Icon, InputField, Button } from "@/src/components";
-import { fs, getColor } from "@/src/utils";
+import { fs, getColor, hp, wp } from "@/src/utils";
 import { ProfileProps } from "@/src/utils/types";
 
 export function Profile({
@@ -188,22 +188,22 @@ export function Profile({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 12,
-    paddingBottom: 20,
-    gap: 24,
+    paddingHorizontal: wp(12),
+    paddingBottom: hp(20),
+    gap: hp(24),
   },
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    gap: 12,
-    borderRadius: 20,
+    paddingHorizontal: wp(16),
+    gap: wp(12),
+    borderRadius: wp(20),
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: wp(52),
+    height: wp(52),
+    borderRadius: wp(26),
   },
   profileMeta: {
     flex: 1,
@@ -214,40 +214,40 @@ const styles = StyleSheet.create({
     color: "#0C154C",
   },
   section: {
-    gap: 12,
+    gap: hp(12),
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    paddingVertical: hp(16),
+    paddingHorizontal: wp(18),
     backgroundColor: "#F7F7FB",
     borderRadius: 0,
   },
   actionSpacing: {
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   actionLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: wp(12),
   },
   iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: wp(36),
+    height: wp(36),
+    borderRadius: wp(8),
     alignItems: "center",
     justifyContent: "center",
   },
   badge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: hp(-4),
+    right: wp(-4),
     backgroundColor: "#DC2626",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
+    borderRadius: wp(8),
+    minWidth: wp(16),
+    height: hp(16),
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
@@ -267,29 +267,29 @@ const styles = StyleSheet.create({
   },
   editCard: {
     backgroundColor: "#fff",
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    gap: 16,
+    borderRadius: wp(24),
+    paddingHorizontal: wp(20),
+    paddingVertical: hp(20),
+    gap: hp(16),
     flexGrow: 1,
   },
   editContent: {
-    gap: 16,
+    gap: hp(16),
   },
   editAvatarWrapper: {
     alignSelf: "center",
   },
   editAvatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 12,
+    width: wp(120),
+    height: wp(120),
+    borderRadius: wp(60),
+    marginBottom: hp(12),
   },
   editAvatarLoading: {
-    width: 120,
-    height: 120,
+    width: wp(120),
+    height: wp(120),
     borderRadius: "100%",
-    marginBottom: 12,
+    marginBottom: hp(12),
     borderColor: "#0C154C",
     borderWidth: 1,
     alignItems: "center",
@@ -299,10 +299,10 @@ const styles = StyleSheet.create({
   cameraBadge: {
     position: "absolute",
     bottom: 0,
-    right: -4,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    right: wp(-4),
+    width: wp(36),
+    height: wp(36),
+    borderRadius: wp(18),
     backgroundColor: "#0C154C",
     justifyContent: "center",
     alignItems: "center",
@@ -310,23 +310,23 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
   editForm: {
-    gap: 16,
+    gap: hp(16),
   },
   editActions: {
     marginTop: "auto",
-    gap: 12,
-    paddingBottom: 8,
+    gap: hp(12),
+    paddingBottom: hp(8),
     width: "100%",
   },
   saveButton: {
-    marginTop: 8,
+    marginTop: hp(8),
   },
   secondaryButton: {
-    marginTop: 10,
+    marginTop: hp(10),
   },
   editContainer: {
     flexGrow: 1,
     justifyContent: "space-between",
-    gap: 24,
+    gap: hp(24),
   },
-}); 
+});

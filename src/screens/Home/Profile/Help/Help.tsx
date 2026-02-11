@@ -7,7 +7,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText, InputField, Button } from "@/src/components";
-import { getColor } from "@/src/utils";
+import { getColor, hp, wp } from "@/src/utils";
 
 interface HelpProps {
   onBack: () => void;
@@ -268,8 +268,8 @@ export function Help({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: wp(16),
+    paddingBottom: wp(20),
     gap: 24,
   },
   content: {
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   description: {
-    lineHeight: 24,
+    lineHeight: hp(24),
     color: "#424242",
     textAlign: "left",
   },
@@ -289,10 +289,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   messageInput: {
-    height: 120,
+    height: hp(120),
     textAlignVertical: 'top',
   },
   submitButton: {
-    marginTop: 8,
+    marginTop: hp(8),
   },
 });

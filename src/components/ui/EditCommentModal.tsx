@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { wp, hp } from '@/src/utils';
+import { wp, hp, fs } from '@/src/utils';
 
 interface EditCommentModalProps {
   visible: boolean;
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(16),
   },
   title: {
-    fontSize: 20,
+    fontSize: fs(20),
     fontWeight: '700',
     color: '#1F2937',
     fontFamily: 'Geist-Bold',
@@ -133,17 +133,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: wp(12),
     padding: wp(16),
-    fontSize: 16,
+    fontSize: fs(16),
     color: '#1F2937',
     minHeight: hp(120),
     maxHeight: hp(200),
     textAlignVertical: 'top',
     fontFamily: 'Geist-Regular',
-    borderWidth: 1,
+    borderWidth: wp(1),
     borderColor: '#E5E7EB',
   },
   charCount: {
-    fontSize: 12,
+    fontSize: fs(12),
     color: '#9CA3AF',
     textAlign: 'right',
     marginTop: hp(8),
@@ -171,13 +171,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1D5DB',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'Geist-SemiBold',
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#fff',
     fontFamily: 'Geist-SemiBold',

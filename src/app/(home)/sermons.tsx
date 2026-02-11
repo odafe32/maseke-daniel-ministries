@@ -2,7 +2,8 @@ import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { Animated } from 'react-native'
 import { Sermons, SermonItem } from '@/src/screens/Home/Sermons/Sermons'
 import { useRouter } from 'expo-router'
-import { useLiveStatus } from '@/src/hooks/useLiveStatus';
+import { useLiveStore } from '@/src/stores/liveStore';
+import { getLiveStream } from '@/src/api/liveApi';
 import { useSermonCategories, useSermonTapes } from '@/src/hooks/useSermons';
 
 interface FilterItem {
@@ -41,8 +42,10 @@ const getTimeAgo = (dateString: string): string => {
 
 export default function SermonsPage() {
   const router = useRouter();
-  const { data: liveStream, refetch: refetchLive } = useLiveStatus();
+  const liveStream = useLiveStore(state => state.activeLiveStream);
+  const setActiveLiveStream = useLiveStore(state => state.setActiveLiveStream);
   const hasLiveService = !!liveStream;
+  const hasMounted = useRef(false);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,10 +59,13 @@ export default function SermonsPage() {
   const { categories, loadCategories } = useSermonCategories();
   const { tapes, loadTapes, loadMoreTapes, hasMore: hasMoreTapes, isLoading: isLoadingTapes } = useSermonTapes();
 
-  // Load initial data
+  // Load initial data only once on mount
   useEffect(() => {
-    loadCategories();
-    loadTapes();
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      loadCategories();
+      loadTapes();
+    }
   }, [loadCategories, loadTapes]);
 
   useEffect(() => {
@@ -110,12 +116,12 @@ export default function SermonsPage() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
-      loadCategories(true),  // Force refresh categories
-      loadTapes({ refresh: true, forceRefresh: true }),  // Force refresh tapes
-      refetchLive(),
+      loadCategories(true),  
+      loadTapes({ refresh: true, forceRefresh: true }),  
+      getLiveStream().then(data => setActiveLiveStream(data)),  // Also refresh live status
     ]);
     setRefreshing(false);
-  }, [loadCategories, loadTapes, refetchLive]);
+  }, [loadCategories, loadTapes, setActiveLiveStream]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMoreTapes) {
@@ -161,6 +167,7 @@ export default function SermonsPage() {
       hasLiveService={hasLiveService}
       liveStream={liveStream}
       isLoading={isLoadingTapes}
+      showRefreshButton={true}
     />
   )
 }

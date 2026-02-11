@@ -19,6 +19,7 @@ import { StatusBar } from "expo-status-bar";
 import { BibleSidebar } from "./BibleSidebar";
 import { Book } from "@/src/api/bibleApi";
 import { useNotes } from "@/src/hooks/useNotes";
+import { fs, hp, wp } from "@/src/utils";
 
 type BibleProps = {
   sidebarVisible: boolean;
@@ -153,7 +154,7 @@ export function Bible({
 
   const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
   const statusBarBackground = selectedTheme?.backgroundColor ?? "#fff";
-  const statusBarStyle = isHexDark(statusBarBackground) ? "light" : "dark";
+  const statusBarStyle = "dark";
   const isDarkPanel = isHexDark(selectedTheme?.panelBackground);
   const dividerColor = isDarkPanel
     ? "#cccccc"
@@ -695,7 +696,7 @@ export function Bible({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(16),
     backgroundColor: "#fff",
   },
   contentWrapper: {
@@ -707,15 +708,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   readingContent: {
-    paddingBottom: 140,
+    paddingBottom: wp(140),
     gap: 16,
   },
   readingTitle: {
     fontFamily: "Geist-SemiBold",
-    fontSize: 18,
+    fontSize: fs(18),
   },
   readingBody: {
-    lineHeight: 26,
+    lineHeight: hp(26),
     fontFamily: "DMSans-Regular",
   },
   versesContainer: {
@@ -732,10 +733,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    paddingVertical: wp(16),
+    paddingHorizontal: wp(20),
+    borderTopLeftRadius: wp(24),
+    borderTopRightRadius: wp(24),
     gap: 18,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 1,
@@ -748,26 +749,26 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   swatch: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
+    width: wp(32),
+    height: hp(32),
+    borderRadius: wp(16),
+    borderWidth: wp(2),
     alignItems: "center",
     justifyContent: "center",
   },
   swatchInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: wp(8),
+    height: hp(8),
+    borderRadius: wp(4),
     backgroundColor: "#fff",
   },
   dividerContainer: {
     position: "relative",
-    height: 10,
+    height: hp(10),
     justifyContent: "flex-end",
   },
   dividerLine: {
-    height: 2,
+    height: hp(2),
     width: "100%",
   },
   panelActions: {
@@ -777,59 +778,59 @@ const styles = StyleSheet.create({
   },
   fontControlButton: {
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: wp(1),
     borderColor: "rgba(12, 21, 76, 0.24)",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(6),
   },
   fontControlLabel: {
     fontFamily: "DMSans-Bold",
-    fontSize: 16,
+    fontSize: fs(16),
   },
   pageControl: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    borderRadius: wp(12),
+    paddingVertical: wp(6),
+    paddingHorizontal: wp(14),
     gap: 12,
   },
   pageButton: {
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 2,
+    paddingHorizontal: wp(2),
   },
   pageLabel: {
     fontFamily: "DMSans-Medium",
-    fontSize: 14,
+    fontSize: fs(14),
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 16,
-    marginBottom: 24,
+    paddingTop: wp(16),
+    marginBottom: hp(24),
   },
   headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: wp(44),
+    height: hp(44),
+    borderRadius: wp(22),
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     fontFamily: "DMSans-Bold",
-    fontSize: 18,
+    fontSize: fs(18),
   },
   downloadProgressBar: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: wp(12),
+    paddingHorizontal: wp(16),
     zIndex: 10,
     elevation: 5,
     shadowColor: '#000',
@@ -841,23 +842,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: hp(8),
   },
   downloadProgressTitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'DMSans-Medium',
   },
   downloadProgressCount: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'DMSans-Regular',
   },
   downloadProgressTrack: {
-    height: 4,
-    borderRadius: 2,
+    height: hp(4),
+    borderRadius: wp(2),
     overflow: 'hidden',
   },
   downloadProgressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: wp(2),
   },
 });

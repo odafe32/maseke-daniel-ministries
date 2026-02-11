@@ -1,3 +1,4 @@
+import { fs, hp } from '@/src/utils';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -19,12 +20,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: fs(24),
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: hp(20),
   },
   message: {
-    fontSize: 16,
+    fontSize: fs(16),
     textAlign: 'center',
   },
 });

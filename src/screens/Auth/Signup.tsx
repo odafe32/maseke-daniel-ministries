@@ -28,7 +28,7 @@ export const Signup = ({
     <AuthWrapper
       onRefresh={onRefresh}
     >
-      <BackHeader title="Maseke Daniels Ministries s" onBackPress={onBack} />
+      <BackHeader title="Maseke Daniels Ministries" onBackPress={onBack} />
 
       <SectionIntro
         title="Join the Community of Grace"

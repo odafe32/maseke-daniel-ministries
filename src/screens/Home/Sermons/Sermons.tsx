@@ -1,6 +1,6 @@
 import { BackHeader } from '@/src/components'
-import { hp, wp } from '@/src/utils'
-import React, { useState, useEffect } from 'react'
+import { fs, hp, wp } from '@/src/utils'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   FlatList,
   Image,
@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native'
 import { SermonsHero } from './SermonsHero'
 import { Feather } from '@expo/vector-icons'
@@ -67,6 +68,7 @@ interface SermonsProps {
   liveStream?: LiveStream | null;
   hasLiveService?: boolean;
   isLoading?: boolean;
+  showRefreshButton?: boolean;
 }
 
 export const Sermons = ({
@@ -89,14 +91,31 @@ export const Sermons = ({
   liveStream,
   hasLiveService = false,
   isLoading = false,
+  showRefreshButton = false,
 }: SermonsProps) => {
   const router = useRouter();
   const [inputSearchQuery, setInputSearchQuery] = useState('');
+  const refreshRotationAnim = useRef(new Animated.Value(0)).current;
+
+  const triggerRefreshAnimation = () => {
+    // Reset to 0 first
+    refreshRotationAnim.setValue(0);
+    // Animate to 360 degrees (full rotation)
+    Animated.timing(refreshRotationAnim, {
+      toValue: 1,
+      duration: 1000, // 1 second rotation
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleRefreshPress = () => {
+    triggerRefreshAnimation();
+    onRefresh();
+  };
 
   const isSermonAvailableOffline = useSermonStore(state => state.isSermonAvailableOffline);
 
   const skeletonData = Array.from({ length: 6 }, (_, i) => ({ id: i }));
-
 
 const handleWatchLive = async () => {
   try {
@@ -172,6 +191,18 @@ const handleWatchLive = async () => {
         <TouchableOpacity style={styles.searchButton} activeOpacity={0.8} onPress={() => onSearchChange(inputSearchQuery)}>
           <Feather name="search" size={16} color="#fff" />
         </TouchableOpacity>
+        <Animated.View style={{
+          transform: [{
+            rotate: refreshRotationAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '360deg']
+            })
+          }]
+        }}>
+          <TouchableOpacity style={styles.refreshButton} activeOpacity={0.8} onPress={handleRefreshPress}>
+            <Feather name="refresh-ccw" size={16} color="#001891ff" />
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </View>
   );
@@ -228,11 +259,10 @@ const handleWatchLive = async () => {
     <View style={styles.container}>
       {isLoading ? (
         <>
-          <BackHeader title="Sermons" onBackPress={onBack} />
+          <BackHeader title="Sermons" onBackPress={onBack} showRefreshButton={showRefreshButton} onRefreshPress={() => onRefresh()} />
           <SermonsHero
             hasLiveService={hasLiveService}
             liveStream={liveStream}
-              onActionPress={handleWatchLive} 
             onActionPress={() => router.push('/live')}
             offlineMessage="No live sermon available"
           />
@@ -269,7 +299,7 @@ const handleWatchLive = async () => {
         }
         ListHeaderComponent={
           <>
-            <BackHeader title="Sermons" onBackPress={onBack} />
+            <BackHeader title="Sermons" onBackPress={onBack} showRefreshButton={showRefreshButton} onRefreshPress={() => onRefresh()} />
             <SermonsHero
               hasLiveService={hasLiveService}
               liveStream={liveStream}
@@ -430,7 +460,7 @@ const styles = StyleSheet.create({
   },
   searchField: {
     flex: 1,
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: '#151F36',
   },
@@ -449,6 +479,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
     elevation: 3,
+  },
+  refreshButton: {
+    paddingHorizontal: wp(12),
+    paddingVertical: hp(10),
+    borderRadius: wp(18),
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(21,31,54,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filtersContainer: {
     width: '100%',
@@ -513,14 +553,14 @@ const styles = StyleSheet.create({
   cardTitle: {
     paddingHorizontal: wp(14),
     marginTop: hp(10),
-    fontSize: 13.5,
+    fontSize: fs(13.5),
     fontFamily: 'Geist-SemiBold',
     color: '#1C2437',
   },
   cardPreacher: {
     paddingHorizontal: wp(14),
     marginTop: hp(4),
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-Medium',
     color: '#4F6BFF',
   },
@@ -532,7 +572,7 @@ const styles = StyleSheet.create({
     marginTop: hp(6),
   },
   cardMeta: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-Regular',
     color: 'rgba(28,36,55,0.6)',
   },
@@ -572,7 +612,7 @@ const styles = StyleSheet.create({
   },
   loadMoreText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: fs(14),
     fontWeight: '600',
   },
   skeletonCard: {
@@ -594,13 +634,13 @@ const styles = StyleSheet.create({
     paddingVertical: hp(50),
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontFamily: 'Geist-Bold',
     color: '#1C2437',
     textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Regular',
     color: 'rgba(28,36,55,0.6)',
     textAlign: 'center',

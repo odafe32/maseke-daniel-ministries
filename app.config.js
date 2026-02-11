@@ -7,13 +7,16 @@ export default {
       projectId: "36a3c62a-c2e6-4941-836d-f7bb175e9353"
     }
   },
+  cli: {
+    appVersionSource: "remote"
+  },
   plugins: [
     "expo-font",
     "expo-router",
     "expo-web-browser",
   ],
   android: {
-    package: "com.maseke.mobile",
-    versionCode: 2,
+   "package": "org.masekedaniel.ministries",
+    versionCode: 3,
   }
 };

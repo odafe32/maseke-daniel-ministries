@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { wp } from '@/src/utils';
+import { fs, wp } from '@/src/utils';
 
 interface MenuModalProps {
   visible: boolean;
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(8),
   },
   menuText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '500',
     marginLeft: wp(8),
     fontFamily: 'Geist-Medium',

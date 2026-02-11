@@ -158,7 +158,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            At GDM App, your privacy is important to us. We are committed to protecting the personal information you share with us and ensuring that your experience on our app is safe, secure, and private.
+            At Maseke Daniels Ministries, your privacy and trust are fundamental to our mission. We are committed to protecting your personal information and ensuring that your spiritual journey through our app is safe, secure, and private.
           </ThemeText>
         </Animated.View>
 
@@ -177,7 +177,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            We may collect the following information to provide and improve our services:  Personal Information such as name, email address, phone number, and payment details for secure tithe and offering processing;  App Usage Data, including how you interact with the app, such as viewing sermons, reading devotionals, and using app features; and Device Information such as device type, operating system, and app version to ensure compatibility and performance.  We only collect what is necessary to deliver a safe and effective experience.
+            We collect information necessary to provide you with a meaningful spiritual experience and maintain the security of our services. This includes: personal details such as your name, email address, and contact information for account creation and communication; payment information for secure processing of tithes and offerings; app usage data to understand how you engage with sermons, devotionals, and community features; and device information to ensure optimal app performance across different platforms.
           </ThemeText>
         </Animated.View>
 
@@ -196,7 +196,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            Your information is used to provide access to live sermons, devotionals, and stored sermon content; process secure payments for tithes and offerings; improve app functionality and user experience; and communicate important updates, support messages, and notifications.
+            Your information enables us to deliver our core ministry services: providing access to live sermons, devotionals, and archived spiritual content; processing secure financial contributions to support our mission; personalizing your spiritual journey with relevant content and notifications; improving app functionality based on user feedback; and communicating important updates about ministry events, prayer requests, and community activities.
           </ThemeText>
         </Animated.View>
 
@@ -215,7 +215,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            We do not sell or rent your personal information to third parties. We implement industry-standard security measures to protect your data, including encryption for sensitive information such as payment details.
+            We do not sell, trade, or rent your personal information to third parties for marketing purposes. Your data remains confidential and is used solely to enhance your experience with Maseke Daniels Ministries. We employ industry-standard security measures, including SSL encryption, secure payment processing, and regular security audits to protect your information.
           </ThemeText>
         </Animated.View>
 
@@ -234,7 +234,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            While no system is 100% secure, we continually work to protect your information from unauthorized access, alteration, disclosure, or destruction.
+            While we implement robust security measures, please be aware that no online service is completely immune to risks. We continuously monitor and update our security practices to protect against unauthorized access, data breaches, and other potential threats to your information.
           </ThemeText>
         </Animated.View>
 
@@ -253,7 +253,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            We may share your information in limited circumstances: with service providers that help us operate the app and process payments; or when required by law or to protect the rights, property, or safety of GDM App, our users, or others.
+            We may share your information only in limited circumstances and always in accordance with applicable privacy laws: with trusted service providers who assist in operating our app and processing payments (under strict confidentiality agreements); when required by law enforcement or to comply with legal obligations; or to protect the rights, safety, and spiritual well-being of our ministry community and members.
           </ThemeText>
         </Animated.View>
 
@@ -272,7 +272,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            Your data is never shared for marketing purposes without your consent. You can update your personal information anytime through the app, opt out of promotional notifications or emails, and request deletion of your account and personal data by contacting support@gdmapp.com.
+            You maintain control over your data. You can update your profile information at any time through the app settings, manage your notification preferences, opt out of promotional communications, and request account deletion. For data portability or to exercise any of your privacy rights, please contact our support team directly.
           </ThemeText>
         </Animated.View>
 
@@ -291,7 +291,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            GDM App is not intended for children under 13. We do not knowingly collect personal information from children under 13. If we learn that we have collected such information, we will delete it promptly.
+            Our ministry and app are designed for users of all ages who seek spiritual growth. We do not knowingly collect personal information from children under 13 without parental consent. If we become aware that we have inadvertently collected such information, we will promptly delete it from our systems.
           </ThemeText>
         </Animated.View>
 
@@ -310,7 +310,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            We may update this Privacy Policy from time to time. Updates will be posted within the app, and the effective date will be updated. We encourage you to review this policy periodically.
+            As our ministry grows and technology evolves, we may update this Privacy Policy to reflect changes in our practices or legal requirements. We will notify you of significant changes through the app or email, and the updated policy will include a revised effective date. We encourage you to review this policy periodically to stay informed.
           </ThemeText>
         </Animated.View>
 
@@ -329,7 +329,7 @@ export function PrivacyPolicy({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            If you have questions, concerns, or requests regarding your privacy, please contact us at support@gdmapp.com or [Insert Address].
+            Your trust and spiritual privacy matter to us. If you have questions about this Privacy Policy, our data practices, or wish to exercise your privacy rights, please contact us at support@masekedanielsministries.org. We are committed to addressing your concerns promptly and transparently.
           </ThemeText>
         </Animated.View>
       </View>

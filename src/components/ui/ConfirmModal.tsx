@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { wp, hp } from '@/src/utils';
+import { wp, hp, fs } from '@/src/utils';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     borderRadius: wp(16),
     padding: wp(24),
     width: '100%',
-    maxWidth: 400,
+    maxWidth: wp(400),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(16),
   },
   title: {
-    fontSize: 20,
+    fontSize: fs(20),
     fontWeight: '700',
     color: '#1F2937',
     marginBottom: hp(8),
@@ -120,11 +120,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist-Bold',
   },
   message: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#6B7280',
     textAlign: 'center',
     marginBottom: hp(24),
-    lineHeight: 20,
+    lineHeight: hp(20),
     fontFamily: 'Geist-Regular',
   },
   buttonContainer: {
@@ -149,13 +149,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#374151',
     fontFamily: 'Geist-SemiBold',
   },
   confirmButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#fff',
     fontFamily: 'Geist-SemiBold',

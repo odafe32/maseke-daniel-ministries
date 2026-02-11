@@ -1,11 +1,23 @@
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import { API_URL } from './env';
+import Constants from 'expo-constants';
+
+// Lazy-load expo-notifications to avoid crash in Expo Go (SDK 53+)
+let Notifications: typeof import('expo-notifications') | null = null;
+if (Constants.appOwnership !== 'expo') {
+  Notifications = require('expo-notifications');
+}
+
+const isExpoGo = Constants.appOwnership === 'expo';
 
 export const scheduleDevotionalReminders = async () => {
+  if (isExpoGo || !Notifications) {
+    console.log('Notifications not supported in Expo Go');
+    return;
+  }
   try {
     // Request permissions if not granted
     const { status } = await Notifications.requestPermissionsAsync();
@@ -40,6 +52,7 @@ export const scheduleDevotionalReminders = async () => {
 };
 
 export const cancelDevotionalReminders = async () => {
+  if (isExpoGo || !Notifications) return;
   try {
     await Notifications.cancelScheduledNotificationAsync('daily-devotional-reminder');
     console.log('Daily devotional reminder cancelled');
@@ -49,6 +62,10 @@ export const cancelDevotionalReminders = async () => {
 };
 
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
+  if (isExpoGo || !Notifications) {
+    console.log('Push notifications not supported in Expo Go');
+    return;
+  }
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -131,6 +148,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 }
 
 export const registerPushToken = async (authToken: string) => {
+  if (isExpoGo || !Notifications) return;
   try {
     const { status } = await Notifications.requestPermissionsAsync();
     if (status === 'granted') {

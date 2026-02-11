@@ -830,7 +830,7 @@ export function StoreUI({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(16),
   },
   row: {
     flexDirection: 'row',
@@ -1032,7 +1032,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     borderColor: COLORS.LIGHT_GRAY,
-    borderRadius: 6,
+    borderRadius: wp(6),
     borderWidth: 1,
     height: hp(200),
     overflow: "hidden",
@@ -1058,40 +1058,40 @@ const styles = StyleSheet.create({
   },
   skeletonHeartIcon: {
     backgroundColor: COLORS.SKELETON,
-    borderRadius: 14,
-    height: 28,
+    borderRadius: wp(14),
+    height: hp(28),
     position: "absolute",
-    right: 8,
-    top: 8,
+    right: wp(8),
+    top: hp(8),
     width: wp(28),
   },
   skeletonTitleBar: {
     backgroundColor: COLORS.SKELETON,
-    borderRadius: 8,
+    borderRadius: wp(8),
     height: hp(14),
-    marginBottom: 4,
+    marginBottom: hp(4),
     width: '80%',
   },
   skeletonPriceBar: {
     backgroundColor: COLORS.SKELETON,
-    borderRadius: 8,
+    borderRadius: wp(8),
     height: hp(12),
     width: '40%',
   },
   heartIcon: {
     alignItems: "center",
     backgroundColor: COLORS.WHITE,
-    borderRadius: 14,
+    borderRadius: wp(14),
     elevation: 2,
     height: hp(28),
     justifyContent: "center",
     position: "absolute",
-    right: 8,
+    right: wp(8),
     shadowColor: COLORS.BLACK,
-    shadowOffset: { width: wp(0), height: 1 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    top: 8,
+    top: hp(8),
     width: wp(28),
   },
   itemContent: {
@@ -1103,7 +1103,7 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     flexDirection: "row",
-    gap: 6,
+    gap: wp(6),
   },
   currentPrice: {
     color: COLORS.PRIMARY_BLUE,
@@ -1114,7 +1114,6 @@ const styles = StyleSheet.create({
     textDecorationLine: "line-through",
   },
 
-  // Empty State
   emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1125,17 +1124,17 @@ const styles = StyleSheet.create({
   emptyStateIconContainer: {
     width: wp(120),
     height: hp(120),
-    borderRadius: 60,
+    borderRadius: wp(60),
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: hp(24),
   },
   emptyStateTitle: {
     color: COLORS.TEXT_DARK,
     fontFamily: 'Geist-Bold',
     fontSize: fs(22),
-    marginBottom: 12,
+    marginBottom: hp(12),
     textAlign: 'center',
   },
   emptyStateDescription: {
@@ -1151,19 +1150,19 @@ const styles = StyleSheet.create({
   paginationContainer: {
     alignItems: 'center',
     backgroundColor: COLORS.TRANSPARENT,
-    borderRadius: 16,
+    borderRadius: wp(16),
     flexDirection: 'row',
-    gap: 12,
+    gap: wp(12),
     justifyContent: 'center',
-    marginBottom: 24,
-    marginHorizontal: 16,
-    marginTop: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    marginBottom: hp(24),
+    marginHorizontal: wp(16),
+    marginTop: hp(24),
+    paddingHorizontal: wp(20),
+    paddingVertical: hp(16),
   },
   paginationNumbers: {
     flexDirection: 'row',
-    gap: 8,
+    gap: wp(8),
   },
   paginationButton: {
     alignItems: 'center',
@@ -1172,7 +1171,7 @@ const styles = StyleSheet.create({
   paginationNumberButton: {
     backgroundColor: COLORS.WHITE,
     borderColor: COLORS.BORDER_GRAY,
-    borderRadius: 18,
+    borderRadius: wp(18),
     borderWidth: 1,
     elevation: 1,
     height: hp(36),
@@ -1185,7 +1184,7 @@ const styles = StyleSheet.create({
   paginationNavButton: {
     backgroundColor: COLORS.WHITE,
     borderColor: COLORS.BORDER_GRAY,
-    borderRadius: 20,
+    borderRadius: wp(20),
     borderWidth: 1,
     elevation: 1,
     height: hp(40),
@@ -1370,11 +1369,11 @@ const styles = StyleSheet.create({
     color: '#DC2626',
   },
   quantitySection: {
-    marginTop: 24,
+    marginTop: hp(24),
   },
   quantityLabel: {
     color: COLORS.TEXT_DARK,
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   quantityControls: {
     alignItems: 'center',
@@ -1384,7 +1383,7 @@ const styles = StyleSheet.create({
   quantityButton: {
     alignItems: 'center',
     backgroundColor: COLORS.LIGHT_GRAY,
-    borderRadius: 25,
+    borderRadius: wp(25),
     height: hp(50),
     justifyContent: 'center',
     width: wp(50),
@@ -1399,16 +1398,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   descriptionSection: {
-    marginTop: 32,
-    marginBottom: 20,
+    marginTop: hp(32),
+    marginBottom: hp(20),
   },
   descriptionLabel: {
     color: COLORS.TEXT_DARK,
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   descriptionText: {
     color: COLORS.TEXT_GRAY,
-    lineHeight: 22,
+    lineHeight: hp(22),
   },
   modalFooter: {
     backgroundColor: COLORS.WHITE,
@@ -1416,8 +1415,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: wp(20),
+    paddingVertical: wp(16),
     position: 'absolute',
     right: 0,
     flexShrink: 0,

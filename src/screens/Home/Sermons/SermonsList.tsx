@@ -1,7 +1,7 @@
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
 import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { hp, wp } from '@/src/utils';
+import { fs, hp, wp } from '@/src/utils';
 
 interface SermonItem {
   id: string;
@@ -164,13 +164,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   selectorLabel: {
-    fontSize: 11,
+    fontSize: fs(11),
     textTransform: 'uppercase',
     color: 'rgba(23,34,58,0.6)',
     letterSpacing: 0.8,
   },
   selectorValue: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '700',
     color: '#151F36',
   },
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E7EDFF',
   },
   dropdownLabel: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#1F2A44',
     fontWeight: '600',
   },
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   searchField: {
     flex: 1,
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#151F36',
   },
   searchButton: {
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   seeAll: {
     color: '#1E4DFF',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: fs(13),
   },
   listContent: {
     gap: hp(16),
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     paddingHorizontal: wp(14),
     marginTop: hp(10),
-    fontSize: 13.5,
+    fontSize: fs(13.5),
     fontWeight: '700',
     color: '#1C2437',
   },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     marginTop: hp(6),
   },
   cardMeta: {
-    fontSize: 12,
+    fontSize: fs(12),
     color: 'rgba(28,36,55,0.6)',
   },
   dot: {

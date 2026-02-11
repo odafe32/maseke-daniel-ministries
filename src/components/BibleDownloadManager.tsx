@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { BibleStorage, BibleData } from '../utils/bibleStorage';
 import { bibleApi } from '../api/bibleApi';
+import { fs, hp, wp } from '../utils';
 
 interface BibleDownloadProgress {
   current: number;
@@ -224,40 +225,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: wp(20),
   },
   container: {
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: wp(16),
+    padding: wp(24),
     width: '90%',
     maxWidth: 400,
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: fs(24),
     fontWeight: 'bold',
     color: '#0C154C',
-    marginBottom: 8,
+    marginBottom: wp(8),
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     color: '#666',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: wp(24),
     lineHeight: 22,
   },
   errorContainer: {
     backgroundColor: '#ffebee',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: wp(8),
+    padding: wp(12),
+    marginBottom: wp(16),
     width: '100%',
   },
   errorText: {
     color: '#c62828',
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   progressContainer: {
     alignItems: 'center',
@@ -265,60 +266,60 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   progressText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#0C154C',
     marginBottom: 4,
   },
   progressNumbers: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#666',
     marginBottom: 12,
   },
   progressBar: {
     width: '100%',
-    height: 8,
+    height: hp(8),
     backgroundColor: '#e0e0e0',
-    borderRadius: 4,
+    borderRadius: wp(4),
     overflow: 'hidden',
     marginBottom: 8,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#0C154C',
-    borderRadius: 4,
+    borderRadius: wp(4),
   },
   percentage: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: 'bold',
     color: '#0C154C',
   },
   spinner: {
-    marginTop: 12,
+    marginTop: hp(12),
   },
   downloadButton: {
     backgroundColor: '#0C154C',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    borderRadius: wp(8),
+    paddingVertical: wp(12),
+    paddingHorizontal: wp(24),
+    marginBottom: hp(16),
   },
   downloadButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
   },
   cancelButton: {
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderRadius: wp(8),
+    paddingVertical: wp(10),
+    paddingHorizontal: wp(20),
   },
   cancelButtonDisabled: {
     opacity: 0.5,
   },
   cancelButtonText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: fs(16),
   },
   cancelButtonTextDisabled: {
     color: '#5b5b5bff',

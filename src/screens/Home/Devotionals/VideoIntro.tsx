@@ -11,7 +11,7 @@ import {
 import { Video, ResizeMode, AVPlaybackStatus, Audio } from 'expo-av';
 import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { SCREEN_WIDTH } from '../../../utils/config';
+import { fs, hp, SCREEN_WIDTH, wp } from '../../../utils/config';
 
 const VIDEO_HEIGHT = SCREEN_WIDTH * (9 / 16);
 
@@ -255,38 +255,38 @@ const styles = StyleSheet.create({
   },
   videoLoadingText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    marginTop: 12,
+    fontSize: fs(16),
+    marginTop: hp(12),
     fontFamily: 'DMSans-Medium',
   },
   logoContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
-    right: 25,
+    right: wp(25),
     zIndex: 10,
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: wp(60),
+    height: hp(60),
   },
   backContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
-    left: 25,
+    left: wp(25),
     zIndex: 10,
   },
   backButton: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 20,
+    borderRadius: wp(20),
     padding: 5,
   },
   footerSection: {
     position: 'absolute',
-    bottom: 30,
+    bottom: wp(30),
     left: 0,
     right: 0,
-    paddingHorizontal: 30,
-    paddingVertical: 20,
+    paddingHorizontal: wp(30),
+    paddingVertical: wp(20),
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -294,8 +294,8 @@ const styles = StyleSheet.create({
   finalButton: {
     backgroundColor: '#FFFFFF',
     width: '100%',
-    paddingVertical: 22,
-    borderRadius: 18,
+    paddingVertical: wp(22),
+    borderRadius: wp(18),
     alignItems: 'center',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   finalButtonText: {
     color: '#000',
-    fontSize: 20,
+    fontSize: fs(20),
     fontWeight: '800',
     letterSpacing: 1.5,
   },

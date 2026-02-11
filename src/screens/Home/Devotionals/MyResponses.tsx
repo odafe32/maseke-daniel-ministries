@@ -19,6 +19,7 @@ import { DevotionalResponse } from '@/src/api/devotionalResponsesApi';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { showToast } from '@/src/utils/toast';
+import { fs, hp, wp } from '@/src/utils';
 
 const { height } = Dimensions.get('window');
 
@@ -123,7 +124,11 @@ export default function MyResponses() {
         message: 'Your reflection has been permanently deleted',
       });
     } catch (error) {
-      // Error is handled by the store
+      showToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: 'Failed to delete reflection. Please try again.',
+      });
     }
   };
 
@@ -156,7 +161,11 @@ export default function MyResponses() {
       
       // The UI will show updated data since we refreshed the responses
     } catch (error) {
-      // Error is handled by the store
+      showToast({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update reflection. Please try again.',
+      });
     }
   };
 
@@ -591,61 +600,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(12),
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
+    borderBottomWidth: wp(1),
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
-    padding: 8,
+    padding: wp(8,)
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: '600',
     color: '#111827',
   },
   placeholder: {
-    width: 40,
+    width: wp(40),
   },
   statsContainer: {
     flexDirection: 'row',
-    padding: 16,
+    padding: wp(16),
     gap: 12,
     backgroundColor: '#fff',
   },
   statCard: {
     flex: 1,
     backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: wp(12),
+    padding: wp(16),
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: fs(24),
     fontWeight: '700',
     color: '#0C154C',
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: fs(12),
     color: '#6b7280',
     fontWeight: '500',
   },
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(12),
     gap: 8,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
+    borderBottomWidth: wp(1),
     borderBottomColor: '#e5e7eb',
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: wp(8),
+    paddingHorizontal: wp(16),
+    borderRadius: wp(8),
     backgroundColor: '#f3f4f6',
     alignItems: 'center',
   },
@@ -653,7 +662,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0C154C',
   },
   filterText: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontWeight: '600',
     color: '#6b7280',
   },
@@ -664,59 +673,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    margin: 16,
-    padding: 12,
+    margin: hp(16),
+    padding: wp(12),
     backgroundColor: '#fee2e2',
-    borderRadius: 8,
-    borderLeftWidth: 4,
+    borderRadius: wp(8),
+    borderLeftWidth: wp(4),
     borderLeftColor: '#ef4444',
   },
   errorText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#991b1b',
-    marginRight: 8,
+    marginRight: hp(8),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: wp(32),
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: hp(12),
+    fontSize: fs(14),
     color: '#6b7280',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: wp(16),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 64,
+    paddingVertical: wp(64),
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: '600',
     color: '#374151',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: hp(16),
+    marginBottom: hp(8),
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#6b7280',
     textAlign: 'center',
   },
   responseCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: wp(12),
+    padding: wp(16),
+    marginBottom: hp(12),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -727,26 +736,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   responseHeaderLeft: {
     flex: 1,
-    marginRight: 12,
+    marginRight: hp(12),
   },
   responseTitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   responseSubtitle: {
-    fontSize: 13,
+    fontSize: fs(13),
     color: '#6b7280',
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: wp(10),
+    paddingVertical: wp(4),
+    borderRadius: wp(12),
   },
   statusBadgeSubmitted: {
     backgroundColor: '#d1fae5',
@@ -755,7 +764,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef3c7',
   },
   statusText: {
-    fontSize: 11,
+    fontSize: fs(11),
     fontWeight: '600',
   },
   statusTextSubmitted: {
@@ -765,28 +774,28 @@ const styles = StyleSheet.create({
     color: '#92400e',
   },
   responseContent: {
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   responseSection: {
     marginBottom: 8,
   },
   responseSectionLabel: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontWeight: '600',
     color: '#0C154C',
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   responseSectionText: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#374151',
-    lineHeight: 20,
+    lineHeight: hp(20),
   },
   responseFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
+    paddingTop: wp(12),
+    borderTopWidth: wp(1),
     borderTopColor: '#f3f4f6',
   },
   responseFooterLeft: {
@@ -795,11 +804,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   responseDate: {
-    fontSize: 12,
+    fontSize: fs(12),
     color: '#6b7280',
   },
   dayNumber: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontWeight: '600',
     color: '#8B5CF6',
   },
@@ -830,31 +839,31 @@ const styles = StyleSheet.create({
   },
   modalHeaderBar: {
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: wp(12),
+    paddingBottom: hp(8),
   },
   modalHandle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
+    width: wp(40),
+    height: hp(5),
+    borderRadius: wp(3),
     backgroundColor: '#e5e7eb',
   },
   modalContentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: wp(20),
+    paddingBottom: wp(16),
+    borderBottomWidth: wp(1),
     borderBottomColor: '#f3f4f6',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: '700',
     color: '#111827',
   },
   closeButton: {
-    padding: 4,
+    padding: wp(4),
   },
   modalActions: {
     flexDirection: 'row',
@@ -862,30 +871,30 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   modalActionButton: {
-    padding: 8,
+    padding: wp(8),
   },
   modalScrollView: {
     flex: 1,
   },
   modalScrollContent: {
-    padding: 20,
+    padding: wp(20),
   },
   modalInfoCard: {
     backgroundColor: '#f9fafb',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: wp(16),
+    borderRadius: wp(12),
+    marginBottom: hp(16),
   },
   modalEntryTitle: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: '600',
     color: '#0C154C',
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   modalDevotionalTitle: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: '#4b5563',
-    marginBottom: 8,
+    marginBottom: hp(8),
   },
   modalDateRow: {
     flexDirection: 'row',
@@ -893,31 +902,31 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   modalDateText: {
-    fontSize: 12,
+    fontSize: fs(12),
     color: '#6b7280',
   },
   modalStatusContainer: {
-    marginBottom: 20,
+    marginBottom: hp(20),
   },
   fullResponseContainer: {
-    marginBottom: 24,
+    marginBottom: hp(24),
   },
   fullResponseLabel: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#374151',
-    marginBottom: 10,
+    marginBottom: hp(10),
   },
   fullResponseBox: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
+    borderRadius: wp(12),
+    padding: wp(16),
+    borderWidth: hp(1),
     borderColor: '#e5e7eb',
   },
   fullResponseText: {
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: fs(15),
+    lineHeight: hp(24),
     color: '#1f2937',
   },
   editForm: {
@@ -927,20 +936,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editFieldLabel: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#374151',
   },
   editTextInput: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: wp(12),
+    padding: wp(16),
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: fs(15),
+    lineHeight: hp(24),
     color: '#1f2937',
-    minHeight: 120,
+    minHeight: hp(120),
   },
   editTextInputEmpty: {
     borderColor: '#ef4444',
@@ -948,22 +957,22 @@ const styles = StyleSheet.create({
   editActions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 24,
+    marginTop: hp(24),
   },
   editButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: wp(14),
+    borderRadius: wp(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButton: {
     backgroundColor: '#f3f4f6',
-    borderWidth: 1,
+    borderWidth: wp(1),
     borderColor: '#e5e7eb',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#6b7280',
   },
@@ -971,7 +980,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0C154C',
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#fff',
   },
@@ -982,13 +991,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: wp(20),
   },
   deleteModalContainer: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: wp(16),
     width: '100%',
-    maxWidth: 320,
+    maxWidth: wp(320),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
@@ -996,31 +1005,31 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   deleteModalContent: {
-    padding: 24,
+    padding: wp(24),
     alignItems: 'center',
   },
   deleteIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: wp(80),
+    height: hp(80),
+    borderRadius: wp(40),
     backgroundColor: '#fef2f2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: hp(16),
   },
   deleteModalTitle: {
-    fontSize: 20,
+    fontSize: fs(20),
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: hp(8),
     textAlign: 'center',
   },
   deleteModalMessage: {
-    fontSize: 16,
+    fontSize: fs(16),
     color: '#6b7280',
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
+    lineHeight: hp(24),
+    marginBottom: hp(24),
   },
   deleteModalActions: {
     flexDirection: 'row',
@@ -1029,8 +1038,8 @@ const styles = StyleSheet.create({
   },
   deleteModalButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: wp(14),
+    borderRadius: wp(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1040,7 +1049,7 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
   },
   deleteCancelButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#6b7280',
   },
@@ -1048,7 +1057,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ef4444',
   },
   deleteConfirmButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
     color: '#fff',
   },

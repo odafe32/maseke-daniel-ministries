@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
+import { fs, hp, wp } from "@/src/utils";
 
 interface PrayerRequestProps {
   onBack: () => void;
@@ -298,12 +299,12 @@ export function PrayerRequest({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 24,
+    paddingHorizontal: wp(16),
+    paddingBottom: hp(20),
+    gap: hp(24),
   },
   content: {
-    gap: 30,
+    gap: hp(30),
   },
   title: {
     textAlign: "left",
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   formContainer: {
-    gap: 12,
+    gap: hp(12),
   },
   label: {
     fontFamily: "Geist-Medium",
@@ -320,45 +321,45 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderRadius: wp(12),
+    paddingHorizontal: wp(16),
+    paddingVertical: hp(12),
+    fontSize: fs(16),
     fontFamily: "Geist-Regular",
     color: "#121116",
     backgroundColor: "#FFFFFF",
   },
   textArea: {
-    height: 200,
-    paddingTop: 12,
+    height: hp(200),
+    paddingTop: hp(12),
   },
   sendButton: {
     backgroundColor: "#0C154C",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    borderRadius: wp(12),
+    paddingVertical: hp(16),
+    paddingHorizontal: wp(24),
     alignItems: "center",
-    marginTop: 8,
+    marginTop: hp(8),
   },
   sendButtonText: {
     color: "#FFFFFF",
     fontFamily: "Geist-SemiBold",
-    fontSize: 16,
+    fontSize: fs(16),
   },
   cancelButton: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    borderRadius: wp(12),
+    paddingVertical: hp(16),
+    paddingHorizontal: wp(24),
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    marginTop: 8,
+    marginTop: hp(8),
   },
   cancelButtonText: {
     color: "#666",
     fontFamily: "Geist-Medium",
-    fontSize: 16,
+    fontSize: fs(16),
   },
   inputError: {
     borderColor: "#DC2626",
@@ -366,9 +367,9 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#DC2626",
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: "Geist-Medium",
-    marginTop: 4,
+    marginTop: hp(4),
   },
   sendButtonDisabled: {
     backgroundColor: "#94A3B8",
@@ -380,6 +381,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   spinner: {
-    marginRight: 8,
+    marginRight: wp(8),
   },
 });

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemeText } from "@/src/components";
-import { getColor, wp } from "@/src/utils";
+import { fs, getColor, hp, wp } from "@/src/utils";
 import { useRouter } from "expo-router";
 import { useBible, useBibleBooks } from "@/src/hooks/useBible";
 import { Book, Testament as ApiTestament } from "@/src/api/bibleApi";
@@ -477,7 +477,7 @@ const SidebarRow = ({ label, onPress, textColor = "#0C154C", accentColor = "#0C1
 const styles = StyleSheet.create({
   downloadingText: {
     marginTop: wp(12),
-    fontSize: 16,
+    fontSize: fs(16),
     textAlign: 'center',
   },
   loadingContainer: {
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontWeight: '600',
   },
   notesRow: {
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '85%',
-    maxWidth: 350,
+    maxWidth: wp(350),
     borderRadius: 16,
     padding: wp(20),
     elevation: 10,
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     marginBottom: wp(16),
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: fs(20),
     fontWeight: 'bold',
   },
   modalCloseButton: {
@@ -604,15 +604,15 @@ const styles = StyleSheet.create({
     marginBottom: wp(12),
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: fs(16),
     textAlign: 'center',
     marginBottom: wp(8),
-    lineHeight: 22,
+    lineHeight: hp(22),
   },
   modalSubtext: {
-    fontSize: 14,
+    fontSize: fs(14),
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: hp(20),
   },
   modalActions: {
     flexDirection: 'row',
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   modalButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '600',
   },
 });

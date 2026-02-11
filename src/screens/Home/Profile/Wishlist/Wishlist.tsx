@@ -14,7 +14,7 @@ import Feather from "@expo/vector-icons/Feather";
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
 import { IWishlist } from '@/src/utils/types';
-import { hp, wp, wpt } from "@/src/utils";
+import { fs, hp, wp, wpt } from "@/src/utils";
 
 interface WishlistProps {
   wishListData: IWishlist[];
@@ -241,7 +241,7 @@ export function Wishlist({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(16),
   },
   row: {
     justifyContent: "space-between",
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     height: hp(200),
     borderColor: "#f5f5f5",
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: wp(6),
     overflow: "hidden",
   },
   itemImage: {
@@ -267,11 +267,11 @@ const styles = StyleSheet.create({
   },
   heartIcon: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: hp(8),
+    right: wp(8),
+    width: wp(28),
+    height: wp(28),
+    borderRadius: wp(14),
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     flexDirection: "row",
-    gap: 6,
+    gap: wp(6),
   },
   currentPrice: {
     color: "#0C154C",
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "line-through",
   },
   separator: {
-    height: 12,
+    height: hp(12),
   },
   skeletonGrid: {
     flexDirection: "row",
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   skeletonItemContainer: {
     width: wpt(44),
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   skeletonImageContainer: {
     position: "relative",
@@ -318,9 +318,9 @@ const styles = StyleSheet.create({
     height: hp(200),
     borderColor: "#f5f5f5",
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: wp(6),
     overflow: "hidden",
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   skeletonImage: {
     width: "100%",
@@ -331,8 +331,8 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   skeletonBar: {
-    height: 14,
-    borderRadius: 8,
+    height: hp(14),
+    borderRadius: wp(8),
     backgroundColor: "#E3E6EB",
   },
   placeholderImage: {
@@ -351,25 +351,25 @@ const styles = StyleSheet.create({
   emptyStateIconContainer: {
     width: wp(120),
     height: hp(120),
-    borderRadius: 60,
+    borderRadius: wp(60),
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: hp(24),
   },
   emptyStateTitle: {
     color: '#0B0A0D',
     fontFamily: 'Geist-Bold',
-    fontSize: 22,
-    marginBottom: 12,
+    fontSize: fs(22),
+    marginBottom: hp(12),
     textAlign: 'center',
   },
   emptyStateDescription: {
     color: '#6B7280',
     fontFamily: 'Geist-Regular',
-    fontSize: 15,
+    fontSize: fs(15),
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: fs(22),
     maxWidth: '85%',
   },
 });

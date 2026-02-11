@@ -262,14 +262,8 @@ export function Devotionals({
 
   const accentIsWhite = isHexWhite(selectedTheme?.accentColor);
   const statusBarStyle = "dark";
-  const bookmarkIconColor = selectedTheme?.textColor ?? "#0C154C";
 
-  console.log('🎨 StatusBar Debug:', {
-    selectedThemeId,
-    backgroundColor: selectedTheme?.backgroundColor,
-    statusBarStyle,
-    isDark: isHexDark(selectedTheme?.backgroundColor ?? "#fff")
-  });
+  const bookmarkIconColor = selectedTheme?.textColor ?? "#0C154C";
 
   const isDarkPanel = isHexDark(selectedTheme?.panelBackground);
   const dividerColor = "#cccccc";
@@ -573,18 +567,13 @@ export function Devotionals({
             ) : undefined
           }
         >
-          <DevotionalBannerEnhanced
+     <DevotionalBannerEnhanced
             title={content.title}
             subtitle={currentMonth?.name}
             scripture={content.scripture}
             verse={content.verse}
             dayNumber={currentDayNumber}
             totalDays={totalDays}
-            theme={(() => {
-              const themes = ['sage', 'deep', 'warm', 'classic', 'royal', 'dawn'] as const;
-              const randomIndex = Math.floor(Math.random() * themes.length);
-              return themes[randomIndex];
-            })()}
             height={200}
           />
           <Text

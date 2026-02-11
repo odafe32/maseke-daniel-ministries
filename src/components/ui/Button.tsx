@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   outlineButton: {
     backgroundColor: "transparent",
-    borderWidth: 1,
+    borderWidth: wp(1),
   },
   disabledButton: {
     backgroundColor: "rgba(12, 21, 76, 0.08)",

@@ -2,8 +2,9 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
-import { getColor } from '../utils';
+import { getColor, wp } from '../utils';
 import { shouldHideBottomMenu } from '../constants/navigation';
+import { useSafeNavigation } from '../hooks/useSafeNavigation';
 
 type FeatherIconName = keyof typeof Feather.glyphMap;
 
@@ -15,6 +16,7 @@ interface TabItem {
 
 const BottomMenu = () => {
   const router = useRouter();
+  const { push } = useSafeNavigation();
   const pathname = usePathname();
   const colors = getColor();
 
@@ -49,7 +51,7 @@ const BottomMenu = () => {
               <TouchableOpacity
                 key={tab.name}
                 style={styles.tab}
-                onPress={() => router.push(tab.route)}
+                onPress={() => push(tab.route)}
                 activeOpacity={0.85}
               >
                 <View style={styles.tabContent}>
@@ -80,12 +82,12 @@ const BottomMenu = () => {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 0,
-    paddingBottom: 0,
-    paddingTop: 0,
+    bottom: wp(0),
+    left: wp(0),
+    right: wp(0),
+    paddingHorizontal: wp(0),
+    paddingBottom: wp(0),
+    paddingTop: wp(0),
     alignItems: 'center',
   },
   inner: {

@@ -1,4 +1,4 @@
-import { fs, getColor } from "@/src/utils";
+import { fs, getColor, wp } from "@/src/utils";
 import React from "react";
 import {
   StyleSheet,
@@ -47,7 +47,7 @@ export const TextLink = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    padding: wp(10),
   },
   text: {
     fontFamily: "DMSans-Medium",

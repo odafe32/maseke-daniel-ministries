@@ -10,7 +10,7 @@ import {
 
 import { BackHeader, ThemeText, Icon } from "@/src/components";
 import { PickupStation } from "@/src/utils/types";
-import { fs } from "@/src/utils";
+import { fs, hp, wp } from "@/src/utils";
 
 // Color constants to avoid color literals
 const COLORS = {
@@ -215,23 +215,23 @@ export function PaymentUI({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 120, // Space for fixed footer
+    paddingHorizontal: wp(16),
+    paddingBottom: hp(120), // Space for fixed footer
   },
   cardsContainer: {
-    paddingTop: 20,
-    gap: 16,
+    paddingTop: hp(20),
+    gap: hp(16),
   },
   card: {
     backgroundColor: "#FAFAFA",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: wp(12),
+    padding: wp(16),
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
+    gap: wp(12),
+    marginBottom: hp(8),
   },
   cardTitle: {
     color: COLORS.TEXT_DARK,
@@ -249,24 +249,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.WHITE,
     borderColor: COLORS.BORDER_GRAY,
-    borderRadius: 10,
+    borderRadius: wp(10),
     borderWidth: 1,
     flexDirection: 'column',
-    gap: 8,
+    gap: hp(8),
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: wp(12),
+    paddingVertical: hp(12),
   },
   dropdown: {
     backgroundColor: COLORS.WHITE,
     borderColor: COLORS.BORDER_GRAY,
-    borderRadius: 10,
+    borderRadius: wp(10),
     borderWidth: 1,
-    marginTop: 8,
+    marginTop: hp(8),
   },
   dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: wp(12),
+    paddingVertical: hp(10),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.BORDER_GRAY,
   },
@@ -281,14 +281,14 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_LIGHT_GRAY,
   },
   dropdownEmpty: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: wp(12),
+    paddingVertical: hp(12),
   },
   paystackContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 8,
+    gap: wp(12),
+    marginTop: hp(8),
   },
   paystackText: {
     color: COLORS.TEXT_DARK,
@@ -301,8 +301,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
     borderTopColor: COLORS.BORDER_GRAY,
     borderTopWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: wp(16),
+    paddingVertical: hp(16),
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: hp(16),
   },
   totalText: {
     color: COLORS.TEXT_DARK,
@@ -326,11 +326,11 @@ const styles = StyleSheet.create({
   payButton: {
     alignItems: 'center',
     backgroundColor: COLORS.PRIMARY_BLUE,
-    borderRadius: 12,
+    borderRadius: wp(12),
     flexDirection: 'row',
-    gap: 8,
+    gap: wp(8),
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: hp(16),
   },
   payButtonText: {
     color: COLORS.WHITE,

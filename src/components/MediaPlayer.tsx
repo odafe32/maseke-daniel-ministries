@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity } fr
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Feather } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import { hp, wp } from '@/src/utils';
+import { fs, hp, wp } from '@/src/utils';
 import { useFocusEffect } from '@react-navigation/native';
 
 interface MediaPlayerProps {
@@ -268,20 +268,20 @@ const styles = StyleSheet.create({
     height: hp(230),
   },
   audioPlayerHidden: {
-    width: 1,
-    height: 1,
+    width: wp(1),
+    height: wp(1),
     opacity: 0,
     position: 'absolute',
-    top: -1000, // Move it off-screen
+    top: wp(-1000), // Move it off-screen
   },
   audioPoster: {
     width: '100%',
     height: '100%',
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: wp(0),
+    left: wp(0),
+    right: wp(0),
+    bottom: wp(0),
   },
   noMediaContainer: {
     flex: 1,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   noMediaText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Medium',
   },
   errorContainer: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#ff6b6b',
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'Geist-Medium',
     textAlign: 'center',
     paddingHorizontal: wp(20),
@@ -316,15 +316,15 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#fff',
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: fs(16),
+    marginTop: hp(10),
     fontFamily: 'Geist-Medium',
   },
   customControls: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: wp(0),
+    left: wp(0),
+    right: wp(0),
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     paddingVertical: hp(12),
     paddingHorizontal: wp(16),
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'Geist-Medium',
     textAlign: 'center',
     marginBottom: hp(8),
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   speedText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: 'Geist-Bold',
     textAlign: 'center',
   },

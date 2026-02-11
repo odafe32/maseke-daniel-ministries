@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { hp, wp } from '@/src/utils';
+import { fs, hp, wp } from '@/src/utils';
 import { images } from '@/src/constants/data';
 import { LiveStream } from '@/src/api/liveApi';
 import { HomeImageSection } from '../HomeImageSection';
@@ -163,17 +163,17 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 13,
+    fontSize: fs(13),
     marginTop: hp(4),
   },
   title: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: '700',
   },
   description: {
     color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
+    fontSize: fs(14),
   },
   fallbackBanner: {
     flexDirection: 'row',
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     color: '#E5E7EB',
-    fontSize: 14,
+    fontSize: fs(14),
     fontWeight: '500',
   },
   dotMuted: {
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: fs(14),
     fontWeight: '600',
     letterSpacing: 0.2,
   },

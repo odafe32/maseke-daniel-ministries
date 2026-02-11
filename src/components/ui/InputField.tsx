@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 18,
+    borderRadius: wp(18),
     borderWidth: 1,
     paddingHorizontal: wp(20),
     minHeight: hp(50),

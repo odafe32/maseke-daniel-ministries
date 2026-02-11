@@ -8,7 +8,7 @@ import {
   Image,
   Modal,
   Animated,
-  RefreshControl,
+
   ImageSourcePropType,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
@@ -16,6 +16,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { BackHeader, ThemeText } from "@/src/components";
 import { fs, hp, wp } from "@/src/utils";
 import { Order, OrderStatus, OrderItem } from "@/src/utils/types";
+import { RefreshControl } from "react-native-gesture-handler";
 
 interface OrdersProps {
   onBack: () => void;
@@ -516,7 +517,7 @@ export function Orders({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(16),
     paddingBottom: 20,
     gap: 20,
   },
@@ -529,7 +530,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: wp(16),
     paddingVertical: 8,
     borderRadius: 12,
     backgroundColor: 'transparent',
@@ -594,7 +595,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist-Medium',
   },
   statusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: wp(8),
     paddingVertical: 4,
     borderRadius: 8,
   },
@@ -675,7 +676,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: wp(20),
     paddingBottom: 40,
     maxHeight: '85%',
     shadowColor: '#000',
@@ -824,7 +825,7 @@ const styles = StyleSheet.create({
     fontSize: fs(12),
   },
   modalStatusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: wp(8),
     paddingVertical: 4,
     borderRadius: 8,
   },

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   Animated,
   Easing,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
   Path,
@@ -17,11 +16,9 @@ import Svg, {
   Circle,
   G
 } from 'react-native-svg';
+import { fs, hp, wp } from '@/src/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const BANNER_THEME_CACHE_KEY = '@devotional_banner_theme';
-const BANNER_THEME_CACHE_DURATION = 60 * 60 * 1000; 
 
 interface DevotionalBannerProps {
   title: string;
@@ -30,97 +27,16 @@ interface DevotionalBannerProps {
   verse?: string;
   dayNumber?: number;
   totalDays?: number;
-  theme?: 'sage' | 'deep' | 'warm' | 'classic' | 'royal' | 'dawn';
   height?: number;
   animated?: boolean;
 }
 
-type ThemeConfig = {
-  colors: readonly [string, string, string];
-  textColor: string;
-  decorativeColor: string;
-  overlayColor: string;
-  accentColor: string;
-};
-
-const THEME_CONFIGS: Record<string, ThemeConfig> = {
-  sage: {
-    colors: ['#7C9885', '#5A7C65', '#4A6B5A'] as const,
-    textColor: '#FFFFFF',
-    decorativeColor: 'rgba(255, 255, 255, 0.4)',
-    overlayColor: 'rgba(92, 124, 101, 0.15)',
-    accentColor: '#A8C4B0',
-  },
-  deep: {
-    colors: ['#2C5282', '#1A365D', '#153154'] as const,
-    textColor: '#FFFFFF',
-    decorativeColor: 'rgba(255, 255, 255, 0.35)',
-    overlayColor: 'rgba(26, 54, 93, 0.12)',
-    accentColor: '#4A90C2',
-  },
-  warm: {
-    colors: ['#C05621', '#9C4221', '#8B3A1C'] as const,
-    textColor: '#FFFFFF',
-    decorativeColor: 'rgba(255, 255, 255, 0.4)',
-    overlayColor: 'rgba(156, 66, 33, 0.15)',
-    accentColor: '#D4834F',
-  },
-  classic: {
-    colors: ['#0C154C', '#1E2B5B', '#2A3B6C'] as const,
-    textColor: '#FFFFFF',
-    decorativeColor: 'rgba(255, 255, 255, 0.35)',
-    overlayColor: 'rgba(30, 43, 91, 0.12)',
-    accentColor: '#4A5F8A',
-  },
-  royal: {
-    colors: ['#6B46C1', '#553C9A', '#4C1D95'] as const,
-    textColor: '#FFFFFF',
-    decorativeColor: 'rgba(255, 255, 255, 0.4)',
-    overlayColor: 'rgba(76, 29, 149, 0.15)',
-    accentColor: '#8B5CF6',
-  },
-  dawn: {
-    colors: ['#F97316', '#EA580C', '#DC2626'] as const,
-    textColor: '#FFFFFF',
-    decorativeColor: 'rgba(255, 255, 255, 0.35)',
-    overlayColor: 'rgba(234, 88, 12, 0.12)',
-    accentColor: '#FB923C',
-  },
-  } as const;
-// Helper function to get cached theme or select new one
-const getBannerTheme = async (): Promise<string> => {
-  try {
-    const cachedData = await AsyncStorage.getItem(BANNER_THEME_CACHE_KEY);
-    if (cachedData) {
-      const { theme, timestamp } = JSON.parse(cachedData);
-      const now = Date.now();
-      const timeDiff = now - timestamp;
-
-      // If less than 1 hour has passed, return cached theme
-      if (timeDiff < BANNER_THEME_CACHE_DURATION) {
-        console.log('🎨 Using cached banner theme:', theme);
-        return theme;
-      }
-    }
-  } catch (error) {
-    console.warn('❌ Failed to read banner theme cache:', error);
-  }
-
-  // Select new random theme and cache it
-  const themes = Object.keys(THEME_CONFIGS);
-  const randomTheme = themes[Math.floor(Math.random() * themes.length)];
-
-  try {
-    const cacheData = {
-      theme: randomTheme,
-      timestamp: Date.now(),
-    };
-    await AsyncStorage.setItem(BANNER_THEME_CACHE_KEY, JSON.stringify(cacheData));
-  } catch (error) {
-    console.warn('❌ Failed to cache banner theme:', error);
-  }
-
-  return randomTheme;
+const BANNER_CONFIG = {
+  colors: ['#7C9885', '#5A7C65', '#4A6B5A'] as const,
+  textColor: '#FFFFFF',
+  decorativeColor: 'rgba(255, 255, 255, 0.4)',
+  overlayColor: 'rgba(92, 124, 101, 0.15)',
+  accentColor: '#A8C4B0',
 };
 
 // Simple animated decorative flow with consistent driver usage
@@ -338,50 +254,11 @@ export const DevotionalBannerEnhanced: React.FC<DevotionalBannerProps> = ({
   verse,
   dayNumber,
   totalDays,
-  theme: propTheme,
   height = 200,
   animated = true,
 }) => {
-  const [selectedTheme, setSelectedTheme] = useState<string>('sage');
-  const config = THEME_CONFIGS[selectedTheme] || THEME_CONFIGS.sage;
+  const config = BANNER_CONFIG;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Initialize theme on component mount
-  useEffect(() => {
-    const initializeTheme = async () => {
-      if (propTheme && propTheme !== 'sage') {
-        // If a specific theme is passed as prop, use it (but still cache for consistency)
-        setSelectedTheme(propTheme);
-        try {
-          const cacheData = {
-            theme: propTheme,
-            timestamp: Date.now(),
-          };
-          await AsyncStorage.setItem(BANNER_THEME_CACHE_KEY, JSON.stringify(cacheData));
-        } catch (error) {
-          console.warn('❌ Failed to cache prop theme:', error);
-        }
-      } else {
-        // Use cached theme selection logic
-        const cachedTheme = await getBannerTheme();
-        setSelectedTheme(cachedTheme);
-      }
-    };
-
-    initializeTheme();
-  }, [propTheme]);
-
-  console.log('🎯 DevotionalBannerEnhanced props:', {
-    title,
-    subtitle,
-    scripture,
-    verse,
-    hasVerse: !!verse,
-    verseLength: verse?.length,
-    dayNumber,
-    totalDays,
-    selectedTheme,
-  });
 
   useEffect(() => {
     if (animated) {
@@ -463,14 +340,14 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     width: '100%',
-    borderRadius: 5,
+    borderRadius: wp(5),
     overflow: 'hidden',
-    marginVertical: 12,
+    marginVertical: hp(12),
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: {
-      width: 0,
-      height: 6,
+      width: wp(0),
+      height: hp(6),
     },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -498,11 +375,11 @@ const styles = StyleSheet.create({
   },
   floatingDot: {
     position: 'absolute',
-    borderRadius: 2,
+    borderRadius: wp(2),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: wp(28),
     paddingVertical: 24,
     justifyContent: 'center',
     alignItems: 'center',
@@ -510,42 +387,42 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: hp(16),
     alignItems: 'center',
   },
   progressTrack: {
-    height: 3,
+    height: hp(3),
     width: '60%',
-    borderRadius: 1.5,
-    marginBottom: 8,
+    borderRadius: wp(1.5),
+    marginBottom: hp(8),
   },
   progressFill: {
     height: '100%',
-    borderRadius: 1.5,
+    borderRadius: wp(1.5),
   },
   progressText: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: 'DMSans-Medium',
     opacity: 0.9,
     letterSpacing: 0.5,
   },
   title: {
-    fontSize: 26,
+    fontSize: fs(26),
     fontFamily: 'Geist-Bold',
     textAlign: 'center',
-    lineHeight: 30,
+    lineHeight: hp(30),
     letterSpacing: 0.8,
-    marginBottom: 10,
+    marginBottom: hp(10),
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 17,
+    fontSize: fs(17),
     fontFamily: 'DMSans-SemiBold',
     textAlign: 'center',
     opacity: 0.92,
-    marginBottom: 18,
+    marginBottom: hp(18),
     letterSpacing: 0.4,
   },
   scriptureContainer: {
@@ -553,12 +430,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: wp(10),
   },
   scriptureReference: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontFamily: 'DMSans-SemiBold',
-    lineHeight: 20,
+    lineHeight: hp(20),
     opacity: 0.95,
     textAlign: 'center',
     letterSpacing: 0.3,
@@ -567,27 +444,27 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    paddingHorizontal: 20,
+    marginTop: hp(8),
+    paddingHorizontal: wp(20),
   },
   verseText: {
-    fontSize: 18,
+    fontSize: fs(18),
     fontFamily: 'DMSans-Regular',
     fontStyle: 'italic',
-    lineHeight: 23,
+    lineHeight: hp(23),
     opacity: 0.9,
     textAlign: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: wp(12),
     flexWrap: 'wrap',
   },
   scripture: {
-    fontSize: 15,
+    fontSize: fs(15),
     fontFamily: 'DMSans-Regular',
     fontStyle: 'italic',
-    lineHeight: 22,
+    lineHeight: hp(22),
     opacity: 0.95,
     textAlign: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: wp(8),
   },
 });
 

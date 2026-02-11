@@ -9,7 +9,7 @@ import {
   TextLink,
   ThemeText,
 } from "@/src/components";
-import { VerifyProps } from "@/src/utils";
+import { fs, hp, VerifyProps, wp } from "@/src/utils";
 
 export const Verify = ({
   code,
@@ -39,7 +39,7 @@ export const Verify = ({
         />
       }
     >
-      <BackHeader title="Maseke Daniels Ministries s" onBackPress={onBack} />
+      <BackHeader title="Maseke Daniels Ministries " onBackPress={onBack} />
 
       <SectionIntro
         title="Let’s get you verified!"
@@ -82,8 +82,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   label: {
-    marginBottom: 8,
-    fontSize: 16,
+    marginBottom: hp(8),
+    fontSize: fs(16),
     fontFamily: "SpaceGrotesk-SemiBold",
   },
   resendRow: {
@@ -92,11 +92,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   resendLink: {
-    paddingHorizontal: 0,
+    paddingHorizontal: wp(0),
     color: "#2B46E5",
   },
   resendText: {
-    fontSize: 14,
+    fontSize: fs(14),
     color: "#2B46E5",
   },
 });

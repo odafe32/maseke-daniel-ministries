@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   cell: {
     width: wp(48),
     height: wp(48),
-    borderRadius: 12,
+    borderRadius: wp(12),
     borderWidth: 1,
     textAlign: "center",
     fontSize: fs(20),

@@ -1,4 +1,4 @@
-import { getColor,  wp } from "@/src/utils";
+import { fs, getColor,  hp,  wp } from "@/src/utils";
 import { useRouter } from "expo-router";
 import React, { useRef } from "react";
 import { Feather } from "@expo/vector-icons";
@@ -12,31 +12,37 @@ import {
 } from "react-native";
 import { ThemeText } from "./ThemeText";
 import { Icon } from "@/src/components";
+import { useSafeNavigation } from "@/src/hooks/useSafeNavigation";
 
 interface BackHeaderProps {
   title: string;
   onBackPress?: () => void;
   onMorePress?: () => void;
+  onRefreshPress?: () => void;
   containerStyle?: ViewStyle;
   titleStyle?: TextStyle;
   showBackButton?: boolean;
   showMoreButton?: boolean;
   showCartButton?: boolean;
-  cartCount?: number; // New prop for cart item count
+  showRefreshButton?: boolean;
+  cartCount?: number; 
 }
 
 export const BackHeader = ({
   title,
   onBackPress,
   onMorePress,
+  onRefreshPress,
   containerStyle,
   titleStyle,
   showBackButton = true,
   showMoreButton = false,
   showCartButton = false,
+  showRefreshButton = false,
   cartCount = 0, // Default to 0 items
 }: BackHeaderProps) => {
   const router = useRouter();
+  const { back, push } = useSafeNavigation();
   const colors = getColor();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -62,11 +68,7 @@ export const BackHeader = ({
       return;
     }
 
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/index");
-    }
+    back();
   };
 
   const handleMore = () => {
@@ -75,15 +77,17 @@ export const BackHeader = ({
       return;
     }
 
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/index");
+    back();
+  };
+
+  const handleRefresh = () => {
+    if (onRefreshPress) {
+      onRefreshPress();
     }
   };
 
   const handleCart = () => {
-    router.push("/cart");
+    push("/cart");
   };
 
   return (
@@ -116,7 +120,18 @@ export const BackHeader = ({
         {title}
       </ThemeText>
 
-      {showCartButton ? (
+      {showRefreshButton ? (
+        <Pressable
+          onPress={handleRefresh}
+          style={[
+            styles.backButton,
+            { backgroundColor: "#fff" },
+          ]}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Feather name="refresh-ccw" size={22} color={colors.primary} />
+        </Pressable>
+      ) : showCartButton ? (
         <Pressable
           onPress={handleCart}
           style={[
@@ -157,8 +172,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingTop: wp(20),
+    paddingBottom: wp(10),
   },
   sideColumn: {
     width: wp(52),
@@ -190,10 +205,10 @@ const styles = StyleSheet.create({
   cartBadge: {
     alignItems: "center",
     backgroundColor: '#007AFF',
-    borderRadius: 10,
-    height: 15,
+    borderRadius: wp(10),
+    height: hp(15),
     justifyContent: "center",
-    width: 15,
+    width: wp(15),
     paddingHorizontal: 4,
     position: "absolute",
     right: -6,
@@ -201,9 +216,9 @@ const styles = StyleSheet.create({
   },
   cartBadgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: fs(10),
     fontWeight: "500",
-    lineHeight: 12,
+    lineHeight: hp(12),
     textAlign: "center",
     fontFamily: "Geist-SemiBold",
   },

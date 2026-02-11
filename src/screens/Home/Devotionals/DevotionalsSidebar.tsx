@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemeText } from "@/src/components";
-import { wp } from "@/src/utils";
+import { fs, hp, wp } from "@/src/utils";
 import { useDevotionalList, useDevotionalDetail } from "@/src/hooks/useDevotionals";
 import { useRouter } from "expo-router";
 import { useDevotionalsStore } from "@/src/stores/devotionalsStore";
@@ -295,33 +295,33 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, flexDirection: "row", justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)" },
   sidebar: { width: "75%", height: "100%", padding: wp(20) },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
-  headerTitle: { fontWeight: "bold", fontSize: 18 },
-  iconButton: { padding: 8 },
-  iconSpacer: { width: 36 },
-  list: { paddingBottom: 40 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: hp(20) },
+  headerTitle: { fontWeight: "bold", fontSize: fs(18) },
+  iconButton: { padding: wp(8) },
+  iconSpacer: { width: wp(36) },
+  list: { paddingBottom: wp(40) },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: wp(16),
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
   rowContent: {
     flex: 1,
-    marginRight: 12,
+    marginRight: hp(12),
   },
-  rowLabel: { fontSize: 16, fontWeight: "500" },
-  rowSubtitle: { fontSize: 13, marginTop: 4 },
+  rowLabel: { fontSize: fs(16), fontWeight: "500" },
+  rowSubtitle: { fontSize: fs(13), marginTop: hp(4) },
   loadingContainer: {
-    paddingVertical: 40,
+    paddingVertical: wp(40),
     alignItems: "center",
     justifyContent: "center",
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: hp(12),
+    fontSize: fs(14),
   },
   daysScrollView: {
     flex: 1,
@@ -329,25 +329,25 @@ const styles = StyleSheet.create({
   },
   daysColumn: {
     paddingHorizontal: 0,
-    paddingBottom: 20,
+    paddingBottom: wp(20),
   },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: wp(16),
     paddingHorizontal: 0,
-    marginBottom: 8,
-    borderRadius: 12,
-    borderLeftWidth: 4,
+    marginBottom: hp(8),
+    borderRadius: wp(12),
+    borderLeftWidth: wp(4),
   },
   dayRowText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: 'DMSans-SemiBold',
   },
   notesRow: {
-    marginTop: 12,
-    paddingVertical: 16,
+    marginTop: hp(12),
+    paddingVertical: wp(16),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   notesLabel: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontWeight: "500",
   },
 });

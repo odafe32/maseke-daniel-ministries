@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { PullToRefresh } from "@/src/components";
 import { StyleSheet, View, ViewStyle } from "react-native";
-import { hp } from "@/src/utils";
+import { hp, wp } from "@/src/utils";
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -51,25 +51,25 @@ export const AuthWrapper = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: wp(20),
     backgroundColor: "#FFFFFF",
   },
   content: {
     flex: 1,
-    gap: 24,
+    gap: hp(24),
   },
   contentWithFixedBottom: {
-    paddingBottom: hp(160), 
+    paddingBottom: hp(160),
   },
   bottomActions: {
-    paddingTop: 16,
-    gap: 16,
+    paddingTop: hp(16),
+    gap: hp(16),
   },
   fixedBottomActions: {
-    position: 'absolute',
+    position: "absolute",
     bottom: hp(30),
-    left: 20,
-    right: 20,
+    left: wp(20),
+    right: wp(20),
     backgroundColor: "#FFFFFF",
     paddingBottom: hp(20),
     paddingTop: hp(16),

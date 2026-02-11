@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { StatusBar, View, Text, StyleSheet } from "react-native";
+import { StatusBar, View, Text, StyleSheet, Platform } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-url-polyfill/auto";
@@ -12,6 +12,7 @@ import { usePathname } from "expo-router";
 import { shouldHideBottomMenu } from "../constants/navigation";
 import { useInternetConnectivity } from "../hooks/useInternetConnectivity";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import Constants from 'expo-constants';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SystemPopupModal from "../components/SystemPopupModal";
@@ -165,17 +166,19 @@ const RootLayout = () => {
 
   useEffect(() => {
     loadStoredAuth(); // Load token and user from AsyncStorage
-    // Register for push notifications
-    registerForPushNotificationsAsync().then((token) => {
-      if (token) {
-        useAuthStore.getState().setPushToken(token);
-        // If already logged in, send token to backend
-        const { token: authToken } = useAuthStore.getState();
-        if (authToken) {
-          useAuthStore.getState().sendPushToken(token);
+    // Register for push notifications (skip in Expo Go where it's not supported)
+    if (Constants.appOwnership !== 'expo') {
+      registerForPushNotificationsAsync().then((token) => {
+        if (token) {
+          useAuthStore.getState().setPushToken(token);
+          // If already logged in, send token to backend
+          const { token: authToken } = useAuthStore.getState();
+          if (authToken) {
+            useAuthStore.getState().sendPushToken(token);
+          }
         }
-      }
-    });
+      });
+    }
 
     // Allow auto-rotation
     ScreenOrientation.unlockAsync();
@@ -203,7 +206,7 @@ const RootLayout = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <StatusBar barStyle={"dark-content"} backgroundColor={Colors.whiteBg} />
+        <StatusBar barStyle={"dark-content"} backgroundColor={"transparent"} translucent={true} />
 
         {showContent && (
           <RootLayoutNav />
@@ -240,14 +243,14 @@ function RootLayoutNav() {
           contentStyle: {
             backgroundColor: Colors.whiteBg,
             paddingHorizontal: 0,
-            paddingTop: 20,
+            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 20,
           },
           animation: "fade",
           animationDuration: 250,
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/onboarding" options={{ headerShown: false, contentStyle: { paddingTop: 0, backgroundColor: '#000' } }} />
         <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)/verify" options={{ headerShown: false }} />
@@ -267,7 +270,7 @@ function RootLayoutNav() {
           contentStyle: {
             backgroundColor: Colors.whiteBg,
             paddingHorizontal: 0,
-            paddingTop: 20,
+            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 20,
             paddingBottom: showBottomMenu ? 80 : 20,
           },
           animation: "fade",
@@ -291,6 +294,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(home)/change-password" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/payment" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/live" options={{ headerShown: false }} />
+        <Stack.Screen name="(home)/sermons" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/sermon-detail" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/devotionals" options={{ headerShown: false }} />
         <Stack.Screen name="(home)/reset-app" options={{ headerShown: false }} />

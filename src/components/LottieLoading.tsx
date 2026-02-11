@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
+import { hp, wp } from "../utils";
 
 interface LottieLoadingProps {
   visible: boolean;
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   lottie: {
-    width: 200,
-    height: 200,
+    width: wp(200),
+    height: hp(200),
   },
 });

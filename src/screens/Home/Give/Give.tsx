@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText, Dropdown } from "@/src/components";
+import { fs, hp, wp } from "@/src/utils";
 
 interface GiveProps {
   onBack: () => void;
@@ -247,15 +248,15 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: wp(16),
+    paddingBottom: wp(20),
     gap: 24,
   },
   content: {
     gap: 30,
   },
   description: {
-    lineHeight: 24,
+    lineHeight: hp(24),
     color: "#424242",
     textAlign: "left",
     fontFamily: "Geist-Regular",
@@ -273,25 +274,25 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderRadius: wp(12),
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(12),
+    fontSize: fs(16),
     fontFamily: "Geist-Regular",
     color: "#121116",
     backgroundColor: "#FFFFFF",
   },
   continueButton: {
     backgroundColor: "#0C154C",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    borderRadius: wp(12),
+    paddingVertical: wp(16),
+    paddingHorizontal: wp(24),
     alignItems: "center",
   },
   continueButtonText: {
     color: "#FFFFFF",
     fontFamily: "Geist-SemiBold",
-    fontSize: 16,
+    fontSize: fs(16),
   },
   inputError: {
     borderColor: "#DC2626",
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#DC2626",
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: "Geist-Medium",
   },
   continueButtonDisabled: {
@@ -312,8 +313,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(16),
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",

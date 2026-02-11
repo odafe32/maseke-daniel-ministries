@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { DevotionalTheme } from './Devotionals';
+import { fs, hp, wp } from '@/src/utils';
 
 interface NoDevotionalPageProps {
   theme: DevotionalTheme;
@@ -86,14 +87,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: wp(16),
+    paddingBottom: wp(16),
   },
   headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
+    width: wp(44),
+    height: hp(44),
+    borderRadius: wp(22),
+    borderWidth: wp(1),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -104,32 +105,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: wp(32),
   },
   iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: wp(96),
+    height: hp(96),
+    borderRadius: wp(48),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: hp(24),
   },
   title: {
     fontFamily: 'Geist-SemiBold',
-    fontSize: 24,
+    fontSize: fs(24),
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   message: {
     fontFamily: 'DMSans-Regular',
-    fontSize: 16,
+    fontSize: fs(16),
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 8,
+    marginBottom: hp(8),
   },
   suggestion: {
     fontFamily: 'DMSans-Regular',
-    fontSize: 14,
+    fontSize: fs(14),
     textAlign: 'center',
     lineHeight: 20,
   },

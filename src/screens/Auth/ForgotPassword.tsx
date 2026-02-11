@@ -7,7 +7,7 @@ import {
   InputField,
   SectionIntro,
 } from "@/src/components";
-import { ForgotPasswordProps } from "@/src/utils";
+import { ForgotPasswordProps, hp } from "@/src/utils";
 
 export function ForgotPassword({
   email,
@@ -31,7 +31,7 @@ export function ForgotPassword({
         />
       }
     >
-      <BackHeader title="Maseke Daniels Ministries s" onBackPress={onBack} />
+      <BackHeader title="Maseke Daniels Ministries " onBackPress={onBack} />
 
       <SectionIntro
         title="Let’s get you back in"
@@ -57,7 +57,7 @@ export function ForgotPassword({
 
 const styles = StyleSheet.create({
   form: {
-    marginTop: 12,
+    marginTop: hp(12),
     gap: 16,
   },
 }); 

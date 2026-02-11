@@ -5,12 +5,13 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  RefreshControl,
   Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Bell, ArrowLeft, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { fs, hp, wp } from "@/src/utils";
+import { RefreshControl } from "react-native-gesture-handler";
 
 interface NotificationsProps {
   onBack?: () => void;
@@ -165,40 +166,41 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAFB",
   },
   header: {
+    marginTop: hp(-10),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: wp(16),
+    paddingVertical: wp(16),
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   backButton: {
-    padding: 8,
+    padding: wp(8),
   },
   title: {
-    fontSize: 20,
+    fontSize: fs(20),
     fontFamily: "Geist-SemiBold",
     color: "#1F2937",
   },
   placeholder: {
-    width: 40,
+    width: wp(40),
   },
   listContent: {
-    padding: 16,
+    padding: wp(16),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: wp(32),
   },
   notificationCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: wp(12),
+    padding: wp(16),
+    marginBottom: wp(12),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -214,51 +216,51 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: wp(48),
+    height: hp(48),
+    borderRadius: wp(24),
     backgroundColor: "#EDE9FE",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: hp(12),
   },
   textContainer: {
     flex: 1,
   },
   notificationTitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: "Geist-SemiBold",
     color: "#1F2937",
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   notificationMessage: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: "DMSans-Regular",
     color: "#6B7280",
-    marginBottom: 4,
+    marginBottom: hp(4),
   },
   notificationTime: {
-    fontSize: 12,
+    fontSize: fs(12),
     fontFamily: "DMSans-Regular",
     color: "#9CA3AF",
   },
   deleteButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: wp(8),
+    marginLeft: hp(8),
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: fs(20),
     fontFamily: "Geist-SemiBold",
     color: "#1F2937",
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: hp(16),
+    marginBottom: hp(8),
   },
   emptyMessage: {
-    fontSize: 14,
+    fontSize: fs(14),
     fontFamily: "DMSans-Regular",
     color: "#6B7280",
     textAlign: "center",

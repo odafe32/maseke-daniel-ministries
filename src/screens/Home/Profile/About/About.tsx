@@ -7,6 +7,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText } from "@/src/components";
+import { hp, wp } from "@/src/utils";
 
 export function About({ onBack }: { onBack: () => void }) {
   // Animation values
@@ -102,7 +103,7 @@ export function About({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            The Maseke DanielAPP is designed to bring your church experience to your fingertips. Watch live sermons, read devotionals, give tithes and offerings securely, and access a library of past messages anytime, anywhere.
+            Maseke Daniels Ministries brings your spiritual journey to your fingertips. Experience live sermons, daily devotionals, secure online giving, and access our extensive library of faith-building messages from anywhere.
           </ThemeText>
         </Animated.View>
 
@@ -121,7 +122,7 @@ export function About({ onBack }: { onBack: () => void }) {
           }}
         >
           <ThemeText variant="body" style={styles.description}>
-            Our mission is to make it simple and safe for members to stay connected, grow in faith, and engage with your church community no matter where life takes them.
+            Our mission is to foster spiritual growth, build community connections, and make it simple and safe for members to engage with their faith journey wherever life takes them.
           </ThemeText>
         </Animated.View>
       </View>
@@ -132,8 +133,8 @@ export function About({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: wp(16),
+    paddingBottom: wp(20),
     gap: 24,
   },
   content: {
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   description: {
-    lineHeight: 24,
+    lineHeight: hp(24),
     color: "#424242",
     textAlign: "left",
   },

@@ -282,16 +282,16 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
-    gap: 8,
+    gap: hp(8),
   },
   title: {
     fontSize: fs(16),
     color: '#121116',
-    lineHeight: 14,
+    lineHeight: fs(14),
   },
   description: {
     fontSize: fs(14),
     color: '#121116',
-    lineHeight: 18,
+    lineHeight: fs(18),
   },
 });

@@ -14,6 +14,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DevotionalTheme } from "./Devotionals";
+import { fs, hp, wp } from "@/src/utils";
 
 interface ResponseModalProps {
   visible: boolean;
@@ -231,73 +232,73 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: wp(24),
+    paddingTop: wp(60),
   },
   header: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginBottom: 20,
+    marginBottom: hp(20),
   },
   closeButton: {
-    padding: 8,
+    padding: wp(8),
   },
   titleContainer: {
-    marginBottom: 32,
+    marginBottom: hp(32),
   },
   title: {
-    fontSize: 28,
+    fontSize: fs(28),
     fontFamily: "Geist-Bold",
-    marginBottom: 8,
+    marginBottom: hp(8,)
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: "DMSans-Regular",
   },
   section: {
-    marginBottom: 28,
+    marginBottom: hp(28),
   },
   questionHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 12,
+    marginBottom: hp(12),
   },
   label: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: "DMSans-SemiBold",
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderWidth: wp(1),
+    borderRadius: wp(12),
+    paddingHorizontal: wp(16),
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: "DMSans-Regular",
   },
   heartInput: {
-    minHeight: 120,
+    minHeight: hp(120),
   },
   takeawayInput: {
-    minHeight: 100,
+    minHeight: hp(100),
   },
   buttonContainer: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 12,
+    marginTop: hp(12),
   },
   button: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: wp(16),
+    borderRadius: wp(12),
     alignItems: "center",
     justifyContent: "center",
   },
   skipButton: {
-    borderWidth: 2,
+    borderWidth: wp(2),
   },
   skipButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: "DMSans-Bold",
   },
   saveButton: {
@@ -308,7 +309,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: fs(16),
     fontFamily: "DMSans-Bold",
   },
 });

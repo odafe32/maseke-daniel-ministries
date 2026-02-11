@@ -51,12 +51,12 @@ export const Home = ({
   const dynamicStyles = {
     notificationBadge: {
       position: 'absolute' as const,
-      top: -4,
-      right: -4,
+      top: hp(-4),
+      right: hp(-4),
       backgroundColor: '#DC2626',
-      borderRadius: 8,
-      minWidth: 16,
-      height: 16,
+      borderRadius: wp(8),
+      minWidth: wp(16),
+      height: wp(16),
       justifyContent: 'center' as const,
       alignItems: 'center' as const,
       borderWidth: 1,
@@ -223,7 +223,9 @@ export const Home = ({
           refreshTrigger={refreshTrigger}
         /> */}
         
-        <HomeImageSection imageUris={imageUris} durations={durations} loading={adsLoading} />
+        {imageUris.length > 0 && (
+          <HomeImageSection imageUris={imageUris} durations={durations} loading={adsLoading} />
+        )}
         
     
         {loading ? (
@@ -262,18 +264,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fixedHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingHorizontal: wp(10),
+    paddingTop: hp(10),
+    paddingBottom: hp(10),
     backgroundColor: '#fff',
   },
   scrollableContent: {
     flex: 1,
   },
   scrollableContentContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingHorizontal: wp(20),
+    paddingTop: hp(20),
+    paddingBottom: hp(20),
   },
   headerRow: {
     flexDirection: "row",
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   greeting: {
-    marginTop: 4,
+    marginTop: hp(4),
     fontFamily: "Geist-Medium",
     fontSize: fs(20),
     color: "#000",
@@ -310,7 +312,7 @@ const styles = StyleSheet.create({
     gap: hp(18),
   },
   cardShadow: {
-    borderRadius: 1,
+    borderRadius: wp(1),
     shadowColor: "#000",
     shadowOpacity: 0.12,
     shadowOffset: { width: 0, height: 6 },
@@ -318,12 +320,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardImage: {
-    height: hp(150),
-    borderRadius: 10,
+    height: hp(200),
+    borderRadius: wp(10),
     overflow: "hidden",
   },
   cardImageInner: {
-    borderRadius: 1,
+    borderRadius: wp(10),
   },
   cardOverlay: {
     flex: 1,
@@ -337,8 +339,8 @@ const styles = StyleSheet.create({
     fontSize: fs(18),
   },
   skeletonCard: {
-    height: hp(160),
-    borderRadius: wp(16),
+    height: hp(200),
+    borderRadius: wp(10),
     backgroundColor: "#E3E6EB",
   },
 });

@@ -1,4 +1,3 @@
-import { SafeAreaWrapper } from "@/src/components/SafeAreaWrapper";
 import { Button } from "@/src/components/ui/Button";
 import { PaginationDots } from "@/src/components/ui/PaginationDots";
 import { TextLink } from "@/src/components/ui/TextLink";
@@ -7,7 +6,6 @@ import { onboardingData } from "@/src/constants/data";
 import { fs, getColor, hp, wp } from "@/src/utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import React, { useRef, useState } from "react";
 import {
   Dimensions,
@@ -19,29 +17,34 @@ import {
   PanResponderGestureState,
   Text,
   Easing,
+  StatusBar as RNStatusBar,
+  Platform,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 const { width, height } = Dimensions.get("window");
+const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : 44;
+const isSmallScreen = height < 700;
 
 const OnboardingScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const router = useRouter();
   const colors = getColor();
-  
+
   // Animated values for smooth transitions
   const backgroundOpacity = useRef(new Animated.Value(1)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentTranslateY = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  
+
   // Track if we're currently transitioning
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const animateToNext = (nextIndex: number) => {
     if (isTransitioning || nextIndex < 0 || nextIndex >= onboardingData.length) return;
-    
+
     setIsTransitioning(true);
-    
+
     Animated.parallel([
       // Background smooth crossfade
       Animated.timing(backgroundOpacity, {
@@ -73,7 +76,7 @@ const OnboardingScreen = () => {
     ]).start(() => {
       // Update index while content is transitioning
       setCurrentIndex(nextIndex);
-      
+
       Animated.parallel([
         Animated.timing(backgroundOpacity, {
           toValue: 1,
@@ -116,11 +119,11 @@ const OnboardingScreen = () => {
       if (!isTransitioning) {
         const dragDistance = Math.abs(gestureState.dx);
         const maxDrag = width * 0.3;
-        
+
         // Subtle content movement during gesture
         const translateValue = gestureState.dx * 0.05;
         contentTranslateY.setValue(Math.abs(translateValue) * 0.5);
-        
+
         // Subtle opacity change during drag
         const fadeValue = Math.max(0.7, 1 - (dragDistance / maxDrag) * 0.3);
         contentOpacity.setValue(fadeValue);
@@ -130,7 +133,7 @@ const OnboardingScreen = () => {
       if (!isTransitioning) {
         const threshold = width * 0.25;
         const velocity = Math.abs(gestureState.vx);
-        
+
         // Determine swipe direction and navigate
         if (gestureState.dx > threshold || (gestureState.dx > 50 && velocity > 0.5)) {
           // Swipe right - go to previous
@@ -215,7 +218,7 @@ const OnboardingScreen = () => {
   const renderCurrentSlide = () => {
     const item = onboardingData[currentIndex];
     const isLastSlide = currentIndex === onboardingData.length - 1;
-    
+
     return (
       <View style={styles.slide} {...panResponder.panHandlers}>
         {/* Background Image with smooth transition */}
@@ -235,7 +238,7 @@ const OnboardingScreen = () => {
           >
             {/* Gradient Overlay */}
             <View style={styles.gradientOverlay} />
-            
+
             {/* Top Content */}
             <View style={styles.topContent}>
               <ThemeText variant="bodySmall" style={styles.brandText}>
@@ -264,7 +267,7 @@ const OnboardingScreen = () => {
                   activeIndex={currentIndex}
                 />
               </View>
-              
+
               <Text style={styles.title}>
                 {item.title}
               </Text>
@@ -308,14 +311,13 @@ const OnboardingScreen = () => {
     );
   };
 
-const markOnboardingComplete = async () => {
-  try {
-    await AsyncStorage.setItem("hasSeenOnboarding", "true");
-  } catch (error) {
-    console.error("Error saving onboarding status:", error);
-  }
-};
-
+  const markOnboardingComplete = async () => {
+    try {
+      await AsyncStorage.setItem("hasSeenOnboarding", "true");
+    } catch (error) {
+      console.error("Error saving onboarding status:", error);
+    }
+  };
 
   const handleNext = () => {
     if (currentIndex < onboardingData.length - 1) {
@@ -324,26 +326,26 @@ const markOnboardingComplete = async () => {
   };
 
   const handleGetStarted = async () => {
-  if (currentIndex < onboardingData.length - 1) {
-    animateToNext(currentIndex + 1);
-  } else {
-    await markOnboardingComplete();
-    router.push("/signup");
-  }
-};
+    if (currentIndex < onboardingData.length - 1) {
+      animateToNext(currentIndex + 1);
+    } else {
+      await markOnboardingComplete();
+      router.push("/signup");
+    }
+  };
 
-const handleLogin = async () => {
-  await markOnboardingComplete();
-  router.push("/login");
-};
+  const handleLogin = async () => {
+    await markOnboardingComplete();
+    router.push("/login");
+  };
 
   return (
-    <SafeAreaWrapper style={styles.container}>
-      <StatusBar style="light" />
+    <View style={styles.container}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
       <View style={styles.gestureContainer}>
         {renderCurrentSlide()}
       </View>
-    </SafeAreaWrapper>
+    </View>
   );
 };
 
@@ -365,7 +367,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: height * 0.73, 
+    height: height * 0.68, 
     width: '100%',
   },
   fullBackgroundImage: {
@@ -377,27 +379,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   topContent: {
-    paddingTop: hp(60),
+    paddingTop: STATUS_BAR_HEIGHT + hp(20),
     paddingHorizontal: wp(24),
   },
   brandText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: fs(18),
     fontWeight: '600',
     textAlign: 'center',
     letterSpacing: 0.5,
   },
   bottomSheet: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: height * 0.42,
+    bottom: wp(0),
+    left: wp(0),
+    right: wp(0),
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: wp(24),
+    borderTopRightRadius: wp(24),
     paddingHorizontal: wp(24),
-    paddingTop: hp(2),
+    paddingTop: isSmallScreen ? hp(10) : hp(16),
+    paddingBottom: isSmallScreen ? hp(10) : hp(16),
+    maxHeight: height * 0.48,
+    minHeight: height * 0.36,
   },
   contentContainer: {
     flex: 1,
@@ -409,43 +413,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: fs(26),
+    fontSize: isSmallScreen ? fs(22) : fs(26),
     fontWeight: '700',
     color: '#000',
     textAlign: 'center',
-    marginBottom: hp(16),
-    lineHeight: 34,
-    width: wp(200),
+    marginBottom: isSmallScreen ? hp(8) : hp(16),
+    lineHeight: isSmallScreen ? 28 : 34,
+    maxWidth: '85%',
   },
   description: {
-    fontSize: fs(15),
+    fontSize: isSmallScreen ? fs(13) : fs(15),
     color: '#424242',
     fontFamily: "SpaceGrotesk-Medium",
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: wp(20),  
+    lineHeight: isSmallScreen ? 20 : 24,
+    paddingHorizontal: wp(10),
   },
   paginationContainer: {
     alignItems: 'center',
-    marginBottom: hp(24),
+    marginBottom: isSmallScreen ? hp(12) : hp(24),
   },
   buttonContainer: {
-    paddingBottom: hp(20),
+    paddingBottom: isSmallScreen ? hp(8) : hp(20),
   },
   primaryButton: {
     backgroundColor: '#0C154C',
     borderRadius: 12,
-    paddingVertical: hp(16),
-    marginBottom: hp(16),
+    paddingVertical: isSmallScreen ? hp(12) : hp(16),
+    marginBottom: isSmallScreen ? hp(8) : hp(16),
   },
   secondaryButton: {
     backgroundColor: 'transparent',
     borderRadius: 12,
-    paddingVertical: hp(16),
+    paddingVertical: isSmallScreen ? hp(12) : hp(16),
     color: "#000000ff",
     borderWidth: 1,
     borderColor: '#3B489740',
-    marginBottom: hp(8),
+    marginBottom: isSmallScreen ? hp(4) : hp(8),
   },
 });
 

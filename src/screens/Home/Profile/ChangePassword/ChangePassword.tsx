@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { BackHeader, ThemeText, InputField, Button } from "@/src/components";
-import { getColor } from "@/src/utils";
+import { getColor, hp, wp } from "@/src/utils";
 import { Ionicons } from '@expo/vector-icons';
 
 interface ChangePasswordProps {
@@ -308,15 +308,15 @@ export function ChangePassword({
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 12,
-    paddingBottom: 20,
+    paddingHorizontal: wp(12),
+    paddingBottom: wp(20),
     gap: 24,
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    borderRadius: wp(24),
+    paddingHorizontal: wp(20),
+    paddingVertical: wp(20),
     gap: 16,
     flexGrow: 1,
   },
@@ -333,10 +333,10 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
-    paddingBottom: 8,
+    paddingBottom: wp(8),
     width: "100%",
   },
   saveButton: {
-    marginTop: 8,
+    marginTop: hp(8),
   },
 });
